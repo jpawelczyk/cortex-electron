@@ -138,6 +138,40 @@ describe('TaskItem (collapsed)', () => {
     expect(screen.getByRole('grid')).toBeInTheDocument();
   });
 
+  it('shows clear button on when_date when set', () => {
+    render(
+      <TaskItem task={fakeTask({ when_date: '2026-03-10' })} onComplete={vi.fn()} />
+    );
+    const badge = screen.getByTestId('when-date');
+    expect(within(badge).getByLabelText('Clear when date')).toBeInTheDocument();
+  });
+
+  it('does not show clear button on when_date when null', () => {
+    render(
+      <TaskItem task={fakeTask({ when_date: null })} onComplete={vi.fn()} />
+    );
+    const badge = screen.getByTestId('when-date');
+    expect(within(badge).queryByLabelText('Clear when date')).not.toBeInTheDocument();
+  });
+
+  it('clears when_date when clear button is clicked', () => {
+    render(
+      <TaskItem task={fakeTask({ when_date: '2026-03-10' })} onComplete={vi.fn()} />
+    );
+    const badge = screen.getByTestId('when-date');
+    fireEvent.click(within(badge).getByLabelText('Clear when date'));
+    expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { when_date: null });
+  });
+
+  it('clears deadline when clear button is clicked', () => {
+    render(
+      <TaskItem task={fakeTask({ deadline: '2026-03-20' })} onComplete={vi.fn()} />
+    );
+    const badge = screen.getByTestId('deadline-badge');
+    fireEvent.click(within(badge).getByLabelText('Clear deadline'));
+    expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { deadline: null });
+  });
+
   it('highlights as selected when isSelected is true', () => {
     render(
       <TaskItem task={fakeTask()} onComplete={vi.fn()} isSelected />
