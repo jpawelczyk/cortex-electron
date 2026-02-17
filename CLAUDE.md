@@ -37,9 +37,30 @@ migrations/      # SQLite migrations
 - ❌ NO network calls without explicit user opt-in
 - ❌ NO telemetry
 - ❌ NO hard deletes
-- ✅ Tests before merge (TDD)
+- ❌ NO code before tests (see TDD below)
 - ✅ Validate all IPC inputs
 - ✅ Type everything
+
+## TDD (Non-Negotiable)
+
+**Test-driven, not "with tests".** Write tests FIRST, then implementation.
+
+```
+1. Write failing test (what behavior do I need?)
+2. Write minimal code to pass
+3. Refactor (tests still pass)
+```
+
+**Never:**
+- Write implementation before test
+- Change tests to match broken code
+- Write tests just for coverage numbers
+
+**Before committing any test, ask:**
+- Did I write this before the implementation?
+- What breaks if I delete this test?
+
+→ Full philosophy: [TESTING.md](docs/TESTING.md)
 
 ## Task Status
 
@@ -61,3 +82,4 @@ Things-inspired: `inbox` → `today` | `upcoming` | `anytime` | `someday` → `l
 | [SYNC](docs/SYNC.md) | Sync-ready patterns |
 | [AI](docs/AI.md) | AI integration layer |
 | [DESIGN_SYSTEM](docs/DESIGN_SYSTEM.md) | Visual language |
+| [TESTING](docs/TESTING.md) | TDD philosophy, patterns |
