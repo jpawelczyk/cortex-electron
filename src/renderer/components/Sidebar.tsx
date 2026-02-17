@@ -50,7 +50,7 @@ export function Sidebar({ activeView, onViewChange, taskCounts }: SidebarProps) 
             >
               <Icon className="size-4 shrink-0" strokeWidth={1.75} />
               <span className="flex-1">{label}</span>
-              {count > 0 && (
+              {count > 0 && view !== 'logbook' && (
                 <span className={`text-xs tabular-nums ${isActive ? 'text-primary/70' : 'text-muted-foreground/70'}`}>
                   {count}
                 </span>
