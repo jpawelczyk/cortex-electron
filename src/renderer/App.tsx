@@ -10,6 +10,7 @@ export default function App() {
   const [activeView, setActiveView] = useState<SidebarView>('inbox');
   const tasks = useStore((s) => s.tasks);
   const deselectTask = useStore((s) => s.deselectTask);
+  const startInlineCreate = useStore((s) => s.startInlineCreate);
 
   useKeyboardShortcuts({ setActiveView, deselectTask });
 
@@ -47,6 +48,7 @@ export default function App() {
             <Search className="size-5" />
           </button>
           <button
+            onClick={() => startInlineCreate()}
             className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
           >
             <Plus className="size-5" />

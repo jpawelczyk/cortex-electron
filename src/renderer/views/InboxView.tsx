@@ -2,6 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { Inbox } from 'lucide-react';
 import { useStore } from '../stores';
 import { TaskList } from '../components/TaskList';
+import { InlineTaskCard } from '../components/InlineTaskCard';
 
 export function InboxView() {
   const tasks = useStore((s) => s.tasks);
@@ -9,6 +10,7 @@ export function InboxView() {
   const updateTask = useStore((s) => s.updateTask);
   const selectTask = useStore((s) => s.selectTask);
   const selectedTaskId = useStore((s) => s.selectedTaskId);
+  const isInlineCreating = useStore((s) => s.isInlineCreating);
   const inboxTasks = useMemo(() => tasks.filter((t) => t.status === 'inbox'), [tasks]);
 
   useEffect(() => {
@@ -24,19 +26,21 @@ export function InboxView() {
       <div className="max-w-5xl mx-auto px-8 py-8">
         <h2 className="text-xl font-semibold text-foreground mb-6">Inbox</h2>
 
-        {inboxTasks.length === 0 ? (
+        {isInlineCreating && <InlineTaskCard />}
+
+        {!isInlineCreating && inboxTasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
             <Inbox className="size-10 mb-3 opacity-30" strokeWidth={1.25} />
             <p className="text-sm">No tasks in your inbox</p>
           </div>
-        ) : (
+        ) : inboxTasks.length > 0 ? (
           <TaskList
             tasks={inboxTasks}
             onCompleteTask={handleComplete}
             onSelectTask={selectTask}
             selectedTaskId={selectedTaskId}
           />
-        )}
+        ) : null}
       </div>
     </div>
   );

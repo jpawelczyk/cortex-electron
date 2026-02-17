@@ -2,19 +2,16 @@ import { describe, it, expect } from 'vitest';
 import { createUISlice, UISlice } from './ui';
 
 function createStore(overrides?: Partial<UISlice>): UISlice {
-  let state: UISlice;
+  const state: UISlice = {} as UISlice;
 
   const set = (partial: Partial<UISlice> | ((s: UISlice) => Partial<UISlice>)) => {
     const update = typeof partial === 'function' ? partial(state) : partial;
-    state = { ...state, ...update };
+    Object.assign(state, update);
   };
 
   const get = () => state;
 
-  state = {
-    ...createUISlice(set as any, get as any, {} as any),
-    ...overrides,
-  };
+  Object.assign(state, createUISlice(set as any, get as any, {} as any), overrides);
 
   return state;
 }
@@ -93,6 +90,32 @@ describe('UISlice', () => {
     it('closes modal', () => {
       const store = createStore({ activeModal: 'confirm-delete', modalData: {} });
       store.closeModal();
+    });
+  });
+
+  describe('inline creating', () => {
+    it('starts with inline creating off', () => {
+      const store = createStore();
+      expect(store.isInlineCreating).toBe(false);
+    });
+
+    it('startInlineCreate sets isInlineCreating to true', () => {
+      const store = createStore();
+      store.startInlineCreate();
+      expect(store.isInlineCreating).toBe(true);
+    });
+
+    it('cancelInlineCreate sets isInlineCreating to false', () => {
+      const store = createStore({ isInlineCreating: true });
+      store.cancelInlineCreate();
+      expect(store.isInlineCreating).toBe(false);
+    });
+
+    it('startInlineCreate deselects any selected task', () => {
+      const store = createStore({ selectedTaskId: 'task-123' });
+      store.startInlineCreate();
+      expect(store.isInlineCreating).toBe(true);
+      expect(store.selectedTaskId).toBeNull();
     });
   });
 
