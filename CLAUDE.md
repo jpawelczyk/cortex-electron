@@ -17,7 +17,7 @@ npm run lint     # Lint + typecheck
 This project uses `better-sqlite3`, a native Node module. Electron bundles its own Node version, so native modules must be rebuilt for Electron.
 
 ```bash
-npm run rebuild:electron   # Rebuild native modules for Electron
+npm run rebuild   # Rebuild native modules for Electron
 ```
 
 **Run this after:**
@@ -27,7 +27,7 @@ npm run rebuild:electron   # Rebuild native modules for Electron
 
 **Symptoms if you forget:** `NODE_MODULE_VERSION` mismatch error on startup.
 
-**Note:** `npm rebuild` rebuilds for system Node, not Electron. Always use `rebuild:electron`.
+**How it works:** Both `npm run dev` and `npm test` use Electron's Node environment (tests run with `ELECTRON_RUN_AS_NODE=1`), so one rebuild works for both.
 
 ## Structure
 
