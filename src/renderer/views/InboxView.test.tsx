@@ -5,16 +5,15 @@ import '@testing-library/jest-dom/vitest';
 import { InboxView } from './InboxView';
 
 // Mock the store
-const mockGetInboxTasks = vi.fn();
+let mockTasks: any[] = [];
 const mockFetchTasks = vi.fn();
 const mockUpdateTask = vi.fn();
 
 vi.mock('../stores', () => ({
   useStore: (selector: (state: any) => any) => {
     const state = {
-      tasks: [],
+      tasks: mockTasks,
       tasksLoading: false,
-      getInboxTasks: mockGetInboxTasks,
       fetchTasks: mockFetchTasks,
       updateTask: mockUpdateTask,
     };
@@ -22,10 +21,29 @@ vi.mock('../stores', () => ({
   },
 }));
 
+const fakeTask = (overrides: Record<string, unknown> = {}) => ({
+  id: 'task-1',
+  title: 'Test task',
+  notes: null,
+  status: 'inbox',
+  when_date: null,
+  deadline: null,
+  project_id: null,
+  heading_id: null,
+  context_id: null,
+  priority: null,
+  sort_order: 0,
+  created_at: '2026-02-17T00:00:00.000Z',
+  updated_at: '2026-02-17T00:00:00.000Z',
+  completed_at: null,
+  deleted_at: null,
+  ...overrides,
+});
+
 describe('InboxView', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetInboxTasks.mockReturnValue([]);
+    mockTasks = [];
   });
 
   it('renders the Inbox heading', () => {
@@ -34,32 +52,23 @@ describe('InboxView', () => {
   });
 
   it('shows empty state when no inbox tasks', () => {
-    mockGetInboxTasks.mockReturnValue([]);
     render(<InboxView />);
     expect(screen.getByText(/no tasks/i)).toBeInTheDocument();
   });
 
   it('renders inbox tasks from the store', () => {
-    mockGetInboxTasks.mockReturnValue([
-      {
-        id: '1',
-        title: 'Triage this',
-        status: 'inbox',
-        notes: null,
-        when_date: null,
-        deadline: null,
-        project_id: null,
-        heading_id: null,
-        context_id: null,
-        priority: null,
-        sort_order: 0,
-        created_at: '2026-02-17T00:00:00.000Z',
-        updated_at: '2026-02-17T00:00:00.000Z',
-        completed_at: null,
-        deleted_at: null,
-      },
-    ]);
+    mockTasks = [fakeTask({ id: '1', title: 'Triage this' })];
     render(<InboxView />);
     expect(screen.getByText('Triage this')).toBeInTheDocument();
+  });
+
+  it('filters to only inbox tasks', () => {
+    mockTasks = [
+      fakeTask({ id: '1', title: 'Inbox task', status: 'inbox' }),
+      fakeTask({ id: '2', title: 'Today task', status: 'today' }),
+    ];
+    render(<InboxView />);
+    expect(screen.getByText('Inbox task')).toBeInTheDocument();
+    expect(screen.queryByText('Today task')).not.toBeInTheDocument();
   });
 });

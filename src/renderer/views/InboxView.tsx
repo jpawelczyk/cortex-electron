@@ -1,11 +1,12 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useStore } from '../stores';
 import { TaskList } from '../components/TaskList';
 
 export function InboxView() {
-  const inboxTasks = useStore((s) => s.getInboxTasks());
+  const tasks = useStore((s) => s.tasks);
   const fetchTasks = useStore((s) => s.fetchTasks);
   const updateTask = useStore((s) => s.updateTask);
+  const inboxTasks = useMemo(() => tasks.filter((t) => t.status === 'inbox'), [tasks]);
 
   useEffect(() => {
     fetchTasks();
