@@ -12,7 +12,7 @@ export default function App() {
   const deselectTask = useStore((s) => s.deselectTask);
   const startInlineCreate = useStore((s) => s.startInlineCreate);
 
-  useKeyboardShortcuts({ setActiveView, deselectTask });
+  useKeyboardShortcuts({ setActiveView, deselectTask, startInlineCreate, activeView });
 
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
 

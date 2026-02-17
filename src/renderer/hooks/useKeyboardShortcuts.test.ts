@@ -10,19 +10,21 @@ function fireKey(key: string, opts: Partial<KeyboardEvent> = {}) {
 describe('useKeyboardShortcuts', () => {
   let setActiveView: ReturnType<typeof vi.fn>;
   let deselectTask: ReturnType<typeof vi.fn>;
+  let startInlineCreate: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     setActiveView = vi.fn();
     deselectTask = vi.fn();
+    startInlineCreate = vi.fn();
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  function renderShortcuts() {
+  function renderShortcuts(activeView: string = 'inbox') {
     return renderHook(() =>
-      useKeyboardShortcuts({ setActiveView, deselectTask })
+      useKeyboardShortcuts({ setActiveView, deselectTask, startInlineCreate, activeView })
     );
   }
 
@@ -83,6 +85,20 @@ describe('useKeyboardShortcuts', () => {
       renderShortcuts();
       fireKey(',', { metaKey: true });
       // just verifying no crash — settings not implemented yet
+    });
+  });
+
+  describe('Cmd+N → new task', () => {
+    it('calls startInlineCreate on inbox view', () => {
+      renderShortcuts('inbox');
+      fireKey('n', { metaKey: true });
+      expect(startInlineCreate).toHaveBeenCalled();
+    });
+
+    it('does not call startInlineCreate on other views', () => {
+      renderShortcuts('today');
+      fireKey('n', { metaKey: true });
+      expect(startInlineCreate).not.toHaveBeenCalled();
     });
   });
 
