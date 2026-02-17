@@ -206,50 +206,58 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded }:
         )}
 
         {!isExpanded && task.deadline && (
-          <span className="text-[11px] text-muted-foreground shrink-0">
+          <span data-testid="deadline-badge" className="text-[11px] text-muted-foreground shrink-0">
             {formatDate(task.deadline)}
           </span>
         )}
       </div>
 
-      {/* Expandable section */}
-      {isExpanded && (
-        <div className="px-3 pb-3 pt-1" style={{ paddingLeft: 42 }}>
-          <textarea
-            value={notes}
-            onChange={(e) => handleNotesChange(e.target.value)}
-            placeholder="Add notes..."
-            rows={3}
-            className="w-full bg-transparent text-[13px] text-foreground/80 placeholder:text-muted-foreground/40 outline-none resize-none leading-relaxed"
-          />
+      {/* Expandable section — always in DOM for CSS grid height animation */}
+      <div
+        className="grid transition-[grid-template-rows] duration-200 ease-out"
+        style={{ gridTemplateRows: isExpanded ? '1fr' : '0fr' }}
+      >
+        <div className="overflow-hidden min-h-0">
+          <div className="px-3 pb-3 pt-1" style={{ paddingLeft: 42 }}>
+            <textarea
+              value={notes}
+              onChange={(e) => handleNotesChange(e.target.value)}
+              placeholder="Add notes..."
+              rows={3}
+              tabIndex={isExpanded ? 0 : -1}
+              className="w-full bg-transparent text-[13px] text-foreground/80 placeholder:text-muted-foreground/40 outline-none resize-none leading-relaxed"
+            />
 
-          <div className="flex items-center gap-2 mt-2">
-            <label className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs text-muted-foreground hover:bg-accent/60 transition-colors cursor-pointer">
-              <Calendar className="size-3.5" />
-              <input
-                type="date"
-                aria-label="When date"
-                value={task.when_date ?? ''}
-                onChange={(e) => handleWhenDateChange(e.target.value)}
-                className="sr-only"
-              />
-              <span>{task.when_date ? formatDate(task.when_date) : 'When'}</span>
-            </label>
+            <div className="flex items-center gap-2 mt-2">
+              <label className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs text-muted-foreground hover:bg-accent/60 transition-colors cursor-pointer">
+                <Calendar className="size-3.5" />
+                <input
+                  type="date"
+                  aria-label="When date"
+                  value={task.when_date ?? ''}
+                  onChange={(e) => handleWhenDateChange(e.target.value)}
+                  tabIndex={isExpanded ? 0 : -1}
+                  className="sr-only"
+                />
+                <span>{task.when_date ? formatDate(task.when_date) : 'When'}</span>
+              </label>
 
-            <label className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs text-muted-foreground hover:bg-accent/60 transition-colors cursor-pointer">
-              <Flag className="size-3.5" />
-              <input
-                type="date"
-                aria-label="Deadline"
-                value={task.deadline ?? ''}
-                onChange={(e) => handleDeadlineChange(e.target.value)}
-                className="sr-only"
-              />
-              <span>{task.deadline ? formatDate(task.deadline) : 'Deadline'}</span>
-            </label>
+              <label className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs text-muted-foreground hover:bg-accent/60 transition-colors cursor-pointer">
+                <Flag className="size-3.5" />
+                <input
+                  type="date"
+                  aria-label="Deadline"
+                  value={task.deadline ?? ''}
+                  onChange={(e) => handleDeadlineChange(e.target.value)}
+                  tabIndex={isExpanded ? 0 : -1}
+                  className="sr-only"
+                />
+                <span>{task.deadline ? formatDate(task.deadline) : 'Deadline'}</span>
+              </label>
+            </div>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

@@ -65,11 +65,11 @@ describe('TaskItem (collapsed)', () => {
     expect(screen.getByRole('checkbox')).toBeChecked();
   });
 
-  it('shows deadline when present', () => {
+  it('shows deadline badge when present', () => {
     render(
       <TaskItem task={fakeTask({ deadline: '2026-02-20' })} onComplete={vi.fn()} />
     );
-    expect(screen.getByText('Feb 20')).toBeInTheDocument();
+    expect(screen.getByTestId('deadline-badge')).toHaveTextContent('Feb 20');
   });
 
   it('shows priority indicator when set', () => {
@@ -95,7 +95,7 @@ describe('TaskItem (collapsed)', () => {
     render(
       <TaskItem task={fakeTask({ when_date: '2026-03-10' })} onComplete={vi.fn()} />
     );
-    expect(screen.getByText('Mar 10')).toBeInTheDocument();
+    expect(screen.getByTestId('when-date')).toHaveTextContent('Mar 10');
   });
 
   it('does not show when_date badge when null', () => {
