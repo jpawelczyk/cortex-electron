@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-> Local-first personal OS. Electron + React + SQLite + Tailwind.
+Cortex is a local-first, privacy-focused personal operating system and "external brain" for managing your work — more focused than Notion, more powerful than Obsidian, AI-native but never AI-dependent, highly opinionated.
 
 ## Commands
 
