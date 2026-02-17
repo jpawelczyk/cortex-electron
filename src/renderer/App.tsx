@@ -5,6 +5,7 @@ import { Sidebar, SidebarView } from './components/Sidebar';
 import { InboxView } from './views/InboxView';
 import { TodayView } from './views/TodayView';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
 
 export default function App() {
   const [activeView, setActiveView] = useState<SidebarView>('inbox');
@@ -13,6 +14,7 @@ export default function App() {
   const startInlineCreate = useStore((s) => s.startInlineCreate);
 
   useKeyboardShortcuts({ setActiveView, deselectTask, startInlineCreate, activeView });
+  useGlobalShortcuts({ setActiveView, startInlineCreate });
 
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
