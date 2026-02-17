@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Circle, CheckCircle2, Calendar, Flag } from 'lucide-react';
+import { Circle, CheckCircle2, Calendar, Flag, Trash2 } from 'lucide-react';
 import type { Task } from '@shared/types';
 import { useStore } from '../stores';
 import { useDebouncedCallback } from '../hooks/useDebouncedCallback';
@@ -24,6 +24,7 @@ interface TaskItemProps {
 
 export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded }: TaskItemProps) {
   const updateTask = useStore((s) => s.updateTask);
+  const deleteTask = useStore((s) => s.deleteTask);
   const deselectTask = useStore((s) => s.deselectTask);
 
   const isCompleted = task.status === 'logbook';
@@ -133,6 +134,12 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded }:
     updateTask(task.id, { deadline: value });
   };
 
+  const handleDelete = () => {
+    flushTitle();
+    flushNotes();
+    deleteTask(task.id);
+  };
+
   const handleRowClick = () => {
     if (!isExpanded) {
       onSelect?.(task.id);
@@ -236,6 +243,19 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded }:
               tabIndex={isExpanded ? 0 : -1}
               className="w-full bg-transparent text-[13px] text-foreground/80 placeholder:text-muted-foreground/40 outline-none resize-none leading-relaxed"
             />
+            <div className="flex justify-end mt-1">
+              <button
+                aria-label="Delete task"
+                tabIndex={isExpanded ? 0 : -1}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete();
+                }}
+                className="p-1 rounded text-muted-foreground/40 hover:text-destructive transition-colors"
+              >
+                <Trash2 className="size-3.5" />
+              </button>
+            </div>
           </div>
         </div>
       </div>

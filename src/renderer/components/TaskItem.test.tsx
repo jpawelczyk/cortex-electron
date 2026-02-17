@@ -7,12 +7,14 @@ import type { Task } from '@shared/types';
 
 const mockUpdateTask = vi.fn();
 const mockDeselectTask = vi.fn();
+const mockDeleteTask = vi.fn();
 
 vi.mock('../stores', () => ({
   useStore: (selector: any) => {
     const state = {
       updateTask: mockUpdateTask,
       deselectTask: mockDeselectTask,
+      deleteTask: mockDeleteTask,
     };
     return selector(state);
   },
@@ -319,5 +321,44 @@ describe('TaskItem (expanded)', () => {
     const day15 = within(grid).getByText('15');
     fireEvent.click(day15);
     expect(mockUpdateTask).toHaveBeenCalledWith('task-1', expect.objectContaining({ deadline: expect.stringMatching(/^\d{4}-\d{2}-15$/) }));
+  });
+
+  it('shows trash button when expanded', () => {
+    render(
+      <TaskItem task={fakeTask()} onComplete={vi.fn()} isExpanded />
+    );
+    expect(screen.getByLabelText('Delete task')).toBeInTheDocument();
+  });
+
+  it('does not show interactive trash button when collapsed', () => {
+    render(
+      <TaskItem task={fakeTask()} onComplete={vi.fn()} />
+    );
+    // The button exists in the DOM (for CSS grid animation) but has tabIndex -1
+    const btn = screen.getByLabelText('Delete task');
+    expect(btn).toHaveAttribute('tabindex', '-1');
+  });
+
+  it('calls deleteTask with task id when trash button is clicked', () => {
+    render(
+      <TaskItem task={fakeTask({ id: 'task-99' })} onComplete={vi.fn()} isExpanded />
+    );
+    fireEvent.click(screen.getByLabelText('Delete task'));
+    expect(mockDeleteTask).toHaveBeenCalledWith('task-99');
+  });
+
+  it('flushes debounced saves before deleting', () => {
+    render(
+      <TaskItem task={fakeTask({ title: 'Original' })} onComplete={vi.fn()} isExpanded />
+    );
+    const input = screen.getByDisplayValue('Original');
+    fireEvent.change(input, { target: { value: 'Edited' } });
+    // Don't advance timers — debounce has NOT fired yet
+
+    fireEvent.click(screen.getByLabelText('Delete task'));
+
+    // The flush should have saved the pending title
+    expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { title: 'Edited' });
+    expect(mockDeleteTask).toHaveBeenCalledWith('task-1');
   });
 });
