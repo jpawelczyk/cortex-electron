@@ -48,6 +48,7 @@ export default function App() {
             <Search className="size-5" />
           </button>
           <button
+            onMouseDown={(e) => e.stopPropagation()}
             onClick={() => startInlineCreate()}
             className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
           >

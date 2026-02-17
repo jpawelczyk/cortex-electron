@@ -1,17 +1,20 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { createUISlice, UISlice } from './ui';
 
-function createStore(overrides?: Partial<UISlice>): UISlice {
-  const state: UISlice = {} as UISlice;
+type SetFn = (partial: Partial<UISlice> | ((s: UISlice) => Partial<UISlice>)) => void;
 
-  const set = (partial: Partial<UISlice> | ((s: UISlice) => Partial<UISlice>)) => {
+function createStore(overrides?: Partial<UISlice>): UISlice & { _set: ReturnType<typeof vi.fn<SetFn>> } {
+  const state = {} as UISlice & { _set: ReturnType<typeof vi.fn<SetFn>> };
+
+  const set = vi.fn<SetFn>((partial) => {
     const update = typeof partial === 'function' ? partial(state) : partial;
     Object.assign(state, update);
-  };
+  });
 
   const get = () => state;
 
   Object.assign(state, createUISlice(set as any, get as any, {} as any), overrides);
+  state._set = set;
 
   return state;
 }
@@ -116,6 +119,13 @@ describe('UISlice', () => {
       store.startInlineCreate();
       expect(store.isInlineCreating).toBe(true);
       expect(store.selectedTaskId).toBeNull();
+    });
+
+    it('startInlineCreate is a no-op when already creating', () => {
+      const store = createStore({ isInlineCreating: true });
+      store._set.mockClear();
+      store.startInlineCreate();
+      expect(store._set).not.toHaveBeenCalled();
     });
   });
 

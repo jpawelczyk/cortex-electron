@@ -25,7 +25,7 @@ export interface UISlice {
   cancelInlineCreate: () => void;
 }
 
-export const createUISlice: StateCreator<UISlice> = (set) => ({
+export const createUISlice: StateCreator<UISlice> = (set, get) => ({
   activeContextId: null,
   setActiveContext: (id) => set({ activeContextId: id }),
 
@@ -46,6 +46,9 @@ export const createUISlice: StateCreator<UISlice> = (set) => ({
   deselectTask: () => set({ selectedTaskId: null }),
 
   isInlineCreating: false,
-  startInlineCreate: () => set({ isInlineCreating: true, selectedTaskId: null }),
+  startInlineCreate: () => {
+    if (get().isInlineCreating) return;
+    set({ isInlineCreating: true, selectedTaskId: null });
+  },
   cancelInlineCreate: () => set({ isInlineCreating: false }),
 });
