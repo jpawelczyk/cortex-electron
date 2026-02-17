@@ -91,6 +91,10 @@ export function TaskDetail({ task }: TaskDetailProps) {
     updateTask(task.id, { status: value as TaskStatus });
   };
 
+  const handleWhenDateChange = (value: string) => {
+    updateTask(task.id, { when_date: value || null });
+  };
+
   const handleDeadlineChange = (value: string) => {
     updateTask(task.id, { deadline: value || null });
   };
@@ -153,6 +157,19 @@ export function TaskDetail({ task }: TaskDetailProps) {
               </option>
             ))}
           </select>
+        </div>
+
+        <div>
+          <label htmlFor="task-when" className="text-xs font-medium text-muted-foreground mb-1 block">
+            When
+          </label>
+          <input
+            id="task-when"
+            type="date"
+            value={task.when_date ?? ''}
+            onChange={(e) => handleWhenDateChange(e.target.value)}
+            className="w-full bg-secondary text-foreground text-sm px-2 py-1.5 rounded-md border border-border focus:outline-none focus:ring-1 focus:ring-ring"
+          />
         </div>
 
         <div>

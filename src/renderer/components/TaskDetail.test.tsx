@@ -235,6 +235,40 @@ describe('TaskDetail', () => {
     expect(mockDeselectTask).toHaveBeenCalled();
   });
 
+  // --- When date tests ---
+
+  it('renders when_date input with current value', () => {
+    render(<TaskDetail task={makeTask({ when_date: '2026-03-10' })} />);
+
+    const input = screen.getByLabelText(/when/i);
+    expect((input as HTMLInputElement).value).toBe('2026-03-10');
+  });
+
+  it('renders empty when_date input when when_date is null', () => {
+    render(<TaskDetail task={makeTask({ when_date: null })} />);
+
+    const input = screen.getByLabelText(/when/i);
+    expect((input as HTMLInputElement).value).toBe('');
+  });
+
+  it('calls updateTask when when_date changes', () => {
+    render(<TaskDetail task={makeTask()} />);
+
+    const input = screen.getByLabelText(/when/i);
+    fireEvent.change(input, { target: { value: '2026-04-01' } });
+
+    expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { when_date: '2026-04-01' });
+  });
+
+  it('clears when_date when input is emptied', () => {
+    render(<TaskDetail task={makeTask({ when_date: '2026-03-10' })} />);
+
+    const input = screen.getByLabelText(/when/i);
+    fireEvent.change(input, { target: { value: '' } });
+
+    expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { when_date: null });
+  });
+
   it('resets local state when task prop changes', () => {
     const { rerender } = render(
       <TaskDetail task={makeTask({ id: 'task-1', title: 'First' })} />

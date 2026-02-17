@@ -78,6 +78,20 @@ describe('TaskItem', () => {
     expect(onSelect).toHaveBeenCalledWith('task-42');
   });
 
+  it('shows when_date badge when set', () => {
+    render(
+      <TaskItem task={fakeTask({ when_date: '2026-03-10' })} onComplete={vi.fn()} />
+    );
+    expect(screen.getByText('Mar 10')).toBeInTheDocument();
+  });
+
+  it('does not show when_date badge when null', () => {
+    render(
+      <TaskItem task={fakeTask({ when_date: null })} onComplete={vi.fn()} />
+    );
+    expect(screen.queryByTestId('when-date')).not.toBeInTheDocument();
+  });
+
   it('highlights as selected when isSelected is true', () => {
     render(
       <TaskItem task={fakeTask()} onComplete={vi.fn()} isSelected />

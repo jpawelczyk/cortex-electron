@@ -8,7 +8,7 @@ const PRIORITY_COLORS: Record<string, string> = {
   P3: 'text-blue-500',
 };
 
-function formatDeadline(date: string): string {
+function formatDate(date: string): string {
   const d = new Date(date + 'T00:00:00');
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
@@ -64,9 +64,15 @@ export function TaskItem({ task, onComplete, onSelect, isSelected }: TaskItemPro
         </span>
       )}
 
+      {task.when_date && (
+        <span data-testid="when-date" className="text-[11px] text-primary/70 shrink-0">
+          {formatDate(task.when_date)}
+        </span>
+      )}
+
       {task.deadline && (
         <span className="text-[11px] text-muted-foreground shrink-0">
-          {formatDeadline(task.deadline)}
+          {formatDate(task.deadline)}
         </span>
       )}
     </div>
