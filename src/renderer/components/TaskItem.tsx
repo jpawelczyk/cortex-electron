@@ -218,7 +218,7 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded }:
         style={{ gridTemplateRows: isExpanded ? '1fr' : '0fr' }}
       >
         <div className="overflow-hidden min-h-0">
-          <div className="pr-4 pb-4 pt-1" style={{ paddingLeft: 46 }}>
+          <div className="pr-4 pt-1 pb-2" style={{ paddingLeft: 46 }}>
             <textarea
               value={notes}
               onChange={(e) => handleNotesChange(e.target.value)}
@@ -227,34 +227,34 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded }:
               tabIndex={isExpanded ? 0 : -1}
               className="w-full bg-transparent text-[13px] text-foreground/80 placeholder:text-muted-foreground/40 outline-none resize-none leading-relaxed"
             />
+          </div>
 
-            <div className="flex items-center gap-2 mt-3">
-              <label className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs text-muted-foreground hover:bg-accent/60 transition-colors cursor-pointer">
-                <Calendar className="size-3.5" />
-                <input
-                  type="date"
-                  aria-label="When date"
-                  value={task.when_date ?? ''}
-                  onChange={(e) => handleWhenDateChange(e.target.value)}
-                  tabIndex={isExpanded ? 0 : -1}
-                  className="sr-only"
-                />
-                <span>{task.when_date ? formatDate(task.when_date) : 'When'}</span>
-              </label>
+          <div className="flex items-center justify-end gap-2 px-2 pb-2">
+            <label className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs text-muted-foreground hover:bg-accent/60 transition-colors cursor-pointer">
+              <Calendar className="size-3.5" />
+              <input
+                type="date"
+                aria-label="When date"
+                value={task.when_date ?? ''}
+                onChange={(e) => handleWhenDateChange(e.target.value)}
+                tabIndex={isExpanded ? 0 : -1}
+                className="sr-only"
+              />
+              <span>{task.when_date ? formatDate(task.when_date) : 'When'}</span>
+            </label>
 
-              <label className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs text-muted-foreground hover:bg-accent/60 transition-colors cursor-pointer">
-                <Flag className="size-3.5" />
-                <input
-                  type="date"
-                  aria-label="Deadline"
-                  value={task.deadline ?? ''}
-                  onChange={(e) => handleDeadlineChange(e.target.value)}
-                  tabIndex={isExpanded ? 0 : -1}
-                  className="sr-only"
-                />
-                <span>{task.deadline ? formatDate(task.deadline) : 'Deadline'}</span>
-              </label>
-            </div>
+            <label className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs text-muted-foreground hover:bg-accent/60 transition-colors cursor-pointer">
+              <Flag className="size-3.5" />
+              <input
+                type="date"
+                aria-label="Deadline"
+                value={task.deadline ?? ''}
+                onChange={(e) => handleDeadlineChange(e.target.value)}
+                tabIndex={isExpanded ? 0 : -1}
+                className="sr-only"
+              />
+              <span>{task.deadline ? formatDate(task.deadline) : 'Deadline'}</span>
+            </label>
           </div>
         </div>
       </div>
