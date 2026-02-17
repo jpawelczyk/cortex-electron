@@ -222,8 +222,8 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded }:
             <textarea
               value={notes}
               onChange={(e) => handleNotesChange(e.target.value)}
-              placeholder="Add notes..."
-              rows={3}
+              placeholder="Notes"
+              rows={1}
               tabIndex={isExpanded ? 0 : -1}
               className="w-full bg-transparent text-[13px] text-foreground/80 placeholder:text-muted-foreground/40 outline-none resize-none leading-relaxed"
             />

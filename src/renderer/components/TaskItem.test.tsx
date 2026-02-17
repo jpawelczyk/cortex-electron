@@ -144,7 +144,7 @@ describe('TaskItem (expanded)', () => {
     render(
       <TaskItem task={fakeTask({ notes: null })} onComplete={vi.fn()} isExpanded />
     );
-    const textarea = screen.getByPlaceholderText('Add notes...');
+    const textarea = screen.getByPlaceholderText('Notes');
     expect(textarea.tagName).toBe('TEXTAREA');
     expect((textarea as HTMLTextAreaElement).value).toBe('');
   });
