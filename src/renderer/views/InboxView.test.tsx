@@ -8,6 +8,7 @@ import { InboxView } from './InboxView';
 let mockTasks: any[] = [];
 const mockFetchTasks = vi.fn();
 const mockUpdateTask = vi.fn();
+const mockCreateTask = vi.fn();
 
 vi.mock('../stores', () => ({
   useStore: (selector: (state: any) => any) => {
@@ -16,6 +17,7 @@ vi.mock('../stores', () => ({
       tasksLoading: false,
       fetchTasks: mockFetchTasks,
       updateTask: mockUpdateTask,
+      createTask: mockCreateTask,
     };
     return selector(state);
   },
@@ -60,6 +62,11 @@ describe('InboxView', () => {
     mockTasks = [fakeTask({ id: '1', title: 'Triage this' })];
     render(<InboxView />);
     expect(screen.getByText('Triage this')).toBeInTheDocument();
+  });
+
+  it('renders the task input', () => {
+    render(<InboxView />);
+    expect(screen.getByPlaceholderText('Add a task...')).toBeInTheDocument();
   });
 
   it('filters to only inbox tasks', () => {

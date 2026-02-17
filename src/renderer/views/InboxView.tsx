@@ -2,6 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { Inbox } from 'lucide-react';
 import { useStore } from '../stores';
 import { TaskList } from '../components/TaskList';
+import { TaskInput } from '../components/TaskInput';
 
 export function InboxView() {
   const tasks = useStore((s) => s.tasks);
@@ -21,6 +22,10 @@ export function InboxView() {
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-2xl mx-auto px-8 py-10">
         <h2 className="text-xl font-semibold text-foreground mb-6">Inbox</h2>
+
+        <div className="mb-4">
+          <TaskInput />
+        </div>
 
         {inboxTasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
