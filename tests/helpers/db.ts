@@ -15,7 +15,8 @@ export interface TestDb {
   // Raw access for assertions
   getRawTask(id: string): RawTask | undefined;
   getRawProject(id: string): RawProject | undefined;
-  
+  getRawContext(id: string): RawContext | undefined;
+
   // Cleanup
   close(): void;
 }
@@ -30,6 +31,13 @@ interface RawTask {
 interface RawProject {
   id: string;
   title: string;
+  deleted_at: string | null;
+  [key: string]: unknown;
+}
+
+interface RawContext {
+  id: string;
+  name: string;
   deleted_at: string | null;
   [key: string]: unknown;
 }
@@ -111,6 +119,10 @@ export function createTestDb(): TestDb {
 
     getRawProject(id: string) {
       return db.prepare('SELECT * FROM projects WHERE id = ?').get(id) as RawProject | undefined;
+    },
+
+    getRawContext(id: string) {
+      return db.prepare('SELECT * FROM contexts WHERE id = ?').get(id) as RawContext | undefined;
     },
 
     close() {

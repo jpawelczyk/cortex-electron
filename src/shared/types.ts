@@ -94,3 +94,16 @@ export interface Context {
   updated_at: string;
   deleted_at: string | null;
 }
+
+export interface CreateContextInput {
+  name: string;
+  color?: string;
+  icon?: string;
+}
+
+export interface UpdateContextInput {
+  name?: string;
+  color?: string | null;
+  icon?: string | null;
+  sort_order?: number;
+}
