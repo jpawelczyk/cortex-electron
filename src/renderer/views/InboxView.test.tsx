@@ -64,11 +64,6 @@ describe('InboxView', () => {
     expect(screen.getByText('Triage this')).toBeInTheDocument();
   });
 
-  it('renders the task input', () => {
-    render(<InboxView />);
-    expect(screen.getByPlaceholderText('Add a task...')).toBeInTheDocument();
-  });
-
   it('filters to only inbox tasks', () => {
     mockTasks = [
       fakeTask({ id: '1', title: 'Inbox task', status: 'inbox' }),

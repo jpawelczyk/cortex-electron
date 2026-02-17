@@ -1,4 +1,4 @@
-import { useRef, useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Plus, Search } from 'lucide-react';
 import { useStore } from './stores';
 import { Sidebar, SidebarView } from './components/Sidebar';
@@ -10,16 +10,8 @@ export default function App() {
   const [activeView, setActiveView] = useState<SidebarView>('inbox');
   const tasks = useStore((s) => s.tasks);
   const deselectTask = useStore((s) => s.deselectTask);
-  const taskInputRef = useRef<HTMLInputElement>(null);
 
-  useKeyboardShortcuts({ setActiveView, deselectTask, taskInputRef });
-
-  useEffect(() => {
-    return window.cortex.onFocusTaskInput(() => {
-      setActiveView('inbox');
-      taskInputRef.current?.focus();
-    });
-  }, []);
+  useKeyboardShortcuts({ setActiveView, deselectTask });
 
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
@@ -61,7 +53,7 @@ export default function App() {
           </button>
         </header>
 
-        {activeView === 'inbox' && <InboxView taskInputRef={taskInputRef} />}
+        {activeView === 'inbox' && <InboxView />}
         {activeView === 'today' && <TodayView />}
         {activeView !== 'inbox' && activeView !== 'today' && (
           <div className="flex-1 flex items-center justify-center text-muted-foreground">
