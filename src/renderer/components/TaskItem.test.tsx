@@ -218,6 +218,16 @@ describe('TaskItem (expanded)', () => {
     expect((textarea as HTMLTextAreaElement).value).toBe('');
   });
 
+  it('auto-grows notes textarea to fit content', () => {
+    render(
+      <TaskItem task={fakeTask({ notes: 'Line 1' })} onComplete={vi.fn()} isExpanded />
+    );
+    const textarea = screen.getByDisplayValue('Line 1') as HTMLTextAreaElement;
+    // jsdom scrollHeight is 0, so auto-grow sets height to '0px'
+    expect(textarea.style.height).toBe('0px');
+    expect(textarea.className).toContain('overflow-hidden');
+  });
+
   it('shows when-date button when expanded', () => {
     render(
       <TaskItem task={fakeTask()} onComplete={vi.fn()} isExpanded />

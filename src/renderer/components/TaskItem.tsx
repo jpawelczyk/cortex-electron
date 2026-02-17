@@ -29,6 +29,7 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded }:
 
   const isCompleted = task.status === 'logbook';
   const cardRef = useRef<HTMLDivElement>(null);
+  const notesRef = useRef<HTMLTextAreaElement>(null);
 
   // Local state for debounced fields
   const [title, setTitle] = useState(task.title);
@@ -82,6 +83,18 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded }:
       flushNotes();
     };
   }, [flushTitle, flushNotes]);
+
+  const autoResizeNotes = useCallback(() => {
+    const el = notesRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }, []);
+
+  // Auto-resize notes textarea when content or expansion changes
+  useEffect(() => {
+    if (isExpanded) autoResizeNotes();
+  }, [isExpanded, notes, autoResizeNotes]);
 
   const handleDelete = useCallback(() => {
     flushTitle();
@@ -240,12 +253,13 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded }:
         <div className="overflow-hidden min-h-0">
           <div className="pr-4 pt-1 pb-3" style={{ paddingLeft: 46 }}>
             <textarea
+              ref={notesRef}
               value={notes}
               onChange={(e) => handleNotesChange(e.target.value)}
               placeholder="Notes"
               rows={1}
               tabIndex={isExpanded ? 0 : -1}
-              className="w-full bg-transparent text-[13px] text-foreground/80 placeholder:text-muted-foreground/40 outline-none resize-none leading-relaxed"
+              className="w-full bg-transparent text-[13px] text-foreground/80 placeholder:text-muted-foreground/40 outline-none resize-none leading-relaxed overflow-hidden"
             />
             <div className="flex justify-end mt-1">
               <button
