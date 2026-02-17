@@ -29,13 +29,11 @@ const NAV_ITEMS: { view: SidebarView; label: string; icon: typeof Inbox }[] = [
 export function Sidebar({ activeView, onViewChange, taskCounts }: SidebarProps) {
   return (
     <nav className="drag-region flex flex-col w-52 border-r border-border bg-card backdrop-blur-xl h-full select-none">
-      {/* Traffic light padding + branding */}
-      <div className="px-4 pt-11 pb-4">
-        <h1 className="text-base font-semibold tracking-tight text-foreground">Cortex</h1>
-      </div>
+      {/* Spacer — aligns with header border */}
+      <div className="pt-12" />
 
       {/* Navigation */}
-      <div className="no-drag flex flex-col gap-0.5 px-3 flex-1">
+      <div className="no-drag flex flex-col gap-0.5 px-3 pt-2 flex-1">
         {NAV_ITEMS.map(({ view, label, icon: Icon }) => {
           const isActive = activeView === view;
           const count = taskCounts[view];

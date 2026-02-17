@@ -1,4 +1,5 @@
 import { useRef, useState, useMemo, useEffect } from 'react';
+import { Plus, Search } from 'lucide-react';
 import { useStore } from './stores';
 import { Sidebar, SidebarView } from './components/Sidebar';
 import { TaskDetail } from './components/TaskDetail';
@@ -54,6 +55,19 @@ export default function App() {
       />
 
       <main className="flex-1 flex flex-col min-w-0">
+        <header className="flex items-center justify-end gap-1 px-4 py-2 border-b border-border">
+          <button
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          >
+            <Search className="size-5" />
+          </button>
+          <button
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          >
+            <Plus className="size-5" />
+          </button>
+        </header>
+
         {activeView === 'inbox' && <InboxView taskInputRef={taskInputRef} />}
         {activeView === 'today' && <TodayView />}
         {activeView !== 'inbox' && activeView !== 'today' && (
