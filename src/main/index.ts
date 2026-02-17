@@ -6,6 +6,13 @@ import { registerHandlers } from './ipc/handlers.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+// Single instance lock - prevent multiple instances
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  app.quit();
+}
+
 let mainWindow: BrowserWindow | null = null;
 
 function createWindow(): void {
@@ -42,6 +49,14 @@ function createWindow(): void {
     mainWindow = null;
   });
 }
+
+// Focus existing window when second instance attempted
+app.on('second-instance', () => {
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+  }
+});
 
 app.whenReady().then(() => {
   initDatabase();
