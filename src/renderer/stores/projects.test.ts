@@ -1,0 +1,149 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { createProjectSlice, ProjectSlice } from './projects';
+
+function createStore(overrides?: Partial<ProjectSlice>): ProjectSlice {
+  let state: ProjectSlice;
+
+  const set = (partial: Partial<ProjectSlice> | ((s: ProjectSlice) => Partial<ProjectSlice>)) => {
+    const update = typeof partial === 'function' ? partial(state) : partial;
+    state = { ...state, ...update };
+  };
+
+  const get = () => state;
+
+  state = {
+    ...createProjectSlice(set as any, get as any, {} as any),
+    ...overrides,
+  };
+
+  return state;
+}
+
+const mockCortex = {
+  projects: {
+    list: vi.fn(),
+    get: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+  },
+};
+
+(globalThis as any).window = { ...((globalThis as any).window || {}), cortex: { ...((globalThis as any).window?.cortex || {}), ...mockCortex } };
+
+const fakeProject = (overrides = {}) => ({
+  id: 'proj-1',
+  title: 'Test project',
+  description: null,
+  status: 'active' as const,
+  context_id: null,
+  sort_order: 0,
+  created_at: '2026-02-17T00:00:00.000Z',
+  updated_at: '2026-02-17T00:00:00.000Z',
+  completed_at: null,
+  deleted_at: null,
+  ...overrides,
+});
+
+describe('ProjectSlice', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe('initial state', () => {
+    it('starts with empty projects array', () => {
+      const store = createStore();
+      expect(store.projects).toEqual([]);
+    });
+
+    it('starts with loading false', () => {
+      const store = createStore();
+      expect(store.projectsLoading).toBe(false);
+    });
+
+    it('starts with error null', () => {
+      const store = createStore();
+      expect(store.projectsError).toBeNull();
+    });
+  });
+
+  describe('fetchProjects', () => {
+    it('calls IPC list', async () => {
+      mockCortex.projects.list.mockResolvedValue([fakeProject()]);
+
+      const store = createStore();
+      await store.fetchProjects();
+
+      expect(mockCortex.projects.list).toHaveBeenCalledOnce();
+    });
+
+    it('sets error on failure', async () => {
+      mockCortex.projects.list.mockRejectedValue(new Error('fail'));
+
+      const store = createStore();
+      await store.fetchProjects();
+
+      expect(mockCortex.projects.list).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe('createProject', () => {
+    it('calls IPC create and returns the project', async () => {
+      const newProject = fakeProject({ id: 'new-1', title: 'New' });
+      mockCortex.projects.create.mockResolvedValue(newProject);
+
+      const store = createStore();
+      const result = await store.createProject({ title: 'New' });
+
+      expect(mockCortex.projects.create).toHaveBeenCalledWith({ title: 'New' });
+      expect(result).toEqual(newProject);
+    });
+  });
+
+  describe('updateProject', () => {
+    it('calls IPC update and returns updated project', async () => {
+      const updated = fakeProject({ title: 'Updated' });
+      mockCortex.projects.update.mockResolvedValue(updated);
+
+      const store = createStore({ projects: [fakeProject()] });
+      const result = await store.updateProject('proj-1', { title: 'Updated' });
+
+      expect(mockCortex.projects.update).toHaveBeenCalledWith('proj-1', { title: 'Updated' });
+      expect(result).toEqual(updated);
+    });
+  });
+
+  describe('deleteProject', () => {
+    it('calls IPC delete', async () => {
+      mockCortex.projects.delete.mockResolvedValue(undefined);
+
+      const store = createStore({ projects: [fakeProject()] });
+      await store.deleteProject('proj-1');
+
+      expect(mockCortex.projects.delete).toHaveBeenCalledWith('proj-1');
+    });
+  });
+
+  describe('derived getters', () => {
+    const projects = [
+      fakeProject({ id: '1', status: 'active', context_id: 'ctx-1' }),
+      fakeProject({ id: '2', status: 'completed', context_id: 'ctx-2' }),
+      fakeProject({ id: '3', status: 'active', context_id: 'ctx-1' }),
+      fakeProject({ id: '4', status: 'archived', context_id: null }),
+    ];
+
+    it('getProjectsByStatus filters by status', () => {
+      const store = createStore({ projects });
+      const active = store.getProjectsByStatus('active');
+      expect(active).toHaveLength(2);
+      expect(active.map((p) => p.id)).toEqual(['1', '3']);
+    });
+
+    it('getProjectsByContext filters by context_id', () => {
+      const store = createStore({ projects });
+      const ctx1 = store.getProjectsByContext('ctx-1');
+      expect(ctx1).toHaveLength(2);
+      expect(ctx1.map((p) => p.id)).toEqual(['1', '3']);
+    });
+  });
+});
