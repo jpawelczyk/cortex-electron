@@ -12,6 +12,23 @@ npm run build    # Production build
 npm run lint     # Lint + typecheck
 ```
 
+## Native Modules
+
+This project uses `better-sqlite3`, a native Node module. Electron bundles its own Node version, so native modules must be rebuilt for Electron.
+
+```bash
+npm run rebuild:electron   # Rebuild native modules for Electron
+```
+
+**Run this after:**
+- `npm install`
+- Upgrading Electron
+- Switching machines/architectures
+
+**Symptoms if you forget:** `NODE_MODULE_VERSION` mismatch error on startup.
+
+**Note:** `npm rebuild` rebuilds for system Node, not Electron. Always use `rebuild:electron`.
+
 ## Structure
 
 ```
