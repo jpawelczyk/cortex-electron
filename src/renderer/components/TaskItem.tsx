@@ -3,6 +3,7 @@ import { Circle, CheckCircle2, Calendar, Flag } from 'lucide-react';
 import type { Task } from '@shared/types';
 import { useStore } from '../stores';
 import { useDebouncedCallback } from '../hooks/useDebouncedCallback';
+import { DatePickerButton } from './DatePickerButton';
 
 const DEBOUNCE_MS = 500;
 
@@ -12,11 +13,6 @@ const PRIORITY_COLORS: Record<string, string> = {
   P2: 'text-yellow-500',
   P3: 'text-blue-500',
 };
-
-function formatDate(date: string): string {
-  const d = new Date(date + 'T00:00:00');
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
 
 interface TaskItemProps {
   task: Task;
@@ -124,12 +120,12 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded }:
     debouncedSaveNotes(value);
   };
 
-  const handleWhenDateChange = (value: string) => {
-    updateTask(task.id, { when_date: value || null });
+  const handleWhenDateChange = (value: string | null) => {
+    updateTask(task.id, { when_date: value });
   };
 
-  const handleDeadlineChange = (value: string) => {
-    updateTask(task.id, { deadline: value || null });
+  const handleDeadlineChange = (value: string | null) => {
+    updateTask(task.id, { deadline: value });
   };
 
   const handleRowClick = () => {
@@ -202,26 +198,22 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded }:
         {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events */}
         {!isExpanded && (
           <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-            <label data-testid="when-date" className="relative inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs text-muted-foreground hover:bg-accent/60 transition-colors cursor-pointer">
-              <Calendar className="size-3.5" />
-              {task.when_date && formatDate(task.when_date)}
-              <input
-                type="date"
-                value={task.when_date ?? ''}
-                onChange={(e) => handleWhenDateChange(e.target.value)}
-                className="date-trigger absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            <span data-testid="when-date">
+              <DatePickerButton
+                value={task.when_date}
+                onChange={handleWhenDateChange}
+                icon={<Calendar className="size-3.5" />}
+                label="When date"
               />
-            </label>
-            <label data-testid="deadline-badge" className="relative inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs text-muted-foreground hover:bg-accent/60 transition-colors cursor-pointer">
-              <Flag className="size-3.5" />
-              {task.deadline && formatDate(task.deadline)}
-              <input
-                type="date"
-                value={task.deadline ?? ''}
-                onChange={(e) => handleDeadlineChange(e.target.value)}
-                className="date-trigger absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            </span>
+            <span data-testid="deadline-badge">
+              <DatePickerButton
+                value={task.deadline}
+                onChange={handleDeadlineChange}
+                icon={<Flag className="size-3.5" />}
+                label="Deadline"
               />
-            </label>
+            </span>
           </div>
         )}
       </div>
@@ -244,31 +236,18 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded }:
           </div>
 
           <div className="flex items-center justify-end gap-2 px-2 pb-2">
-            <label className="relative inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs text-muted-foreground hover:bg-accent/60 transition-colors cursor-pointer">
-              <Calendar className="size-3.5" />
-              {task.when_date && <span>{formatDate(task.when_date)}</span>}
-              <input
-                type="date"
-                aria-label="When date"
-                value={task.when_date ?? ''}
-                onChange={(e) => handleWhenDateChange(e.target.value)}
-                tabIndex={isExpanded ? 0 : -1}
-                className="date-trigger absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              />
-            </label>
-
-            <label className="relative inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs text-muted-foreground hover:bg-accent/60 transition-colors cursor-pointer">
-              <Flag className="size-3.5" />
-              {task.deadline && <span>{formatDate(task.deadline)}</span>}
-              <input
-                type="date"
-                aria-label="Deadline"
-                value={task.deadline ?? ''}
-                onChange={(e) => handleDeadlineChange(e.target.value)}
-                tabIndex={isExpanded ? 0 : -1}
-                className="date-trigger absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              />
-            </label>
+            <DatePickerButton
+              value={task.when_date}
+              onChange={handleWhenDateChange}
+              icon={<Calendar className="size-3.5" />}
+              label="When date"
+            />
+            <DatePickerButton
+              value={task.deadline}
+              onChange={handleDeadlineChange}
+              icon={<Flag className="size-3.5" />}
+              label="Deadline"
+            />
           </div>
         </div>
       </div>

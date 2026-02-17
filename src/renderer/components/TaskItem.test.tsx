@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { TaskItem } from './TaskItem';
 import type { Task } from '@shared/types';
@@ -104,7 +104,38 @@ describe('TaskItem (collapsed)', () => {
     );
     const badge = screen.getByTestId('when-date');
     expect(badge).toBeInTheDocument();
-    expect(badge.textContent).toBe('');
+    // Button only contains the icon, no date text
+    const button = within(badge).getByRole('button');
+    expect(button.querySelector('span')).toBeNull();
+  });
+
+  it('does not expand when clicking date picker button', () => {
+    const onSelect = vi.fn();
+    render(
+      <TaskItem task={fakeTask()} onComplete={vi.fn()} onSelect={onSelect} />
+    );
+    const whenButton = within(screen.getByTestId('when-date')).getByRole('button');
+    fireEvent.click(whenButton);
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it('opens calendar popover when when-date button is clicked', () => {
+    render(
+      <TaskItem task={fakeTask()} onComplete={vi.fn()} />
+    );
+    const whenButton = within(screen.getByTestId('when-date')).getByRole('button');
+    fireEvent.click(whenButton);
+    // Calendar renders a grid (the month grid)
+    expect(screen.getByRole('grid')).toBeInTheDocument();
+  });
+
+  it('opens calendar popover when deadline button is clicked', () => {
+    render(
+      <TaskItem task={fakeTask()} onComplete={vi.fn()} />
+    );
+    const deadlineButton = within(screen.getByTestId('deadline-badge')).getByRole('button');
+    fireEvent.click(deadlineButton);
+    expect(screen.getByRole('grid')).toBeInTheDocument();
   });
 
   it('highlights as selected when isSelected is true', () => {
@@ -151,14 +182,14 @@ describe('TaskItem (expanded)', () => {
     expect((textarea as HTMLTextAreaElement).value).toBe('');
   });
 
-  it('shows when-date input when expanded', () => {
+  it('shows when-date button when expanded', () => {
     render(
       <TaskItem task={fakeTask()} onComplete={vi.fn()} isExpanded />
     );
     expect(screen.getByLabelText('When date')).toBeInTheDocument();
   });
 
-  it('shows deadline input when expanded', () => {
+  it('shows deadline button when expanded', () => {
     render(
       <TaskItem task={fakeTask()} onComplete={vi.fn()} isExpanded />
     );
@@ -231,39 +262,28 @@ describe('TaskItem (expanded)', () => {
     expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { title: 'Edited' });
   });
 
-  it('updates when_date immediately via input', () => {
+  it('updates when_date via calendar popover', () => {
     render(
       <TaskItem task={fakeTask()} onComplete={vi.fn()} isExpanded />
     );
-    const input = screen.getByLabelText('When date');
-    fireEvent.change(input, { target: { value: '2026-04-01' } });
-    expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { when_date: '2026-04-01' });
+    const trigger = screen.getByLabelText('When date');
+    fireEvent.click(trigger);
+    // Find day 15 in the calendar and click it
+    const grid = screen.getByRole('grid');
+    const day15 = within(grid).getByText('15');
+    fireEvent.click(day15);
+    expect(mockUpdateTask).toHaveBeenCalledWith('task-1', expect.objectContaining({ when_date: expect.stringMatching(/^\d{4}-\d{2}-15$/) }));
   });
 
-  it('updates deadline immediately via input', () => {
+  it('updates deadline via calendar popover', () => {
     render(
       <TaskItem task={fakeTask()} onComplete={vi.fn()} isExpanded />
     );
-    const input = screen.getByLabelText('Deadline');
-    fireEvent.change(input, { target: { value: '2026-04-01' } });
-    expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { deadline: '2026-04-01' });
-  });
-
-  it('clears when_date when input is emptied', () => {
-    render(
-      <TaskItem task={fakeTask({ when_date: '2026-03-10' })} onComplete={vi.fn()} isExpanded />
-    );
-    const input = screen.getByLabelText('When date');
-    fireEvent.change(input, { target: { value: '' } });
-    expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { when_date: null });
-  });
-
-  it('clears deadline when input is emptied', () => {
-    render(
-      <TaskItem task={fakeTask({ deadline: '2026-03-10' })} onComplete={vi.fn()} isExpanded />
-    );
-    const input = screen.getByLabelText('Deadline');
-    fireEvent.change(input, { target: { value: '' } });
-    expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { deadline: null });
+    const trigger = screen.getByLabelText('Deadline');
+    fireEvent.click(trigger);
+    const grid = screen.getByRole('grid');
+    const day15 = within(grid).getByText('15');
+    fireEvent.click(day15);
+    expect(mockUpdateTask).toHaveBeenCalledWith('task-1', expect.objectContaining({ deadline: expect.stringMatching(/^\d{4}-\d{2}-15$/) }));
   });
 });
