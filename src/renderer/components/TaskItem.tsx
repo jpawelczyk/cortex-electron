@@ -146,13 +146,13 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded }:
       className={
         isExpanded
           ? 'bg-card border border-border rounded-xl shadow-sm my-2 p-2 cursor-default'
-          : `group flex items-center gap-3 px-3 py-2 rounded-lg transition-colors duration-100 cursor-default ${
+          : `group rounded-lg transition-colors duration-100 cursor-default ${
               isSelected ? 'bg-accent' : 'hover:bg-accent/40'
             }`
       }
     >
       {/* Title row */}
-      <div className={isExpanded ? 'flex items-center gap-3 px-4 pt-3 pb-2' : 'contents'}>
+      <div className={isExpanded ? 'flex items-center gap-3 px-4 pt-3 pb-2' : 'flex items-center gap-3 px-3 py-2'}>
         <button
           role="checkbox"
           aria-checked={isCompleted}
@@ -199,16 +199,17 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded }:
           </span>
         )}
 
-        {!isExpanded && task.when_date && (
-          <span data-testid="when-date" className="text-[11px] text-primary/70 shrink-0">
-            {formatDate(task.when_date)}
-          </span>
-        )}
-
-        {!isExpanded && task.deadline && (
-          <span data-testid="deadline-badge" className="text-[11px] text-muted-foreground shrink-0">
-            {formatDate(task.deadline)}
-          </span>
+        {!isExpanded && (
+          <div className="flex items-center gap-1 shrink-0">
+            <span data-testid="when-date" className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs text-muted-foreground">
+              <Calendar className="size-3.5" />
+              {task.when_date && formatDate(task.when_date)}
+            </span>
+            <span data-testid="deadline-badge" className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs text-muted-foreground">
+              <Flag className="size-3.5" />
+              {task.deadline && formatDate(task.deadline)}
+            </span>
+          </div>
         )}
       </div>
 
@@ -240,7 +241,7 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded }:
                 tabIndex={isExpanded ? 0 : -1}
                 className="sr-only"
               />
-              <span>{task.when_date ? formatDate(task.when_date) : 'When'}</span>
+              {task.when_date && <span>{formatDate(task.when_date)}</span>}
             </label>
 
             <label className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs text-muted-foreground hover:bg-accent/60 transition-colors cursor-pointer">
@@ -253,7 +254,7 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded }:
                 tabIndex={isExpanded ? 0 : -1}
                 className="sr-only"
               />
-              <span>{task.deadline ? formatDate(task.deadline) : 'Deadline'}</span>
+              {task.deadline && <span>{formatDate(task.deadline)}</span>}
             </label>
           </div>
         </div>

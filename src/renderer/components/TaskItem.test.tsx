@@ -98,11 +98,13 @@ describe('TaskItem (collapsed)', () => {
     expect(screen.getByTestId('when-date')).toHaveTextContent('Mar 10');
   });
 
-  it('does not show when_date badge when null', () => {
+  it('shows when_date icon without text when null', () => {
     render(
       <TaskItem task={fakeTask({ when_date: null })} onComplete={vi.fn()} />
     );
-    expect(screen.queryByTestId('when-date')).not.toBeInTheDocument();
+    const badge = screen.getByTestId('when-date');
+    expect(badge).toBeInTheDocument();
+    expect(badge.textContent).toBe('');
   });
 
   it('highlights as selected when isSelected is true', () => {
