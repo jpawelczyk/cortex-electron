@@ -89,7 +89,12 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded }:
       if (cardRef.current && !cardRef.current.contains(e.target as Node)) {
         flushTitle();
         flushNotes();
-        deselectTask();
+        // If clicking another task, let its handler set the new selection
+        // directly (avoids a layout shift that would swallow the click event)
+        const clickedTask = (e.target as Element).closest?.('[data-testid="task-item"]');
+        if (!clickedTask) {
+          deselectTask();
+        }
       }
     };
     document.addEventListener('mousedown', handleMouseDown);
