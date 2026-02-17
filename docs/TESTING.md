@@ -1,16 +1,54 @@
 # Testing Strategy
 
-TDD-first development with comprehensive coverage. Every feature is bulletproof before merging.
+Test-driven development — tests drive design, not the other way around.
 
 ## Philosophy
 
+### Test-Driven, Not "With Tests"
+
+The difference matters:
+
+| ❌ "With Tests" | ✅ Test-Driven |
+|-----------------|----------------|
+| Write code, then add tests | Write test first, then code |
+| Tests validate what you built | Tests define what to build |
+| Tests bend to match implementation | Implementation bends to pass tests |
+| "How do I test this code?" | "What behavior do I need?" |
+
+**The rule:** If you're writing implementation before tests, stop. Write the test first.
+
+### No Gaming the Tests
+
+When a test fails after code changes:
+
+| ❌ Wrong response | ✅ Right response |
+|-------------------|-------------------|
+| "The test is wrong, let me fix it" | "The code broke expected behavior" |
+| Change assertion to match output | Fix the code to match the test |
+| Delete the "flaky" test | Understand why it's failing |
+
+**The rule:** Tests are the spec. If you change a test, you're changing the spec — that requires justification, not convenience.
+
+### Meaningful > Coverage Percentage
+
+| ❌ Gaming coverage | ✅ Meaningful coverage |
+|--------------------|------------------------|
+| 95% coverage, tests assert nothing | 70% coverage, every test has purpose |
+| `expect(result).toBeDefined()` | `expect(task.context_id).toBe(project.context_id)` |
+| Testing getters/setters | Testing business rules |
+| One test per function (checkbox) | Tests per behavior/edge case |
+
+**The rule:** Every test should answer "what breaks if this test is deleted?" If nothing meaningful breaks, delete the test.
+
+### Core Principles
+
 | Principle | Meaning |
 |-----------|---------|
-| **TDD** | Write tests first, then implementation |
+| **Tests are specs** | Tests define correct behavior; code conforms to tests |
 | **Fast feedback** | Unit tests run in <5 seconds |
-| **Bulletproof core** | Task system has near-100% coverage |
-| **Test behavior, not implementation** | Tests survive refactoring |
-| **Readable tests** | Tests document expected behavior |
+| **Test behavior** | What it does, not how it does it |
+| **Survive refactoring** | Internal changes shouldn't break tests |
+| **Readable as docs** | Test names describe expected behavior |
 
 ## Stack
 
@@ -74,15 +112,40 @@ tests/
 
 **Coverage:** Critical user journeys, keyboard flows.
 
-## Coverage Requirements
+## Coverage Philosophy
 
-| Layer | Min Coverage | Notes |
-|-------|--------------|-------|
-| **Services (main)** | 90% | Core business logic |
-| **Validation (shared)** | 95% | Input sanitization |
-| **Stores (renderer)** | 80% | State management |
-| **Components** | 70% | UI behavior |
-| **E2E critical paths** | 100% | Task CRUD, context switch |
+**Coverage is a smell detector, not a goal.**
+
+High coverage with bad tests is worse than lower coverage with good tests. Use coverage to find untested code paths, not as a metric to maximize.
+
+### What Must Be Tested
+
+| Area | Why |
+|------|-----|
+| **Task status transitions** | Core business rules |
+| **Context inheritance** | Easy to break, hard to debug |
+| **Validation boundaries** | Security + data integrity |
+| **Edge cases** | Nulls, empty strings, boundaries |
+| **Error paths** | What happens when things fail |
+
+### What Doesn't Need Tests
+
+| Area | Why |
+|------|-----|
+| **Simple pass-through** | No logic to test |
+| **Framework code** | Trust Electron/React to work |
+| **Styling** | Visual review, not unit tests |
+| **Generated code** | Test the generator, not output |
+
+### Coverage Guidelines (Not Requirements)
+
+| Layer | Guideline | Focus |
+|-------|-----------|-------|
+| **Services** | High | Business logic, rules, edge cases |
+| **Validation** | High | Every rule, every boundary |
+| **Stores** | Medium | State transitions, not getters |
+| **Components** | Low-Medium | Behavior, not rendering |
+| **E2E** | Critical paths only | User journeys that must not break |
 
 ## TDD Workflow
 
@@ -510,16 +573,28 @@ export default defineConfig({
 
 ### Do
 
-- ✅ Test one thing per test
-- ✅ Use descriptive test names (`it('should inherit context from project')`)
-- ✅ Test edge cases (null, empty, boundary values)
-- ✅ Test error cases
-- ✅ Keep tests fast (<100ms per unit test)
+- ✅ Write the test BEFORE the implementation
+- ✅ Ask "what behavior am I specifying?" before writing
+- ✅ Test one behavior per test
+- ✅ Use descriptive names (`it('inherits context from project when task added')`)
+- ✅ Test edge cases that matter (nulls, boundaries, errors)
+- ✅ Let failing tests drive code changes
+- ✅ Delete tests that don't justify their existence
 
 ### Don't
 
+- ❌ Write code first, tests after
+- ❌ Change tests to match broken implementation
+- ❌ Write tests just to hit coverage numbers
 - ❌ Test implementation details (internal state, private methods)
-- ❌ Use vague names (`it('works')`)
+- ❌ Use vague assertions (`toBeDefined()`, `toBeTruthy()` without reason)
 - ❌ Have tests depend on each other
-- ❌ Mock everything (test real integrations where practical)
-- ❌ Skip tests instead of fixing them
+- ❌ Skip tests instead of understanding why they fail
+
+### The Litmus Test
+
+Before committing any test, ask:
+
+1. **Did I write this test before the implementation?** If no, consider rewriting.
+2. **What breaks if I delete this test?** If nothing meaningful, delete it.
+3. **Would I change this test if I refactored internals?** If yes, you're testing implementation, not behavior.
