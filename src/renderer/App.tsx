@@ -1,13 +1,18 @@
-import { useState, useMemo } from 'react';
+import { useRef, useState, useMemo } from 'react';
 import { useStore } from './stores';
 import { Sidebar, SidebarView } from './components/Sidebar';
 import { TaskDetail } from './components/TaskDetail';
 import { InboxView } from './views/InboxView';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 
 export default function App() {
   const [activeView, setActiveView] = useState<SidebarView>('inbox');
   const tasks = useStore((s) => s.tasks);
   const selectedTaskId = useStore((s) => s.selectedTaskId);
+  const deselectTask = useStore((s) => s.deselectTask);
+  const taskInputRef = useRef<HTMLInputElement>(null);
+
+  useKeyboardShortcuts({ setActiveView, deselectTask, taskInputRef });
 
   const taskCounts = useMemo(() => ({
     inbox: tasks.filter((t) => t.status === 'inbox').length,
@@ -32,7 +37,7 @@ export default function App() {
       />
 
       <main className="flex-1 flex flex-col min-w-0">
-        {activeView === 'inbox' && <InboxView />}
+        {activeView === 'inbox' && <InboxView taskInputRef={taskInputRef} />}
         {activeView !== 'inbox' && (
           <div className="flex-1 flex items-center justify-center text-muted-foreground">
             <p className="text-sm">{activeView.charAt(0).toUpperCase() + activeView.slice(1)} — coming soon</p>

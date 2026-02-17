@@ -1,10 +1,14 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, type RefObject } from 'react';
 import { Inbox } from 'lucide-react';
 import { useStore } from '../stores';
 import { TaskList } from '../components/TaskList';
 import { TaskInput } from '../components/TaskInput';
 
-export function InboxView() {
+interface InboxViewProps {
+  taskInputRef?: RefObject<HTMLInputElement | null>;
+}
+
+export function InboxView({ taskInputRef }: InboxViewProps) {
   const tasks = useStore((s) => s.tasks);
   const fetchTasks = useStore((s) => s.fetchTasks);
   const updateTask = useStore((s) => s.updateTask);
@@ -26,7 +30,7 @@ export function InboxView() {
         <h2 className="text-xl font-semibold text-foreground mb-6">Inbox</h2>
 
         <div className="mb-4">
-          <TaskInput />
+          <TaskInput ref={taskInputRef} />
         </div>
 
         {inboxTasks.length === 0 ? (

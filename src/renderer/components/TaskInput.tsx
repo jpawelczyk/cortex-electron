@@ -1,7 +1,7 @@
-import { useState, type KeyboardEvent } from 'react';
+import { forwardRef, useState, type KeyboardEvent } from 'react';
 import { useStore } from '../stores';
 
-export function TaskInput() {
+export const TaskInput = forwardRef<HTMLInputElement>(function TaskInput(_props, ref) {
   const [title, setTitle] = useState('');
   const createTask = useStore((s) => s.createTask);
 
@@ -20,6 +20,7 @@ export function TaskInput() {
 
   return (
     <input
+      ref={ref}
       type="text"
       value={title}
       onChange={(e) => setTitle(e.target.value)}
@@ -28,4 +29,4 @@ export function TaskInput() {
       className="w-full px-3 py-2 text-[13px] bg-transparent border border-border/50 rounded-lg text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50 transition-colors"
     />
   );
-}
+});
