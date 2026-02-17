@@ -1,4 +1,4 @@
-import { Inbox, Sun, Calendar, Layers, Cloud, BookOpen } from 'lucide-react';
+import { Inbox, Sun, Calendar, Layers, Cloud, BookOpen, Settings } from 'lucide-react';
 
 export type SidebarView = 'inbox' | 'today' | 'upcoming' | 'anytime' | 'someday' | 'logbook';
 
@@ -58,6 +58,15 @@ export function Sidebar({ activeView, onViewChange, taskCounts }: SidebarProps) 
             </button>
           );
         })}
+      </div>
+
+      {/* Settings */}
+      <div className="no-drag px-3 py-3">
+        <button
+          className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+        >
+          <Settings className="size-5" />
+        </button>
       </div>
     </nav>
   );
