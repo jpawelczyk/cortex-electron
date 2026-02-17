@@ -1,4 +1,4 @@
-import { useRef, useState, useMemo } from 'react';
+import { useRef, useState, useMemo, useEffect } from 'react';
 import { useStore } from './stores';
 import { Sidebar, SidebarView } from './components/Sidebar';
 import { TaskDetail } from './components/TaskDetail';
@@ -13,6 +13,13 @@ export default function App() {
   const taskInputRef = useRef<HTMLInputElement>(null);
 
   useKeyboardShortcuts({ setActiveView, deselectTask, taskInputRef });
+
+  useEffect(() => {
+    return window.cortex.onFocusTaskInput(() => {
+      setActiveView('inbox');
+      taskInputRef.current?.focus();
+    });
+  }, []);
 
   const taskCounts = useMemo(() => ({
     inbox: tasks.filter((t) => t.status === 'inbox').length,

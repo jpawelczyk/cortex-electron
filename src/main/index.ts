@@ -3,6 +3,7 @@ import { fileURLToPath } from 'url';
 import path from 'path';
 import { initDatabase, closeDatabase, getDb } from './db/index.js';
 import { registerHandlers } from './ipc/handlers.js';
+import { registerGlobalShortcuts, unregisterGlobalShortcuts } from './shortcuts.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -62,6 +63,7 @@ app.whenReady().then(() => {
   initDatabase();
   registerHandlers(getDb());
   createWindow();
+  registerGlobalShortcuts(mainWindow!);
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -77,5 +79,6 @@ app.on('window-all-closed', () => {
 });
 
 app.on('before-quit', () => {
+  unregisterGlobalShortcuts();
   closeDatabase();
 });

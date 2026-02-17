@@ -54,6 +54,12 @@ const api = {
     upsert: (date: string, content: string): Promise<unknown> => ipcRenderer.invoke('dailyNotes:upsert', date, content),
   },
 
+  onFocusTaskInput: (callback: () => void) => {
+    const listener = () => callback();
+    ipcRenderer.on('focus-task-input', listener);
+    return () => { ipcRenderer.removeListener('focus-task-input', listener); };
+  },
+
   system: {
     exportData: (): Promise<unknown> => ipcRenderer.invoke('system:export'),
     importData: (filePath: string): Promise<void> => ipcRenderer.invoke('system:import', filePath),
