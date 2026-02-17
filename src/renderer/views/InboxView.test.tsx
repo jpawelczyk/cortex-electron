@@ -53,7 +53,7 @@ describe('InboxView', () => {
 
   it('shows empty state when no inbox tasks', () => {
     render(<InboxView />);
-    expect(screen.getByText(/no tasks/i)).toBeInTheDocument();
+    expect(screen.getByText(/no tasks in your inbox/i)).toBeInTheDocument();
   });
 
   it('renders inbox tasks from the store', () => {

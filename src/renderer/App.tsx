@@ -17,18 +17,18 @@ export default function App() {
   }), [tasks]);
 
   return (
-    <div className="flex h-screen bg-background text-foreground">
+    <div className="flex h-screen bg-background text-foreground overflow-hidden">
       <Sidebar
         activeView={activeView}
         onViewChange={setActiveView}
         taskCounts={taskCounts}
       />
 
-      <main className="flex-1 flex flex-col overflow-hidden">
+      <main className="flex-1 flex flex-col min-w-0">
         {activeView === 'inbox' && <InboxView />}
         {activeView !== 'inbox' && (
           <div className="flex-1 flex items-center justify-center text-muted-foreground">
-            <p className="text-sm">{activeView.charAt(0).toUpperCase() + activeView.slice(1)} view coming soon</p>
+            <p className="text-sm">{activeView.charAt(0).toUpperCase() + activeView.slice(1)} — coming soon</p>
           </div>
         )}
       </main>
