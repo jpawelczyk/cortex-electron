@@ -199,16 +199,29 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded }:
           </span>
         )}
 
+        {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events */}
         {!isExpanded && (
-          <div className="flex items-center gap-1 shrink-0">
-            <span data-testid="when-date" className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs text-muted-foreground">
+          <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+            <label data-testid="when-date" className="relative inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs text-muted-foreground hover:bg-accent/60 transition-colors cursor-pointer">
               <Calendar className="size-3.5" />
               {task.when_date && formatDate(task.when_date)}
-            </span>
-            <span data-testid="deadline-badge" className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs text-muted-foreground">
+              <input
+                type="date"
+                value={task.when_date ?? ''}
+                onChange={(e) => handleWhenDateChange(e.target.value)}
+                className="date-trigger absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              />
+            </label>
+            <label data-testid="deadline-badge" className="relative inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs text-muted-foreground hover:bg-accent/60 transition-colors cursor-pointer">
               <Flag className="size-3.5" />
               {task.deadline && formatDate(task.deadline)}
-            </span>
+              <input
+                type="date"
+                value={task.deadline ?? ''}
+                onChange={(e) => handleDeadlineChange(e.target.value)}
+                className="date-trigger absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              />
+            </label>
           </div>
         )}
       </div>
@@ -231,30 +244,30 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded }:
           </div>
 
           <div className="flex items-center justify-end gap-2 px-2 pb-2">
-            <label className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs text-muted-foreground hover:bg-accent/60 transition-colors cursor-pointer">
+            <label className="relative inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs text-muted-foreground hover:bg-accent/60 transition-colors cursor-pointer">
               <Calendar className="size-3.5" />
+              {task.when_date && <span>{formatDate(task.when_date)}</span>}
               <input
                 type="date"
                 aria-label="When date"
                 value={task.when_date ?? ''}
                 onChange={(e) => handleWhenDateChange(e.target.value)}
                 tabIndex={isExpanded ? 0 : -1}
-                className="sr-only"
+                className="date-trigger absolute inset-0 w-full h-full opacity-0 cursor-pointer"
               />
-              {task.when_date && <span>{formatDate(task.when_date)}</span>}
             </label>
 
-            <label className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs text-muted-foreground hover:bg-accent/60 transition-colors cursor-pointer">
+            <label className="relative inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs text-muted-foreground hover:bg-accent/60 transition-colors cursor-pointer">
               <Flag className="size-3.5" />
+              {task.deadline && <span>{formatDate(task.deadline)}</span>}
               <input
                 type="date"
                 aria-label="Deadline"
                 value={task.deadline ?? ''}
                 onChange={(e) => handleDeadlineChange(e.target.value)}
                 tabIndex={isExpanded ? 0 : -1}
-                className="sr-only"
+                className="date-trigger absolute inset-0 w-full h-full opacity-0 cursor-pointer"
               />
-              {task.deadline && <span>{formatDate(task.deadline)}</span>}
             </label>
           </div>
         </div>
