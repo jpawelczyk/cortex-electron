@@ -2,7 +2,6 @@ import { useRef, useState, useMemo, useEffect } from 'react';
 import { Plus, Search } from 'lucide-react';
 import { useStore } from './stores';
 import { Sidebar, SidebarView } from './components/Sidebar';
-import { TaskDetail } from './components/TaskDetail';
 import { InboxView } from './views/InboxView';
 import { TodayView } from './views/TodayView';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
@@ -10,7 +9,6 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 export default function App() {
   const [activeView, setActiveView] = useState<SidebarView>('inbox');
   const tasks = useStore((s) => s.tasks);
-  const selectedTaskId = useStore((s) => s.selectedTaskId);
   const deselectTask = useStore((s) => s.deselectTask);
   const taskInputRef = useRef<HTMLInputElement>(null);
 
@@ -40,11 +38,6 @@ export default function App() {
       logbook: tasks.filter((t) => t.status === 'logbook').length,
     };
   }, [tasks, today]);
-
-  const selectedTask = useMemo(
-    () => selectedTaskId ? tasks.find((t) => t.id === selectedTaskId) ?? null : null,
-    [tasks, selectedTaskId]
-  );
 
   return (
     <div className="flex h-screen bg-background text-foreground overflow-hidden">
@@ -76,8 +69,6 @@ export default function App() {
           </div>
         )}
       </main>
-
-      {selectedTask && <TaskDetail task={selectedTask} />}
     </div>
   );
 }

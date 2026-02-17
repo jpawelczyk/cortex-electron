@@ -32,6 +32,7 @@ export function TaskList({ tasks, title, onCompleteTask, onSelectTask, selectedT
               onComplete={onCompleteTask}
               onSelect={onSelectTask}
               isSelected={selectedTaskId === task.id}
+              isExpanded={selectedTaskId === task.id}
             />
           ))}
         </div>
