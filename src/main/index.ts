@@ -1,7 +1,8 @@
 import { app, BrowserWindow } from 'electron';
 import { fileURLToPath } from 'url';
 import path from 'path';
-import { initDatabase, closeDatabase } from './db/index.js';
+import { initDatabase, closeDatabase, getDb } from './db/index.js';
+import { registerHandlers } from './ipc/handlers.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -40,6 +41,7 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   initDatabase();
+  registerHandlers(getDb());
   createWindow();
 
   app.on('activate', () => {
