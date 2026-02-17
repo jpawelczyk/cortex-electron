@@ -39,26 +39,19 @@
   --color-surface: oklch(0.17 0.015 265 / 60%);
 }
 
-*,
-*::before,
-*::after {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+@layer base {
+  html,
+  body {
+    height: 100%;
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
 
-html,
-body {
-  height: 100%;
-  background-color: var(--color-background);
-  color: var(--color-foreground);
-  font-family: var(--font-sans);
-  -webkit-font-smoothing: antialiased;
-  overflow: hidden;
-}
-
-#root {
-  height: 100%;
+  #root {
+    height: 100%;
+  }
 }
 
 /* macOS-style drag region for hidden titlebar */
