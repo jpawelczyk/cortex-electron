@@ -16,6 +16,7 @@ export interface TestDb {
   getRawTask(id: string): RawTask | undefined;
   getRawProject(id: string): RawProject | undefined;
   getRawContext(id: string): RawContext | undefined;
+  getRawStakeholder(id: string): RawStakeholder | undefined;
 
   // Cleanup
   close(): void;
@@ -36,6 +37,13 @@ interface RawProject {
 }
 
 interface RawContext {
+  id: string;
+  name: string;
+  deleted_at: string | null;
+  [key: string]: unknown;
+}
+
+interface RawStakeholder {
   id: string;
   name: string;
   deleted_at: string | null;
@@ -68,6 +76,20 @@ export function createTestDb(): TestDb {
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL,
       completed_at TEXT,
+      deleted_at TEXT
+    );
+
+    CREATE TABLE stakeholders (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      organization TEXT,
+      role TEXT,
+      email TEXT,
+      phone TEXT,
+      notes TEXT,
+      avatar_url TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
       deleted_at TEXT
     );
 
@@ -123,6 +145,10 @@ export function createTestDb(): TestDb {
 
     getRawContext(id: string) {
       return db.prepare('SELECT * FROM contexts WHERE id = ?').get(id) as RawContext | undefined;
+    },
+
+    getRawStakeholder(id: string) {
+      return db.prepare('SELECT * FROM stakeholders WHERE id = ?').get(id) as RawStakeholder | undefined;
     },
 
     close() {

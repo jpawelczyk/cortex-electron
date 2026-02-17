@@ -3,9 +3,10 @@ import { devtools, persist } from 'zustand/middleware';
 import { createTaskSlice, TaskSlice } from './tasks';
 import { createProjectSlice, ProjectSlice } from './projects';
 import { createContextSlice, ContextSlice } from './contexts';
+import { createStakeholderSlice, StakeholderSlice } from './stakeholders';
 import { createUISlice, UISlice } from './ui';
 
-export type StoreState = TaskSlice & ProjectSlice & ContextSlice & UISlice;
+export type StoreState = TaskSlice & ProjectSlice & ContextSlice & StakeholderSlice & UISlice;
 
 export const useStore = create<StoreState>()(
   devtools(
@@ -14,6 +15,7 @@ export const useStore = create<StoreState>()(
         ...createTaskSlice(...a),
         ...createProjectSlice(...a),
         ...createContextSlice(...a),
+        ...createStakeholderSlice(...a),
         ...createUISlice(...a),
       }),
       {

@@ -107,3 +107,37 @@ export interface UpdateContextInput {
   icon?: string | null;
   sort_order?: number;
 }
+
+export interface Stakeholder {
+  id: string;
+  name: string;
+  organization: string | null;
+  role: string | null;
+  email: string | null;
+  phone: string | null;
+  notes: string | null;
+  avatar_url: string | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+export interface CreateStakeholderInput {
+  name: string;
+  organization?: string;
+  role?: string;
+  email?: string;
+  phone?: string;
+  notes?: string;
+  avatar_url?: string;
+}
+
+export interface UpdateStakeholderInput {
+  name?: string;
+  organization?: string | null;
+  role?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  notes?: string | null;
+  avatar_url?: string | null;
+}

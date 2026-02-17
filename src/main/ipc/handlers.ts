@@ -3,6 +3,7 @@ import { ipcMain } from 'electron';
 import { createTaskService } from '../services/task.service';
 import { createProjectService } from '../services/project.service';
 import { createContextService } from '../services/context.service';
+import { createStakeholderService } from '../services/stakeholder.service';
 
 export function registerHandlers(db: Database.Database): void {
   const dbProvider = { db } as any;
@@ -10,6 +11,7 @@ export function registerHandlers(db: Database.Database): void {
   const taskService = createTaskService(dbProvider);
   const projectService = createProjectService(dbProvider);
   const contextService = createContextService(dbProvider);
+  const stakeholderService = createStakeholderService(dbProvider);
 
   // Tasks
   ipcMain.handle('tasks:list', async () => taskService.list());
@@ -31,4 +33,11 @@ export function registerHandlers(db: Database.Database): void {
   ipcMain.handle('contexts:create', async (_, input) => contextService.create(input));
   ipcMain.handle('contexts:update', async (_, id: string, input) => contextService.update(id, input));
   ipcMain.handle('contexts:delete', async (_, id: string) => contextService.delete(id));
+
+  // Stakeholders
+  ipcMain.handle('stakeholders:list', async () => stakeholderService.getAll());
+  ipcMain.handle('stakeholders:get', async (_, id: string) => stakeholderService.get(id));
+  ipcMain.handle('stakeholders:create', async (_, input) => stakeholderService.create(input));
+  ipcMain.handle('stakeholders:update', async (_, id: string, input) => stakeholderService.update(id, input));
+  ipcMain.handle('stakeholders:delete', async (_, id: string) => stakeholderService.delete(id));
 }
