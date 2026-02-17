@@ -1,7 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { X } from 'lucide-react';
 import type { Task, TaskStatus } from '@shared/types';
 import { useStore } from '../stores';
+import { useDebouncedCallback } from '../hooks/useDebouncedCallback';
+
+const DEBOUNCE_MS = 500;
 
 const STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
   { value: 'inbox', label: 'Inbox' },
@@ -22,24 +25,66 @@ export function TaskDetail({ task }: TaskDetailProps) {
   const [title, setTitle] = useState(task.title);
   const [notes, setNotes] = useState(task.notes ?? '');
 
-  // Reset local state when task changes
+  const taskIdRef = useRef(task.id);
+
+  const saveTitle = useCallback(
+    (value: string) => {
+      if (value !== task.title) {
+        updateTask(taskIdRef.current, { title: value });
+      }
+    },
+    [task.title, updateTask],
+  );
+
+  const saveNotes = useCallback(
+    (value: string) => {
+      const oldNotes = task.notes ?? '';
+      if (value !== oldNotes) {
+        updateTask(taskIdRef.current, { notes: value });
+      }
+    },
+    [task.notes, updateTask],
+  );
+
+  const {
+    debouncedFn: debouncedSaveTitle,
+    flush: flushTitle,
+    cancel: cancelTitle,
+  } = useDebouncedCallback(saveTitle, DEBOUNCE_MS);
+
+  const {
+    debouncedFn: debouncedSaveNotes,
+    flush: flushNotes,
+    cancel: cancelNotes,
+  } = useDebouncedCallback(saveNotes, DEBOUNCE_MS);
+
+  // Reset local state when task changes; flush pending saves first
   useEffect(() => {
+    if (taskIdRef.current !== task.id) {
+      flushTitle();
+      flushNotes();
+      taskIdRef.current = task.id;
+    }
     setTitle(task.title);
     setNotes(task.notes ?? '');
-  }, [task.id, task.title, task.notes]);
+  }, [task.id, task.title, task.notes, flushTitle, flushNotes]);
 
-  const handleTitleBlur = () => {
-    if (title !== task.title) {
-      updateTask(task.id, { title });
-    }
+  // Flush on unmount
+  useEffect(() => {
+    return () => {
+      flushTitle();
+      flushNotes();
+    };
+  }, [flushTitle, flushNotes]);
+
+  const handleTitleChange = (value: string) => {
+    setTitle(value);
+    debouncedSaveTitle(value);
   };
 
-  const handleNotesBlur = () => {
-    const newNotes = notes;
-    const oldNotes = task.notes ?? '';
-    if (newNotes !== oldNotes) {
-      updateTask(task.id, { notes: newNotes });
-    }
+  const handleNotesChange = (value: string) => {
+    setNotes(value);
+    debouncedSaveNotes(value);
   };
 
   const handleStatusChange = (value: string) => {
@@ -72,8 +117,7 @@ export function TaskDetail({ task }: TaskDetailProps) {
             id="task-title"
             type="text"
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            onBlur={handleTitleBlur}
+            onChange={(e) => handleTitleChange(e.target.value)}
             className="w-full bg-transparent text-foreground text-sm font-medium px-2 py-1.5 rounded-md border border-transparent focus:border-border focus:outline-none focus:ring-1 focus:ring-ring"
           />
         </div>
@@ -86,8 +130,7 @@ export function TaskDetail({ task }: TaskDetailProps) {
             id="task-notes"
             aria-label="Notes"
             value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            onBlur={handleNotesBlur}
+            onChange={(e) => handleNotesChange(e.target.value)}
             rows={4}
             className="w-full bg-transparent text-foreground text-sm px-2 py-1.5 rounded-md border border-border focus:outline-none focus:ring-1 focus:ring-ring resize-none"
             placeholder="Add notes..."

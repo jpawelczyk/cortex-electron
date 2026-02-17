@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { TaskDetail } from './TaskDetail';
 import type { Task } from '@shared/types';
@@ -41,6 +41,11 @@ function makeTask(overrides?: Partial<Task>): Task {
 describe('TaskDetail', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('renders the task title in an input', () => {
@@ -87,34 +92,112 @@ describe('TaskDetail', () => {
     expect((input as HTMLInputElement).value).toBe('');
   });
 
-  it('calls updateTask on title blur with changed value', () => {
+  // --- Debounced auto-save tests ---
+
+  it('does not save title immediately on typing', () => {
     render(<TaskDetail task={makeTask({ title: 'Original' })} />);
 
     const input = screen.getByDisplayValue('Original');
     fireEvent.change(input, { target: { value: 'Updated title' } });
-    fireEvent.blur(input);
-
-    expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { title: 'Updated title' });
-  });
-
-  it('does not call updateTask on title blur when value unchanged', () => {
-    render(<TaskDetail task={makeTask({ title: 'Same' })} />);
-
-    const input = screen.getByDisplayValue('Same');
-    fireEvent.blur(input);
 
     expect(mockUpdateTask).not.toHaveBeenCalled();
   });
 
-  it('calls updateTask on notes blur with changed value', () => {
+  it('auto-saves title after debounce delay', () => {
+    render(<TaskDetail task={makeTask({ title: 'Original' })} />);
+
+    const input = screen.getByDisplayValue('Original');
+    fireEvent.change(input, { target: { value: 'Updated title' } });
+
+    vi.advanceTimersByTime(500);
+
+    expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { title: 'Updated title' });
+  });
+
+  it('does not auto-save title when value unchanged', () => {
+    render(<TaskDetail task={makeTask({ title: 'Same' })} />);
+
+    const input = screen.getByDisplayValue('Same');
+    fireEvent.change(input, { target: { value: 'Same' } });
+
+    vi.advanceTimersByTime(500);
+
+    expect(mockUpdateTask).not.toHaveBeenCalled();
+  });
+
+  it('auto-saves notes after debounce delay', () => {
     render(<TaskDetail task={makeTask({ notes: 'Old notes' })} />);
 
     const textarea = screen.getByDisplayValue('Old notes');
     fireEvent.change(textarea, { target: { value: 'New notes' } });
-    fireEvent.blur(textarea);
+
+    vi.advanceTimersByTime(500);
 
     expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { notes: 'New notes' });
   });
+
+  it('coalesces rapid keystrokes into a single save', () => {
+    render(<TaskDetail task={makeTask({ title: 'Original' })} />);
+
+    const input = screen.getByDisplayValue('Original');
+    fireEvent.change(input, { target: { value: 'Up' } });
+
+    vi.advanceTimersByTime(200);
+
+    fireEvent.change(input, { target: { value: 'Updated' } });
+
+    vi.advanceTimersByTime(500);
+
+    expect(mockUpdateTask).toHaveBeenCalledTimes(1);
+    expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { title: 'Updated' });
+  });
+
+  it('flushes pending title save when task changes', () => {
+    const { rerender } = render(
+      <TaskDetail task={makeTask({ id: 'task-1', title: 'First' })} />
+    );
+
+    const input = screen.getByDisplayValue('First');
+    fireEvent.change(input, { target: { value: 'Edited' } });
+
+    // Switch tasks before debounce fires
+    rerender(
+      <TaskDetail task={makeTask({ id: 'task-2', title: 'Second' })} />
+    );
+
+    // The pending save for task-1 should have been flushed
+    expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { title: 'Edited' });
+  });
+
+  it('flushes pending notes save when task changes', () => {
+    const { rerender } = render(
+      <TaskDetail task={makeTask({ id: 'task-1', notes: 'Original notes' })} />
+    );
+
+    const textarea = screen.getByDisplayValue('Original notes');
+    fireEvent.change(textarea, { target: { value: 'Edited notes' } });
+
+    rerender(
+      <TaskDetail task={makeTask({ id: 'task-2', title: 'Second' })} />
+    );
+
+    expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { notes: 'Edited notes' });
+  });
+
+  it('flushes pending save on unmount', () => {
+    const { unmount } = render(
+      <TaskDetail task={makeTask({ title: 'Will unmount' })} />
+    );
+
+    const input = screen.getByDisplayValue('Will unmount');
+    fireEvent.change(input, { target: { value: 'Edited before unmount' } });
+
+    unmount();
+
+    expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { title: 'Edited before unmount' });
+  });
+
+  // --- Immediate save tests (unchanged) ---
 
   it('calls updateTask when status changes', () => {
     render(<TaskDetail task={makeTask({ status: 'inbox' })} />);
