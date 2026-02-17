@@ -141,14 +141,14 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded }:
       onClick={handleRowClick}
       className={
         isExpanded
-          ? 'bg-card border border-border rounded-xl shadow-sm my-2 p-2 cursor-default'
+          ? 'bg-card border border-border rounded-xl shadow-sm my-2 cursor-default'
           : `group rounded-lg transition-colors duration-100 cursor-default ${
               isSelected ? 'bg-accent' : 'hover:bg-accent/40'
             }`
       }
     >
       {/* Title row */}
-      <div className={isExpanded ? 'flex items-center gap-3 px-4 pt-3 pb-2' : 'flex items-center gap-3 px-3 py-2'}>
+      <div className="flex items-center gap-3 px-4 py-2.5">
         <button
           role="checkbox"
           aria-checked={isCompleted}
@@ -196,26 +196,24 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded }:
         )}
 
         {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events */}
-        {!isExpanded && (
-          <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-            <span data-testid="when-date">
-              <DatePickerButton
-                value={task.when_date}
-                onChange={handleWhenDateChange}
-                icon={<Calendar className="size-3.5" />}
-                label="When date"
-              />
-            </span>
-            <span data-testid="deadline-badge">
-              <DatePickerButton
-                value={task.deadline}
-                onChange={handleDeadlineChange}
-                icon={<Flag className="size-3.5" />}
-                label="Deadline"
-              />
-            </span>
-          </div>
-        )}
+        <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+          <span data-testid="when-date">
+            <DatePickerButton
+              value={task.when_date}
+              onChange={handleWhenDateChange}
+              icon={<Calendar className="size-3.5" />}
+              label="When date"
+            />
+          </span>
+          <span data-testid="deadline-badge">
+            <DatePickerButton
+              value={task.deadline}
+              onChange={handleDeadlineChange}
+              icon={<Flag className="size-3.5" />}
+              label="Deadline"
+            />
+          </span>
+        </div>
       </div>
 
       {/* Expandable section — always in DOM for CSS grid height animation */}
@@ -224,7 +222,7 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded }:
         style={{ gridTemplateRows: isExpanded ? '1fr' : '0fr' }}
       >
         <div className="overflow-hidden min-h-0">
-          <div className="pr-4 pt-1 pb-2" style={{ paddingLeft: 46 }}>
+          <div className="pr-4 pt-1 pb-3" style={{ paddingLeft: 46 }}>
             <textarea
               value={notes}
               onChange={(e) => handleNotesChange(e.target.value)}
@@ -232,21 +230,6 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded }:
               rows={1}
               tabIndex={isExpanded ? 0 : -1}
               className="w-full bg-transparent text-[13px] text-foreground/80 placeholder:text-muted-foreground/40 outline-none resize-none leading-relaxed"
-            />
-          </div>
-
-          <div className="flex items-center justify-end gap-2 px-2 pb-2">
-            <DatePickerButton
-              value={task.when_date}
-              onChange={handleWhenDateChange}
-              icon={<Calendar className="size-3.5" />}
-              label="When date"
-            />
-            <DatePickerButton
-              value={task.deadline}
-              onChange={handleDeadlineChange}
-              icon={<Flag className="size-3.5" />}
-              label="Deadline"
             />
           </div>
         </div>
