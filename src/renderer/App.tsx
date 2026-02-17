@@ -11,11 +11,9 @@ export default function App() {
   const [activeView, setActiveView] = useState<SidebarView>('inbox');
   const tasks = useStore((s) => s.tasks);
   const deselectTask = useStore((s) => s.deselectTask);
-  const deleteTask = useStore((s) => s.deleteTask);
   const startInlineCreate = useStore((s) => s.startInlineCreate);
-  const selectedTaskId = useStore((s) => s.selectedTaskId);
 
-  useKeyboardShortcuts({ setActiveView, deselectTask, startInlineCreate, deleteTask, activeView, selectedTaskId });
+  useKeyboardShortcuts({ setActiveView, deselectTask, startInlineCreate, activeView });
   useGlobalShortcuts({ setActiveView, startInlineCreate });
 
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);

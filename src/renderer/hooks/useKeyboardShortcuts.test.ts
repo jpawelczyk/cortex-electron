@@ -11,22 +11,20 @@ describe('useKeyboardShortcuts', () => {
   let setActiveView: ReturnType<typeof vi.fn>;
   let deselectTask: ReturnType<typeof vi.fn>;
   let startInlineCreate: ReturnType<typeof vi.fn>;
-  let deleteTask: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     setActiveView = vi.fn();
     deselectTask = vi.fn();
     startInlineCreate = vi.fn();
-    deleteTask = vi.fn();
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  function renderShortcuts(activeView: string = 'inbox', selectedTaskId: string | null = null) {
+  function renderShortcuts(activeView: string = 'inbox') {
     return renderHook(() =>
-      useKeyboardShortcuts({ setActiveView, deselectTask, startInlineCreate, deleteTask, activeView, selectedTaskId })
+      useKeyboardShortcuts({ setActiveView, deselectTask, startInlineCreate, activeView })
     );
   }
 
@@ -101,32 +99,6 @@ describe('useKeyboardShortcuts', () => {
       renderShortcuts('today');
       fireKey('n', { metaKey: true });
       expect(startInlineCreate).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('Cmd+Backspace → delete selected task', () => {
-    it('calls deleteTask with selected task id', () => {
-      renderShortcuts('inbox', 'task-42');
-      fireKey('Backspace', { metaKey: true });
-      expect(deleteTask).toHaveBeenCalledWith('task-42');
-    });
-
-    it('does nothing when no task is selected', () => {
-      renderShortcuts('inbox', null);
-      fireKey('Backspace', { metaKey: true });
-      expect(deleteTask).not.toHaveBeenCalled();
-    });
-
-    it('does nothing when typing in an input', () => {
-      renderShortcuts('inbox', 'task-42');
-      const input = document.createElement('input');
-      document.body.appendChild(input);
-      input.focus();
-
-      fireKey('Backspace', { metaKey: true });
-      expect(deleteTask).not.toHaveBeenCalled();
-
-      document.body.removeChild(input);
     });
   });
 

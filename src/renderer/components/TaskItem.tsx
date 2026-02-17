@@ -83,6 +83,12 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded }:
     };
   }, [flushTitle, flushNotes]);
 
+  const handleDelete = useCallback(() => {
+    flushTitle();
+    flushNotes();
+    deleteTask(task.id);
+  }, [flushTitle, flushNotes, deleteTask, task.id]);
+
   // Click-outside handler
   useEffect(() => {
     if (!isExpanded) return;
@@ -102,7 +108,7 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded }:
     return () => document.removeEventListener('mousedown', handleMouseDown);
   }, [isExpanded, flushTitle, flushNotes, deselectTask]);
 
-  // Escape key handler
+  // Keyboard shortcuts for expanded card
   useEffect(() => {
     if (!isExpanded) return;
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -111,10 +117,14 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded }:
         flushNotes();
         deselectTask();
       }
+      if (e.key === 'Backspace' && e.metaKey) {
+        e.preventDefault();
+        handleDelete();
+      }
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isExpanded, flushTitle, flushNotes, deselectTask]);
+  }, [isExpanded, flushTitle, flushNotes, deselectTask, handleDelete]);
 
   const handleTitleChange = (value: string) => {
     setTitle(value);
@@ -132,12 +142,6 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded }:
 
   const handleDeadlineChange = (value: string | null) => {
     updateTask(task.id, { deadline: value });
-  };
-
-  const handleDelete = () => {
-    flushTitle();
-    flushNotes();
-    deleteTask(task.id);
   };
 
   const handleRowClick = () => {

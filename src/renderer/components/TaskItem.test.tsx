@@ -361,4 +361,20 @@ describe('TaskItem (expanded)', () => {
     expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { title: 'Edited' });
     expect(mockDeleteTask).toHaveBeenCalledWith('task-1');
   });
+
+  it('deletes task on Cmd+Backspace when expanded', () => {
+    render(
+      <TaskItem task={fakeTask({ id: 'task-7' })} onComplete={vi.fn()} isExpanded />
+    );
+    fireEvent.keyDown(document, { key: 'Backspace', metaKey: true });
+    expect(mockDeleteTask).toHaveBeenCalledWith('task-7');
+  });
+
+  it('does not delete on Cmd+Backspace when collapsed', () => {
+    render(
+      <TaskItem task={fakeTask()} onComplete={vi.fn()} />
+    );
+    fireEvent.keyDown(document, { key: 'Backspace', metaKey: true });
+    expect(mockDeleteTask).not.toHaveBeenCalled();
+  });
 });
