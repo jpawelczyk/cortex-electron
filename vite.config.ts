@@ -1,12 +1,14 @@
 import { defineConfig } from 'vite';
 import path from 'path';
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 import electron from 'vite-plugin-electron/simple';
 
 export default defineConfig({
   root: path.resolve(__dirname, 'src/renderer'),
   plugins: [
     react(),
+    tailwindcss(),
     electron({
       main: {
         entry: path.resolve(__dirname, 'src/main/index.ts'),
