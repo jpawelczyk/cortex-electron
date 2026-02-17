@@ -16,13 +16,21 @@ function formatDeadline(date: string): string {
 interface TaskItemProps {
   task: Task;
   onComplete: (id: string) => void;
+  onSelect?: (id: string) => void;
+  isSelected?: boolean;
 }
 
-export function TaskItem({ task, onComplete }: TaskItemProps) {
+export function TaskItem({ task, onComplete, onSelect, isSelected }: TaskItemProps) {
   const isCompleted = task.status === 'logbook';
 
   return (
-    <div className="group flex items-center gap-3 px-3 py-2 rounded-lg transition-colors duration-100 hover:bg-accent/40 cursor-default">
+    <div
+      data-testid="task-item"
+      onClick={() => onSelect?.(task.id)}
+      className={`group flex items-center gap-3 px-3 py-2 rounded-lg transition-colors duration-100 cursor-default ${
+        isSelected ? 'bg-accent' : 'hover:bg-accent/40'
+      }`}
+    >
       <button
         role="checkbox"
         aria-checked={isCompleted}

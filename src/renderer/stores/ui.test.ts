@@ -95,4 +95,26 @@ describe('UISlice', () => {
       store.closeModal();
     });
   });
+
+  describe('selectedTaskId', () => {
+    it('starts with no task selected', () => {
+      const store = createStore();
+      expect(store.selectedTaskId).toBeNull();
+    });
+
+    it('selectTask sets selectedTaskId', () => {
+      let store = createStore();
+      store.selectTask('task-123');
+      // Re-read after set
+      store = createStore({ selectedTaskId: 'task-123' });
+      expect(store.selectedTaskId).toBe('task-123');
+    });
+
+    it('deselectTask clears selectedTaskId', () => {
+      let store = createStore({ selectedTaskId: 'task-123' });
+      store.deselectTask();
+      store = createStore({ selectedTaskId: null });
+      expect(store.selectedTaskId).toBeNull();
+    });
+  });
 });

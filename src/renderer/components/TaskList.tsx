@@ -5,9 +5,11 @@ interface TaskListProps {
   tasks: Task[];
   title?: string;
   onCompleteTask: (id: string) => void;
+  onSelectTask?: (id: string) => void;
+  selectedTaskId?: string | null;
 }
 
-export function TaskList({ tasks, title, onCompleteTask }: TaskListProps) {
+export function TaskList({ tasks, title, onCompleteTask, onSelectTask, selectedTaskId }: TaskListProps) {
   return (
     <div>
       {title && (
@@ -24,7 +26,13 @@ export function TaskList({ tasks, title, onCompleteTask }: TaskListProps) {
       ) : (
         <div className="flex flex-col">
           {tasks.map((task) => (
-            <TaskItem key={task.id} task={task} onComplete={onCompleteTask} />
+            <TaskItem
+              key={task.id}
+              task={task}
+              onComplete={onCompleteTask}
+              onSelect={onSelectTask}
+              isSelected={selectedTaskId === task.id}
+            />
           ))}
         </div>
       )}

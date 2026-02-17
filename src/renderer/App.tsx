@@ -1,11 +1,13 @@
 import { useState, useMemo } from 'react';
 import { useStore } from './stores';
 import { Sidebar, SidebarView } from './components/Sidebar';
+import { TaskDetail } from './components/TaskDetail';
 import { InboxView } from './views/InboxView';
 
 export default function App() {
   const [activeView, setActiveView] = useState<SidebarView>('inbox');
   const tasks = useStore((s) => s.tasks);
+  const selectedTaskId = useStore((s) => s.selectedTaskId);
 
   const taskCounts = useMemo(() => ({
     inbox: tasks.filter((t) => t.status === 'inbox').length,
@@ -15,6 +17,11 @@ export default function App() {
     someday: tasks.filter((t) => t.status === 'someday').length,
     logbook: tasks.filter((t) => t.status === 'logbook').length,
   }), [tasks]);
+
+  const selectedTask = useMemo(
+    () => selectedTaskId ? tasks.find((t) => t.id === selectedTaskId) ?? null : null,
+    [tasks, selectedTaskId]
+  );
 
   return (
     <div className="flex h-screen bg-background text-foreground overflow-hidden">
@@ -32,6 +39,8 @@ export default function App() {
           </div>
         )}
       </main>
+
+      {selectedTask && <TaskDetail task={selectedTask} />}
     </div>
   );
 }

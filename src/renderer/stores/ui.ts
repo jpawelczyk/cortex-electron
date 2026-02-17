@@ -15,6 +15,10 @@ export interface UISlice {
   modalData: unknown;
   openModal: (modal: string, data?: unknown) => void;
   closeModal: () => void;
+
+  selectedTaskId: string | null;
+  selectTask: (id: string) => void;
+  deselectTask: () => void;
 }
 
 export const createUISlice: StateCreator<UISlice> = (set) => ({
@@ -32,4 +36,8 @@ export const createUISlice: StateCreator<UISlice> = (set) => ({
   modalData: null,
   openModal: (modal, data) => set({ activeModal: modal, modalData: data ?? null }),
   closeModal: () => set({ activeModal: null, modalData: null }),
+
+  selectedTaskId: null,
+  selectTask: (id) => set({ selectedTaskId: id }),
+  deselectTask: () => set({ selectedTaskId: null }),
 });

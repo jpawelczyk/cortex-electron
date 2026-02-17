@@ -8,6 +8,8 @@ export function InboxView() {
   const tasks = useStore((s) => s.tasks);
   const fetchTasks = useStore((s) => s.fetchTasks);
   const updateTask = useStore((s) => s.updateTask);
+  const selectTask = useStore((s) => s.selectTask);
+  const selectedTaskId = useStore((s) => s.selectedTaskId);
   const inboxTasks = useMemo(() => tasks.filter((t) => t.status === 'inbox'), [tasks]);
 
   useEffect(() => {
@@ -33,7 +35,12 @@ export function InboxView() {
             <p className="text-sm">No tasks in your inbox</p>
           </div>
         ) : (
-          <TaskList tasks={inboxTasks} onCompleteTask={handleComplete} />
+          <TaskList
+            tasks={inboxTasks}
+            onCompleteTask={handleComplete}
+            onSelectTask={selectTask}
+            selectedTaskId={selectedTaskId}
+          />
         )}
       </div>
     </div>

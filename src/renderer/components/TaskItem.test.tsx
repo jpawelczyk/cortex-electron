@@ -68,4 +68,21 @@ describe('TaskItem', () => {
     render(<TaskItem task={fakeTask({ priority: null })} onComplete={vi.fn()} />);
     expect(screen.queryByTestId('priority-indicator')).not.toBeInTheDocument();
   });
+
+  it('calls onSelect with task id when row is clicked', () => {
+    const onSelect = vi.fn();
+    render(
+      <TaskItem task={fakeTask({ id: 'task-42' })} onComplete={vi.fn()} onSelect={onSelect} />
+    );
+    fireEvent.click(screen.getByText('Test task'));
+    expect(onSelect).toHaveBeenCalledWith('task-42');
+  });
+
+  it('highlights as selected when isSelected is true', () => {
+    render(
+      <TaskItem task={fakeTask()} onComplete={vi.fn()} isSelected />
+    );
+    const row = screen.getByText('Test task').closest('[data-testid="task-item"]');
+    expect(row?.className).toContain('bg-accent');
+  });
 });
