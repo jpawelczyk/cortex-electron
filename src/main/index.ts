@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, nativeImage } from 'electron';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import { initDatabase, closeDatabase, getDb } from './db/index.js';
@@ -6,6 +6,21 @@ import { registerHandlers } from './ipc/handlers.js';
 import { registerGlobalShortcuts, unregisterGlobalShortcuts } from './shortcuts.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Set dock icon (macOS) - works in dev mode
+if (process.platform === 'darwin') {
+  const iconPath = app.isPackaged
+    ? path.join(process.resourcesPath, 'build', 'icon.png')
+    : path.join(app.getAppPath(), 'build', 'icon.png');
+  try {
+    const icon = nativeImage.createFromPath(iconPath);
+    if (!icon.isEmpty()) {
+      app.dock.setIcon(icon);
+    }
+  } catch {
+    // Icon not found, use default
+  }
+}
 
 // Single instance lock - prevent multiple instances
 const gotTheLock = app.requestSingleInstanceLock();
