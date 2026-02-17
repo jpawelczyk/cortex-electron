@@ -67,6 +67,23 @@ export interface Project {
   deleted_at: string | null;
 }
 
+export type ProjectStatus = 'active' | 'completed' | 'archived';
+
+export interface CreateProjectInput {
+  title: string;
+  description?: string;
+  status?: ProjectStatus;
+  context_id?: string;
+}
+
+export interface UpdateProjectInput {
+  title?: string;
+  description?: string | null;
+  status?: ProjectStatus;
+  context_id?: string | null;
+  sort_order?: number;
+}
+
 export interface Context {
   id: string;
   name: string;
