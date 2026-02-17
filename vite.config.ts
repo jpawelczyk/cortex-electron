@@ -15,6 +15,9 @@ export default defineConfig({
             outDir: path.resolve(__dirname, 'dist/main'),
             rollupOptions: {
               external: ['better-sqlite3'],
+              output: {
+                format: 'cjs',
+              },
             },
           },
         },
@@ -27,6 +30,11 @@ export default defineConfig({
         vite: {
           build: {
             outDir: path.resolve(__dirname, 'dist/preload'),
+            rollupOptions: {
+              output: {
+                format: 'cjs',
+              },
+            },
           },
         },
       },
