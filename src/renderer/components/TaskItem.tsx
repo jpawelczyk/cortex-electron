@@ -145,14 +145,14 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded }:
       onClick={handleRowClick}
       className={
         isExpanded
-          ? 'bg-card border border-border rounded-xl shadow-sm my-1 cursor-default'
+          ? 'bg-card border border-border rounded-xl shadow-sm my-2 p-2 cursor-default'
           : `group flex items-center gap-3 px-3 py-2 rounded-lg transition-colors duration-100 cursor-default ${
               isSelected ? 'bg-accent' : 'hover:bg-accent/40'
             }`
       }
     >
       {/* Title row */}
-      <div className={isExpanded ? 'flex items-center gap-3 px-3 py-2' : 'contents'}>
+      <div className={isExpanded ? 'flex items-center gap-3 px-4 pt-3 pb-2' : 'contents'}>
         <button
           role="checkbox"
           aria-checked={isCompleted}
@@ -218,7 +218,7 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded }:
         style={{ gridTemplateRows: isExpanded ? '1fr' : '0fr' }}
       >
         <div className="overflow-hidden min-h-0">
-          <div className="px-3 pb-3 pt-1" style={{ paddingLeft: 42 }}>
+          <div className="pr-4 pb-4 pt-1" style={{ paddingLeft: 46 }}>
             <textarea
               value={notes}
               onChange={(e) => handleNotesChange(e.target.value)}
@@ -228,7 +228,7 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded }:
               className="w-full bg-transparent text-[13px] text-foreground/80 placeholder:text-muted-foreground/40 outline-none resize-none leading-relaxed"
             />
 
-            <div className="flex items-center gap-2 mt-2">
+            <div className="flex items-center gap-2 mt-3">
               <label className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs text-muted-foreground hover:bg-accent/60 transition-colors cursor-pointer">
                 <Calendar className="size-3.5" />
                 <input
