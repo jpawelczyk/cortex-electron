@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Circle, CheckCircle2, Calendar, Flag, Trash2 } from 'lucide-react';
+import { Circle, CheckCircle2, Calendar, Flag, Trash2, Check, X } from 'lucide-react';
 import type { Task } from '@shared/types';
 import { useStore } from '../stores';
 import { useDebouncedCallback } from '../hooks/useDebouncedCallback';
@@ -27,6 +27,7 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded }:
   const deleteTask = useStore((s) => s.deleteTask);
   const deselectTask = useStore((s) => s.deselectTask);
 
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const isCompleted = task.status === 'logbook';
   const cardRef = useRef<HTMLDivElement>(null);
   const notesRef = useRef<HTMLTextAreaElement>(null);
@@ -262,17 +263,44 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded }:
               className="w-full bg-transparent text-[13px] text-foreground/80 placeholder:text-muted-foreground/40 outline-none resize-none leading-relaxed overflow-hidden"
             />
             <div className="flex justify-end mt-1">
-              <button
-                aria-label="Delete task"
-                tabIndex={isExpanded ? 0 : -1}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDelete();
-                }}
-                className="p-1 rounded text-muted-foreground/40 hover:text-destructive transition-colors"
-              >
-                <Trash2 className="size-3.5" />
-              </button>
+              {confirmingDelete ? (
+                <div className="flex items-center gap-1.5 rounded-lg bg-accent px-2.5 py-1">
+                  <span className="text-sm text-muted-foreground mr-1">Confirm?</span>
+                  <button
+                    aria-label="Confirm delete task"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete();
+                      setConfirmingDelete(false);
+                    }}
+                    className="p-1 rounded bg-destructive/15 text-destructive hover:bg-destructive/25 transition-colors"
+                  >
+                    <Check className="size-3.5" />
+                  </button>
+                  <button
+                    aria-label="Cancel delete task"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setConfirmingDelete(false);
+                    }}
+                    className="p-1 rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  aria-label="Delete task"
+                  tabIndex={isExpanded ? 0 : -1}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setConfirmingDelete(true);
+                  }}
+                  className="p-1 rounded text-muted-foreground/40 hover:text-destructive transition-colors"
+                >
+                  <Trash2 className="size-3.5" />
+                </button>
+              )}
             </div>
           </div>
         </div>

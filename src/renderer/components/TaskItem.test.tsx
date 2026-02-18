@@ -349,12 +349,35 @@ describe('TaskItem (expanded)', () => {
     expect(btn).toHaveAttribute('tabindex', '-1');
   });
 
-  it('calls deleteTask with task id when trash button is clicked', () => {
+  it('does not call deleteTask on first click — shows confirmation', () => {
     render(
       <TaskItem task={fakeTask({ id: 'task-99' })} onComplete={vi.fn()} isExpanded />
     );
     fireEvent.click(screen.getByLabelText('Delete task'));
+    expect(mockDeleteTask).not.toHaveBeenCalled();
+    expect(screen.getByText('Confirm?')).toBeInTheDocument();
+    expect(screen.getByLabelText('Confirm delete task')).toBeInTheDocument();
+    expect(screen.getByLabelText('Cancel delete task')).toBeInTheDocument();
+  });
+
+  it('calls deleteTask when confirm button is clicked', () => {
+    render(
+      <TaskItem task={fakeTask({ id: 'task-99' })} onComplete={vi.fn()} isExpanded />
+    );
+    fireEvent.click(screen.getByLabelText('Delete task'));
+    fireEvent.click(screen.getByLabelText('Confirm delete task'));
     expect(mockDeleteTask).toHaveBeenCalledWith('task-99');
+  });
+
+  it('resets delete confirmation when cancel is clicked', () => {
+    render(
+      <TaskItem task={fakeTask()} onComplete={vi.fn()} isExpanded />
+    );
+    fireEvent.click(screen.getByLabelText('Delete task'));
+    expect(screen.getByText('Confirm?')).toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText('Cancel delete task'));
+    expect(screen.getByLabelText('Delete task')).toBeInTheDocument();
+    expect(screen.queryByText('Confirm?')).not.toBeInTheDocument();
   });
 
   it('flushes debounced saves before deleting', () => {
@@ -366,6 +389,7 @@ describe('TaskItem (expanded)', () => {
     // Don't advance timers — debounce has NOT fired yet
 
     fireEvent.click(screen.getByLabelText('Delete task'));
+    fireEvent.click(screen.getByLabelText('Confirm delete task'));
 
     // The flush should have saved the pending title
     expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { title: 'Edited' });
