@@ -106,4 +106,64 @@ describe('TodayView', () => {
     checkbox.click();
     expect(mockUpdateTask).toHaveBeenCalledWith('task-42', { status: 'logbook' });
   });
+
+  describe('completed tasks', () => {
+    it('keeps a completed task visible in the list', () => {
+      mockTasks = [fakeTask({ id: '1', title: 'Just completed', status: 'today' })];
+      const { rerender } = render(<TodayView />);
+
+      screen.getByRole('checkbox').click();
+      expect(mockUpdateTask).toHaveBeenCalledWith('1', { status: 'logbook' });
+
+      // Store updates: task is now logbook
+      mockTasks = [fakeTask({ id: '1', title: 'Just completed', status: 'logbook', completed_at: '2026-02-18T00:00:00.000Z' })];
+      rerender(<TodayView />);
+
+      expect(screen.getByText('Just completed')).toBeInTheDocument();
+    });
+
+    it('sorts completed tasks to the bottom', () => {
+      mockTasks = [fakeTask({ id: '1', title: 'Active task', status: 'today' })];
+      const { rerender } = render(<TodayView />);
+
+      screen.getByRole('checkbox').click();
+
+      mockTasks = [
+        fakeTask({ id: '1', title: 'Done task', status: 'logbook', completed_at: '2026-02-18T00:00:00.000Z' }),
+        fakeTask({ id: '2', title: 'New today task', status: 'today' }),
+      ];
+      rerender(<TodayView />);
+
+      const items = screen.getAllByTestId('task-item');
+      expect(items).toHaveLength(2);
+      expect(items[0]).toHaveTextContent('New today task');
+      expect(items[1]).toHaveTextContent('Done task');
+    });
+
+    it('uncompletes a completed task back to today on checkbox click', () => {
+      mockTasks = [fakeTask({ id: '1', title: 'Task', status: 'today' })];
+      const { rerender } = render(<TodayView />);
+
+      screen.getByRole('checkbox').click();
+      expect(mockUpdateTask).toHaveBeenCalledWith('1', { status: 'logbook' });
+
+      mockTasks = [fakeTask({ id: '1', title: 'Task', status: 'logbook', completed_at: '2026-02-18T00:00:00.000Z' })];
+      rerender(<TodayView />);
+
+      vi.clearAllMocks();
+      screen.getByRole('checkbox').click();
+      expect(mockUpdateTask).toHaveBeenCalledWith('1', { status: 'today' });
+    });
+
+    it('does not show logbook tasks that were not completed in this session', () => {
+      mockTasks = [
+        fakeTask({ id: '1', title: 'Old completed', status: 'logbook', completed_at: '2026-01-01T00:00:00.000Z' }),
+        fakeTask({ id: '2', title: 'Today task', status: 'today' }),
+      ];
+      render(<TodayView />);
+
+      expect(screen.queryByText('Old completed')).not.toBeInTheDocument();
+      expect(screen.getByText('Today task')).toBeInTheDocument();
+    });
+  });
 });

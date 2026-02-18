@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Inbox } from 'lucide-react';
 import { useStore } from '../stores';
 import { TaskList } from '../components/TaskList';
@@ -11,15 +11,46 @@ export function InboxView() {
   const selectTask = useStore((s) => s.selectTask);
   const selectedTaskId = useStore((s) => s.selectedTaskId);
   const isInlineCreating = useStore((s) => s.isInlineCreating);
-  const inboxTasks = useMemo(() => tasks.filter((t) => t.status === 'inbox'), [tasks]);
+
+  const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
+
+  const inboxTasks = useMemo(() => {
+    const visible = tasks.filter(
+      (t) => t.status === 'inbox' || (t.status === 'logbook' && completedIds.has(t.id)),
+    );
+    // Sort: incomplete first (original order), completed at bottom
+    return visible.sort((a, b) => {
+      const aCompleted = a.status === 'logbook' ? 1 : 0;
+      const bCompleted = b.status === 'logbook' ? 1 : 0;
+      return aCompleted - bCompleted;
+    });
+  }, [tasks, completedIds]);
 
   useEffect(() => {
     fetchTasks();
   }, [fetchTasks]);
 
-  const handleComplete = (id: string) => {
-    updateTask(id, { status: 'logbook' });
-  };
+  const handleComplete = useCallback(
+    (id: string) => {
+      const task = tasks.find((t) => t.id === id);
+      if (!task) return;
+
+      if (task.status === 'logbook') {
+        // Uncomplete: restore to inbox
+        updateTask(id, { status: 'inbox' });
+        setCompletedIds((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+      } else {
+        // Complete
+        updateTask(id, { status: 'logbook' });
+        setCompletedIds((prev) => new Set(prev).add(id));
+      }
+    },
+    [tasks, updateTask],
+  );
 
   return (
     <div className="flex-1 overflow-y-auto">

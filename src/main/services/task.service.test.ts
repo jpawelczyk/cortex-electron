@@ -210,6 +210,27 @@ describe('TaskService', () => {
       expect(completed.completed_at).not.toBeNull();
     });
 
+    it('clears completed_at when moving from logbook to another status', async () => {
+      const task = await taskService.create({ title: 'Task' });
+      const completed = await taskService.update(task.id, { status: 'logbook' });
+      expect(completed.completed_at).not.toBeNull();
+
+      const uncompleted = await taskService.update(task.id, { status: 'inbox' });
+
+      expect(uncompleted.completed_at).toBeNull();
+      expect(uncompleted.status).toBe('inbox');
+    });
+
+    it('preserves completed_at when updating non-status fields on logbook task', async () => {
+      const task = await taskService.create({ title: 'Task' });
+      const completed = await taskService.update(task.id, { status: 'logbook' });
+      const completedAt = completed.completed_at;
+
+      const updated = await taskService.update(task.id, { title: 'New title' });
+
+      expect(updated.completed_at).toBe(completedAt);
+    });
+
     it('throws error for non-existent task', async () => {
       await expect(
         taskService.update('non-existent', { title: 'Nope' })

@@ -22,6 +22,8 @@ vi.mock('../stores', () => ({
       createTask: mockCreateTask,
       isInlineCreating: mockIsInlineCreating,
       cancelInlineCreate: mockCancelInlineCreate,
+      selectTask: vi.fn(),
+      selectedTaskId: null,
     };
     return selector(state);
   },
@@ -105,5 +107,72 @@ describe('InboxView', () => {
     mockIsInlineCreating = true;
     render(<InboxView />);
     expect(screen.queryByText(/no tasks in your inbox/i)).not.toBeInTheDocument();
+  });
+
+  describe('completed tasks', () => {
+    it('keeps a completed task visible in the list', () => {
+      mockTasks = [fakeTask({ id: '1', title: 'Just completed', status: 'inbox' })];
+      const { rerender } = render(<InboxView />);
+
+      // Simulate completing via checkbox
+      const checkbox = screen.getByRole('checkbox');
+      checkbox.click();
+      expect(mockUpdateTask).toHaveBeenCalledWith('1', { status: 'logbook' });
+
+      // Store updates: task is now logbook
+      mockTasks = [fakeTask({ id: '1', title: 'Just completed', status: 'logbook', completed_at: '2026-02-18T00:00:00.000Z' })];
+      rerender(<InboxView />);
+
+      expect(screen.getByText('Just completed')).toBeInTheDocument();
+    });
+
+    it('sorts completed tasks to the bottom', () => {
+      mockTasks = [fakeTask({ id: '1', title: 'Active task', status: 'inbox' })];
+      const { rerender } = render(<InboxView />);
+
+      // Complete the task
+      screen.getByRole('checkbox').click();
+
+      // Store updates with completed task + a new inbox task
+      mockTasks = [
+        fakeTask({ id: '1', title: 'Done task', status: 'logbook', completed_at: '2026-02-18T00:00:00.000Z' }),
+        fakeTask({ id: '2', title: 'New inbox task', status: 'inbox' }),
+      ];
+      rerender(<InboxView />);
+
+      const items = screen.getAllByTestId('task-item');
+      expect(items).toHaveLength(2);
+      expect(items[0]).toHaveTextContent('New inbox task');
+      expect(items[1]).toHaveTextContent('Done task');
+    });
+
+    it('uncompletes a completed task back to inbox on checkbox click', () => {
+      mockTasks = [fakeTask({ id: '1', title: 'Task', status: 'inbox' })];
+      const { rerender } = render(<InboxView />);
+
+      // Complete
+      screen.getByRole('checkbox').click();
+      expect(mockUpdateTask).toHaveBeenCalledWith('1', { status: 'logbook' });
+
+      // Store updates to logbook
+      mockTasks = [fakeTask({ id: '1', title: 'Task', status: 'logbook', completed_at: '2026-02-18T00:00:00.000Z' })];
+      rerender(<InboxView />);
+
+      // Uncomplete
+      vi.clearAllMocks();
+      screen.getByRole('checkbox').click();
+      expect(mockUpdateTask).toHaveBeenCalledWith('1', { status: 'inbox' });
+    });
+
+    it('does not show logbook tasks that were not completed in this session', () => {
+      mockTasks = [
+        fakeTask({ id: '1', title: 'Old completed', status: 'logbook', completed_at: '2026-01-01T00:00:00.000Z' }),
+        fakeTask({ id: '2', title: 'Inbox task', status: 'inbox' }),
+      ];
+      render(<InboxView />);
+
+      expect(screen.queryByText('Old completed')).not.toBeInTheDocument();
+      expect(screen.getByText('Inbox task')).toBeInTheDocument();
+    });
   });
 });

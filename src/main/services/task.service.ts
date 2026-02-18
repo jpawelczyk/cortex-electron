@@ -100,9 +100,10 @@ export function createTaskService(testDb: TestDb): TaskService {
 
       const now = new Date().toISOString();
       
-      // Determine if completing
+      // Determine if completing or uncompleting
       const isCompleting = input.status === 'logbook' && existing.status !== 'logbook';
-      const completedAt = isCompleting ? now : existing.completed_at;
+      const isUncompleting = input.status && input.status !== 'logbook' && existing.status === 'logbook';
+      const completedAt = isCompleting ? now : isUncompleting ? null : existing.completed_at;
 
       // Build update
       const updated: Task = {
