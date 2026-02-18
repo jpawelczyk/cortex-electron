@@ -16,7 +16,7 @@ if (process.platform === 'darwin') {
   try {
     const icon = nativeImage.createFromPath(iconPath);
     if (!icon.isEmpty()) {
-      app.dock.setIcon(icon);
+      app.dock?.setIcon(icon);
     }
   } catch {
     // Icon not found, use default
