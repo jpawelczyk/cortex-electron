@@ -25,6 +25,7 @@ const NAV_ITEMS: { view: SidebarView; label: string; icon: typeof Inbox }[] = [
   { view: 'anytime', label: 'Anytime', icon: Layers },
   { view: 'someday', label: 'Someday', icon: Cloud },
   { view: 'logbook', label: 'Logbook', icon: BookOpen },
+  { view: 'trash', label: 'Trash', icon: Trash2 },
 ];
 
 export function Sidebar({ activeView, onViewChange, taskCounts }: SidebarProps) {
@@ -51,7 +52,7 @@ export function Sidebar({ activeView, onViewChange, taskCounts }: SidebarProps) 
             >
               <Icon className="size-4 shrink-0" strokeWidth={1.75} />
               <span className="flex-1">{label}</span>
-              {count > 0 && view !== 'logbook' && (
+              {count > 0 && view !== 'logbook' && view !== 'trash' && (
                 <span className={`text-xs tabular-nums ${isActive ? 'text-primary/70' : 'text-muted-foreground/70'}`}>
                   {count}
                 </span>
@@ -61,30 +62,8 @@ export function Sidebar({ activeView, onViewChange, taskCounts }: SidebarProps) 
         })}
       </div>
 
-      {/* Bottom section: Trash + Settings */}
+      {/* Bottom section */}
       <div className="no-drag px-3 py-3 flex flex-col gap-0.5">
-        {(() => {
-          const isActive = activeView === 'trash';
-          const count = taskCounts.trash;
-          return (
-            <button
-              onClick={() => onViewChange('trash')}
-              className={`flex items-center gap-3 rounded-md px-3 py-1.5 text-[13px] font-medium transition-all duration-150 w-full text-left cursor-default ${
-                isActive
-                  ? 'bg-primary/10 text-primary'
-                  : 'text-muted-foreground hover:bg-accent/40 hover:text-foreground'
-              }`}
-            >
-              <Trash2 className="size-4 shrink-0" strokeWidth={1.75} />
-              <span className="flex-1">Trash</span>
-              {count > 0 && (
-                <span className={`text-xs tabular-nums ${isActive ? 'text-primary/70' : 'text-muted-foreground/70'}`}>
-                  {count}
-                </span>
-              )}
-            </button>
-          );
-        })()}
         <button
           className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
         >

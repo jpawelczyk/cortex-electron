@@ -60,8 +60,9 @@ describe('Sidebar', () => {
     expect(onViewChange).toHaveBeenCalledWith('trash');
   });
 
-  it('shows trash count when items exist', () => {
+  it('does not show trash count badge', () => {
     render(<Sidebar {...defaultProps} />);
-    expect(screen.getByText('4')).toBeInTheDocument();
+    const trashItem = screen.getByText('Trash').closest('button');
+    expect(trashItem).not.toHaveTextContent('4');
   });
 });
