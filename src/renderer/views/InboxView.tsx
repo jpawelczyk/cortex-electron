@@ -14,8 +14,16 @@ export function InboxView() {
   const selectedTaskId = useStore((s) => s.selectedTaskId);
   const isInlineCreating = useStore((s) => s.isInlineCreating);
 
+  // Toggle signal: which tasks are currently completed from the UI's perspective.
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
-  const [settledIds, setSettledIds] = useState<Set<string>>(new Set());
+  // Ordered settled list: newly settled tasks are prepended so they stay at
+  // their current visual position (top of the settled section) and don't cause
+  // a reorder of already-settled tasks.
+  const [settledIds, setSettledIds] = useState<string[]>([]);
+  // Filter signal: keeps logbook tasks visible during the async IPC window
+  // after uncomplete (when completedIds no longer has the id but the store
+  // hasn't updated to inbox yet).
+  const everCompletedIds = useRef(new Set<string>());
   const sortTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
 
   useEffect(() => {
@@ -24,14 +32,18 @@ export function InboxView() {
 
   const inboxTasks = useMemo(() => {
     const visible = tasks.filter(
-      (t) => t.status === 'inbox' || (t.status === 'logbook' && completedIds.has(t.id)),
+      (t) => t.status === 'inbox' || (t.status === 'logbook' && everCompletedIds.current.has(t.id)),
     );
     return visible.sort((a, b) => {
-      const aSettled = settledIds.has(a.id) ? 1 : 0;
-      const bSettled = settledIds.has(b.id) ? 1 : 0;
-      return aSettled - bSettled;
+      const aIdx = settledIds.indexOf(a.id);
+      const bIdx = settledIds.indexOf(b.id);
+      const aSettled = aIdx >= 0 ? 1 : 0;
+      const bSettled = bIdx >= 0 ? 1 : 0;
+      if (aSettled !== bSettled) return aSettled - bSettled;
+      if (aSettled && bSettled) return aIdx - bIdx;
+      return 0;
     });
-  }, [tasks, completedIds, settledIds]);
+  }, [tasks, completedIds, settledIds]); // completedIds included as recalc trigger
 
   useEffect(() => {
     fetchTasks();
@@ -39,10 +51,7 @@ export function InboxView() {
 
   const handleComplete = useCallback(
     (id: string) => {
-      const task = tasks.find((t) => t.id === id);
-      if (!task) return;
-
-      if (task.status === 'logbook') {
+      if (completedIds.has(id)) {
         // Uncomplete: restore to inbox
         updateTask(id, { status: 'inbox' });
         setCompletedIds((prev) => {
@@ -55,23 +64,20 @@ export function InboxView() {
           clearTimeout(existing);
           sortTimers.current.delete(id);
         }
-        setSettledIds((prev) => {
-          const next = new Set(prev);
-          next.delete(id);
-          return next;
-        });
+        setSettledIds((prev) => prev.filter((x) => x !== id));
       } else {
         // Complete
         updateTask(id, { status: 'logbook' });
         setCompletedIds((prev) => new Set(prev).add(id));
+        everCompletedIds.current.add(id);
         const timer = setTimeout(() => {
-          setSettledIds((prev) => new Set(prev).add(id));
+          setSettledIds((prev) => [id, ...prev]);
           sortTimers.current.delete(id);
         }, SORT_DELAY_MS);
         sortTimers.current.set(id, timer);
       }
     },
-    [tasks, updateTask],
+    [completedIds, updateTask],
   );
 
   return (

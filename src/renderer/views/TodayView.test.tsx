@@ -185,6 +185,41 @@ describe('TodayView', () => {
       expect(mockUpdateTask).toHaveBeenCalledWith('1', { status: 'today' });
     });
 
+    it('task stays visible during uncomplete (before store updates)', () => {
+      mockTasks = [
+        fakeTask({ id: '1', title: 'Task A', status: 'today' }),
+        fakeTask({ id: '2', title: 'Task B', status: 'today' }),
+      ];
+      const { rerender } = render(<TodayView />);
+
+      // Complete both tasks
+      screen.getAllByRole('checkbox')[0].click();
+      mockTasks = [
+        fakeTask({ id: '1', title: 'Task A', status: 'logbook', completed_at: '2026-02-18T00:00:00.000Z' }),
+        fakeTask({ id: '2', title: 'Task B', status: 'today' }),
+      ];
+      rerender(<TodayView />);
+
+      screen.getAllByRole('checkbox')[1].click();
+      mockTasks = [
+        fakeTask({ id: '1', title: 'Task A', status: 'logbook', completed_at: '2026-02-18T00:00:00.000Z' }),
+        fakeTask({ id: '2', title: 'Task B', status: 'logbook', completed_at: '2026-02-18T00:00:00.000Z' }),
+      ];
+      rerender(<TodayView />);
+
+      // Both visible
+      expect(screen.getByText('Task A')).toBeInTheDocument();
+      expect(screen.getByText('Task B')).toBeInTheDocument();
+
+      // Uncomplete Task A — store still shows logbook (async IPC pending)
+      screen.getAllByRole('checkbox')[0].click();
+      rerender(<TodayView />);
+
+      // Both tasks must still be visible (no brief disappearance)
+      expect(screen.getByText('Task A')).toBeInTheDocument();
+      expect(screen.getByText('Task B')).toBeInTheDocument();
+    });
+
     it('does not show logbook tasks that were not completed in this session', () => {
       mockTasks = [
         fakeTask({ id: '1', title: 'Old completed', status: 'logbook', completed_at: '2026-01-01T00:00:00.000Z' }),
