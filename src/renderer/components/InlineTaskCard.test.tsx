@@ -115,7 +115,7 @@ describe('InlineTaskCard', () => {
     expect(mockCreateTask).not.toHaveBeenCalled();
   });
 
-  it('dismisses on click outside', () => {
+  it('dismisses on click outside when title is empty', () => {
     render(
       <div>
         <div data-testid="outside">Outside area</div>
@@ -124,6 +124,22 @@ describe('InlineTaskCard', () => {
     );
     fireEvent.mouseDown(screen.getByTestId('outside'));
 
+    expect(mockCreateTask).not.toHaveBeenCalled();
+    expect(mockCancelInlineCreate).toHaveBeenCalled();
+  });
+
+  it('saves task on click outside when title has content', () => {
+    render(
+      <div>
+        <div data-testid="outside">Outside area</div>
+        <InlineTaskCard />
+      </div>
+    );
+    const input = screen.getByPlaceholderText('New task');
+    fireEvent.change(input, { target: { value: 'Buy groceries' } });
+    fireEvent.mouseDown(screen.getByTestId('outside'));
+
+    expect(mockCreateTask).toHaveBeenCalledWith({ title: 'Buy groceries' });
     expect(mockCancelInlineCreate).toHaveBeenCalled();
   });
 

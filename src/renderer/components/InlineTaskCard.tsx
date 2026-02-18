@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, type KeyboardEvent } from 'react';
+import { useState, useRef, useEffect, useCallback, type KeyboardEvent } from 'react';
 import { Circle } from 'lucide-react';
 import { useStore } from '../stores';
 
@@ -9,22 +9,27 @@ export function InlineTaskCard() {
   const [title, setTitle] = useState('');
   const [notes, setNotes] = useState('');
   const cardRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef(title);
+  const notesRef = useRef(notes);
+  titleRef.current = title;
+  notesRef.current = notes;
 
-  const handleSubmit = () => {
-    const trimmed = title.trim();
-    if (!trimmed) return;
-    const input: { title: string; notes?: string } = { title: trimmed };
-    if (notes.trim()) {
-      input.notes = notes.trim();
+  const saveAndClose = useCallback(() => {
+    const trimmed = titleRef.current.trim();
+    if (trimmed) {
+      const input: { title: string; notes?: string } = { title: trimmed };
+      if (notesRef.current.trim()) {
+        input.notes = notesRef.current.trim();
+      }
+      createTask(input);
     }
-    createTask(input);
     cancelInlineCreate();
-  };
+  }, [createTask, cancelInlineCreate]);
 
   const handleTitleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      handleSubmit();
+      saveAndClose();
     }
   };
 
@@ -39,16 +44,16 @@ export function InlineTaskCard() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [cancelInlineCreate]);
 
-  // Click-outside handler
+  // Click-outside handler — save if title present, otherwise just dismiss
   useEffect(() => {
     const handleMouseDown = (e: MouseEvent) => {
       if (cardRef.current && !cardRef.current.contains(e.target as Node)) {
-        cancelInlineCreate();
+        saveAndClose();
       }
     };
     document.addEventListener('mousedown', handleMouseDown);
     return () => document.removeEventListener('mousedown', handleMouseDown);
-  }, [cancelInlineCreate]);
+  }, [saveAndClose]);
 
   return (
     <div
