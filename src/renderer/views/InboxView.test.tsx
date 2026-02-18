@@ -280,6 +280,20 @@ describe('InboxView', () => {
       vi.useRealTimers();
     });
 
+    it('shows store-loaded logbook task completed today with checked checkbox', () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-02-18T12:00:00'));
+
+      mockTasks = [
+        fakeTask({ id: '1', title: 'Done today', status: 'logbook', completed_at: '2026-02-18T09:00:00.000Z' }),
+      ];
+      render(<InboxView />);
+
+      expect(screen.getByRole('checkbox')).toHaveAttribute('aria-checked', 'true');
+
+      vi.useRealTimers();
+    });
+
     it('uncompletes a store-loaded logbook task on checkbox click', () => {
       vi.useFakeTimers();
       vi.setSystemTime(new Date('2026-02-18T12:00:00'));

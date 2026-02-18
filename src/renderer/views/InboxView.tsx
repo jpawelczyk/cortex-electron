@@ -36,6 +36,10 @@ export function InboxView() {
   // after uncomplete (when completedIds no longer has the id but the store
   // hasn't updated to inbox yet).
   const everCompletedIds = useRef(new Set<string>());
+  // Tracks all tasks whose checkbox was toggled in this session, so we can
+  // distinguish "not interacted with" (defer to store) from "explicitly
+  // unchecked" (override store).
+  const interactedIds = useRef(new Set<string>());
   const sortTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
 
   useEffect(() => {
@@ -67,8 +71,22 @@ export function InboxView() {
     fetchTasks();
   }, [fetchTasks]);
 
+  // Merge session-level completedIds with store-loaded logbook tasks completed
+  // today. Tasks not interacted with in this session inherit their visual state
+  // from the store (status === 'logbook' → checked).
+  const effectiveCompletedIds = useMemo(() => {
+    const effective = new Set(completedIds);
+    for (const t of tasks) {
+      if (t.status === 'logbook' && isCompletedToday(t) && !interactedIds.current.has(t.id)) {
+        effective.add(t.id);
+      }
+    }
+    return effective;
+  }, [tasks, completedIds]);
+
   const handleComplete = useCallback(
     (id: string) => {
+      interactedIds.current.add(id);
       const task = tasks.find((t) => t.id === id);
       const isAlreadyDone = completedIds.has(id) || task?.status === 'logbook';
 
@@ -119,7 +137,7 @@ export function InboxView() {
             onCompleteTask={handleComplete}
             onSelectTask={selectTask}
             selectedTaskId={selectedTaskId}
-            completedIds={completedIds}
+            completedIds={effectiveCompletedIds}
           />
         ) : null}
       </div>
