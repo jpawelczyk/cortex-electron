@@ -1,5 +1,7 @@
+import { useRef } from 'react';
 import type { Task } from '@shared/types';
 import { TaskItem } from './TaskItem';
+import { useFlipAnimation } from '../hooks/useFlipAnimation';
 
 interface TaskListProps {
   tasks: Task[];
@@ -10,6 +12,9 @@ interface TaskListProps {
 }
 
 export function TaskList({ tasks, title, onCompleteTask, onSelectTask, selectedTaskId }: TaskListProps) {
+  const listRef = useRef<HTMLDivElement>(null);
+  useFlipAnimation(listRef);
+
   return (
     <div>
       {title && (
@@ -24,7 +29,7 @@ export function TaskList({ tasks, title, onCompleteTask, onSelectTask, selectedT
       {tasks.length === 0 ? (
         <p className="px-3 py-8 text-sm text-muted-foreground text-center">No tasks</p>
       ) : (
-        <div className="flex flex-col">
+        <div ref={listRef} className="flex flex-col">
           {tasks.map((task) => (
             <TaskItem
               key={task.id}

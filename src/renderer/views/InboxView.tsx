@@ -1,8 +1,10 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Inbox } from 'lucide-react';
 import { useStore } from '../stores';
 import { TaskList } from '../components/TaskList';
 import { InlineTaskCard } from '../components/InlineTaskCard';
+
+const SORT_DELAY_MS = 400;
 
 export function InboxView() {
   const tasks = useStore((s) => s.tasks);
@@ -13,18 +15,23 @@ export function InboxView() {
   const isInlineCreating = useStore((s) => s.isInlineCreating);
 
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
+  const [settledIds, setSettledIds] = useState<Set<string>>(new Set());
+  const sortTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+
+  useEffect(() => {
+    return () => sortTimers.current.forEach(clearTimeout);
+  }, []);
 
   const inboxTasks = useMemo(() => {
     const visible = tasks.filter(
       (t) => t.status === 'inbox' || (t.status === 'logbook' && completedIds.has(t.id)),
     );
-    // Sort: incomplete first (original order), completed at bottom
     return visible.sort((a, b) => {
-      const aCompleted = a.status === 'logbook' ? 1 : 0;
-      const bCompleted = b.status === 'logbook' ? 1 : 0;
-      return aCompleted - bCompleted;
+      const aSettled = settledIds.has(a.id) ? 1 : 0;
+      const bSettled = settledIds.has(b.id) ? 1 : 0;
+      return aSettled - bSettled;
     });
-  }, [tasks, completedIds]);
+  }, [tasks, completedIds, settledIds]);
 
   useEffect(() => {
     fetchTasks();
@@ -43,10 +50,25 @@ export function InboxView() {
           next.delete(id);
           return next;
         });
+        const existing = sortTimers.current.get(id);
+        if (existing) {
+          clearTimeout(existing);
+          sortTimers.current.delete(id);
+        }
+        setSettledIds((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
       } else {
         // Complete
         updateTask(id, { status: 'logbook' });
         setCompletedIds((prev) => new Set(prev).add(id));
+        const timer = setTimeout(() => {
+          setSettledIds((prev) => new Set(prev).add(id));
+          sortTimers.current.delete(id);
+        }, SORT_DELAY_MS);
+        sortTimers.current.set(id, timer);
       }
     },
     [tasks, updateTask],

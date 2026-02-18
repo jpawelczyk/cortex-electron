@@ -168,6 +168,7 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded }:
     <div
       ref={cardRef}
       data-testid="task-item"
+      data-flip-key={task.id}
       onClick={handleRowClick}
       className={
         isExpanded
@@ -210,7 +211,7 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded }:
           />
         ) : (
           <span
-            className={`flex-1 text-[13px] leading-snug truncate ${isCompleted ? 'line-through text-muted-foreground' : 'text-foreground'}`}
+            className={`flex-1 text-[13px] leading-snug truncate line-through transition-[color,text-decoration-color] duration-300 ${isCompleted ? 'text-muted-foreground decoration-muted-foreground' : 'text-foreground decoration-transparent'}`}
           >
             {task.title}
           </span>

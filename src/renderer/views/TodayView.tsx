@@ -1,7 +1,9 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Sun } from 'lucide-react';
 import { useStore } from '../stores';
 import { TaskList } from '../components/TaskList';
+
+const SORT_DELAY_MS = 400;
 
 function getToday(): string {
   return new Date().toISOString().slice(0, 10);
@@ -17,22 +19,25 @@ export function TodayView() {
   const today = getToday();
 
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
+  const [settledIds, setSettledIds] = useState<Set<string>>(new Set());
+  const sortTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+
+  useEffect(() => {
+    return () => sortTimers.current.forEach(clearTimeout);
+  }, []);
 
   const todayTasks = useMemo(() => {
     const visible = tasks.filter((t) => {
-      // Show logbook tasks that were completed in this session
       if (t.status === 'logbook' && completedIds.has(t.id)) return true;
-      // Exclude logbook/cancelled otherwise
       if (t.status === 'logbook' || t.status === 'cancelled') return false;
       return t.status === 'today' || t.when_date === today;
     });
-    // Sort: incomplete first (original order), completed at bottom
     return visible.sort((a, b) => {
-      const aCompleted = a.status === 'logbook' ? 1 : 0;
-      const bCompleted = b.status === 'logbook' ? 1 : 0;
-      return aCompleted - bCompleted;
+      const aSettled = settledIds.has(a.id) ? 1 : 0;
+      const bSettled = settledIds.has(b.id) ? 1 : 0;
+      return aSettled - bSettled;
     });
-  }, [tasks, today, completedIds]);
+  }, [tasks, today, completedIds, settledIds]);
 
   useEffect(() => {
     fetchTasks();
@@ -51,10 +56,25 @@ export function TodayView() {
           next.delete(id);
           return next;
         });
+        const existing = sortTimers.current.get(id);
+        if (existing) {
+          clearTimeout(existing);
+          sortTimers.current.delete(id);
+        }
+        setSettledIds((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
       } else {
         // Complete
         updateTask(id, { status: 'logbook' });
         setCompletedIds((prev) => new Set(prev).add(id));
+        const timer = setTimeout(() => {
+          setSettledIds((prev) => new Set(prev).add(id));
+          sortTimers.current.delete(id);
+        }, SORT_DELAY_MS);
+        sortTimers.current.set(id, timer);
       }
     },
     [tasks, updateTask],

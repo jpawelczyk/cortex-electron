@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, act } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { TodayView } from './TodayView';
 
@@ -122,7 +122,32 @@ describe('TodayView', () => {
       expect(screen.getByText('Just completed')).toBeInTheDocument();
     });
 
-    it('sorts completed tasks to the bottom', () => {
+    it('keeps completed task in place before sort delay', () => {
+      vi.useFakeTimers();
+      mockTasks = [
+        fakeTask({ id: '1', title: 'First task', status: 'today' }),
+        fakeTask({ id: '2', title: 'Second task', status: 'today' }),
+      ];
+      const { rerender } = render(<TodayView />);
+
+      screen.getAllByRole('checkbox')[0].click();
+
+      mockTasks = [
+        fakeTask({ id: '1', title: 'First task', status: 'logbook', completed_at: '2026-02-18T00:00:00.000Z' }),
+        fakeTask({ id: '2', title: 'Second task', status: 'today' }),
+      ];
+      rerender(<TodayView />);
+
+      // Before delay: completed task stays in original position
+      const itemsBefore = screen.getAllByTestId('task-item');
+      expect(itemsBefore[0]).toHaveTextContent('First task');
+      expect(itemsBefore[1]).toHaveTextContent('Second task');
+
+      vi.useRealTimers();
+    });
+
+    it('sorts completed tasks to the bottom after delay', () => {
+      vi.useFakeTimers();
       mockTasks = [fakeTask({ id: '1', title: 'Active task', status: 'today' })];
       const { rerender } = render(<TodayView />);
 
@@ -134,10 +159,15 @@ describe('TodayView', () => {
       ];
       rerender(<TodayView />);
 
+      // Advance past sort delay
+      act(() => { vi.advanceTimersByTime(400); });
+
       const items = screen.getAllByTestId('task-item');
       expect(items).toHaveLength(2);
       expect(items[0]).toHaveTextContent('New today task');
       expect(items[1]).toHaveTextContent('Done task');
+
+      vi.useRealTimers();
     });
 
     it('uncompletes a completed task back to today on checkbox click', () => {
