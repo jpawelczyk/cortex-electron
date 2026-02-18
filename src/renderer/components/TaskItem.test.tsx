@@ -181,6 +181,13 @@ describe('TaskItem (collapsed)', () => {
     const row = screen.getByText('Test task').closest('[data-testid="task-item"]');
     expect(row?.className).toContain('bg-accent');
   });
+
+  it('shows completed state when isCompleted prop is true regardless of task status', () => {
+    render(
+      <TaskItem task={fakeTask({ status: 'inbox' })} onComplete={vi.fn()} isCompleted />
+    );
+    expect(screen.getByRole('checkbox')).toBeChecked();
+  });
 });
 
 describe('TaskItem (expanded)', () => {
@@ -360,12 +367,24 @@ describe('TaskItem (expanded)', () => {
     expect(screen.getByLabelText('Cancel delete task')).toBeInTheDocument();
   });
 
+  it('delays deleteTask call for exit animation', () => {
+    render(
+      <TaskItem task={fakeTask({ id: 'task-99' })} onComplete={vi.fn()} isExpanded />
+    );
+    fireEvent.click(screen.getByLabelText('Delete task'));
+    fireEvent.click(screen.getByLabelText('Confirm delete task'));
+    expect(mockDeleteTask).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(150);
+    expect(mockDeleteTask).toHaveBeenCalledWith('task-99');
+  });
+
   it('calls deleteTask when confirm button is clicked', () => {
     render(
       <TaskItem task={fakeTask({ id: 'task-99' })} onComplete={vi.fn()} isExpanded />
     );
     fireEvent.click(screen.getByLabelText('Delete task'));
     fireEvent.click(screen.getByLabelText('Confirm delete task'));
+    vi.advanceTimersByTime(150);
     expect(mockDeleteTask).toHaveBeenCalledWith('task-99');
   });
 
@@ -393,6 +412,7 @@ describe('TaskItem (expanded)', () => {
 
     // The flush should have saved the pending title
     expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { title: 'Edited' });
+    vi.advanceTimersByTime(150);
     expect(mockDeleteTask).toHaveBeenCalledWith('task-1');
   });
 
@@ -401,6 +421,7 @@ describe('TaskItem (expanded)', () => {
       <TaskItem task={fakeTask({ id: 'task-7' })} onComplete={vi.fn()} isExpanded />
     );
     fireEvent.keyDown(document, { key: 'Backspace', metaKey: true });
+    vi.advanceTimersByTime(150);
     expect(mockDeleteTask).toHaveBeenCalledWith('task-7');
   });
 

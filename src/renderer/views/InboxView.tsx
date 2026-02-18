@@ -98,6 +98,7 @@ export function InboxView() {
             onCompleteTask={handleComplete}
             onSelectTask={selectTask}
             selectedTaskId={selectedTaskId}
+            completedIds={completedIds}
           />
         ) : null}
       </div>

@@ -9,9 +9,10 @@ interface TaskListProps {
   onCompleteTask: (id: string) => void;
   onSelectTask?: (id: string) => void;
   selectedTaskId?: string | null;
+  completedIds?: Set<string>;
 }
 
-export function TaskList({ tasks, title, onCompleteTask, onSelectTask, selectedTaskId }: TaskListProps) {
+export function TaskList({ tasks, title, onCompleteTask, onSelectTask, selectedTaskId, completedIds }: TaskListProps) {
   const listRef = useRef<HTMLDivElement>(null);
   useFlipAnimation(listRef);
 
@@ -38,6 +39,7 @@ export function TaskList({ tasks, title, onCompleteTask, onSelectTask, selectedT
               onSelect={onSelectTask}
               isSelected={selectedTaskId === task.id}
               isExpanded={selectedTaskId === task.id}
+              isCompleted={completedIds?.has(task.id)}
             />
           ))}
         </div>

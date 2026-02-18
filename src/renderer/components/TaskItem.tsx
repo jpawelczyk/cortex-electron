@@ -4,8 +4,10 @@ import type { Task } from '@shared/types';
 import { useStore } from '../stores';
 import { useDebouncedCallback } from '../hooks/useDebouncedCallback';
 import { DatePickerButton } from './DatePickerButton';
+import { cn } from '../lib/utils';
 
 const DEBOUNCE_MS = 500;
+const EXIT_DURATION_MS = 150;
 
 const PRIORITY_COLORS: Record<string, string> = {
   P0: 'text-red-500',
@@ -20,15 +22,17 @@ interface TaskItemProps {
   onSelect?: (id: string) => void;
   isSelected?: boolean;
   isExpanded?: boolean;
+  isCompleted?: boolean;
 }
 
-export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded }: TaskItemProps) {
+export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, isCompleted: isCompletedProp }: TaskItemProps) {
   const updateTask = useStore((s) => s.updateTask);
   const deleteTask = useStore((s) => s.deleteTask);
   const deselectTask = useStore((s) => s.deselectTask);
 
   const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const isCompleted = task.status === 'logbook';
+  const [isExiting, setIsExiting] = useState(false);
+  const isCompleted = isCompletedProp ?? (task.status === 'logbook');
   const cardRef = useRef<HTMLDivElement>(null);
   const notesRef = useRef<HTMLTextAreaElement>(null);
 
@@ -100,7 +104,10 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded }:
   const handleDelete = useCallback(() => {
     flushTitle();
     flushNotes();
-    deleteTask(task.id);
+    setIsExiting(true);
+    setTimeout(() => {
+      deleteTask(task.id);
+    }, EXIT_DURATION_MS);
   }, [flushTitle, flushNotes, deleteTask, task.id]);
 
   // Click-outside handler
@@ -170,13 +177,17 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded }:
       data-testid="task-item"
       data-flip-key={task.id}
       onClick={handleRowClick}
-      className={
+      className={cn(
+        'rounded-xl cursor-default border',
+        'transition-[background-color,border-color,box-shadow,margin,opacity,transform] duration-200 ease-out',
         isExpanded
-          ? 'bg-card border border-border rounded-xl shadow-sm my-2 cursor-default'
-          : `group rounded-lg transition-colors duration-100 cursor-default ${
-              isSelected ? 'bg-accent' : 'hover:bg-accent/40'
-            }`
-      }
+          ? 'bg-card border-border shadow-sm my-2'
+          : cn(
+              'group border-transparent',
+              isSelected ? 'bg-accent' : 'hover:bg-accent/40',
+            ),
+        isExiting && 'opacity-0 -translate-y-2 pointer-events-none duration-150',
+      )}
     >
       {/* Title row */}
       <div className="flex items-center gap-3 px-4 py-2.5">

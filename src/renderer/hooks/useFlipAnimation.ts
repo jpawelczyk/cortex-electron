@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, type RefObject } from 'react';
 
 const FLIP_DURATION = 300;
+const ENTER_DURATION = 200;
 const FLIP_EASING = 'cubic-bezier(0.2, 0, 0, 1)';
 
 /**
@@ -45,7 +46,19 @@ export function useFlipAnimation(containerRef: RefObject<HTMLElement | null>) {
         if (!key) continue;
 
         const oldRect = oldPositions.get(key);
-        if (!oldRect) continue;
+        if (!oldRect) {
+          // New element — animate it entering
+          const animation = el.animate(
+            [
+              { opacity: 0, transform: 'translateY(-8px)' },
+              { opacity: 1, transform: 'translateY(0)' },
+            ],
+            { duration: ENTER_DURATION, easing: FLIP_EASING },
+          );
+          activeAnimations.current.set(key, animation);
+          animation.onfinish = () => activeAnimations.current.delete(key);
+          continue;
+        }
 
         const newRect = el.getBoundingClientRect();
         const deltaY = oldRect.top - newRect.top;

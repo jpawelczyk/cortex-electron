@@ -59,7 +59,7 @@ export function InlineTaskCard() {
     <div
       ref={cardRef}
       data-testid="inline-task-card"
-      className="bg-card border border-border rounded-xl shadow-sm my-2"
+      className="bg-card border border-border rounded-xl shadow-sm my-2 animate-card-enter"
     >
       <div className="flex items-center gap-3 px-4 py-2.5">
         <div className="shrink-0">

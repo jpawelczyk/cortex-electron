@@ -102,6 +102,7 @@ export function TodayView() {
             onCompleteTask={handleComplete}
             onSelectTask={selectTask}
             selectedTaskId={selectedTaskId}
+            completedIds={completedIds}
           />
         )}
       </div>
