@@ -79,38 +79,40 @@ describe('TrashView', () => {
   it('shows Empty Trash button when items exist', () => {
     mockStore.trashedTasks = [fakeTask()];
     render(<TrashView />);
-    expect(screen.getByText('Empty Trash')).toBeInTheDocument();
+    expect(screen.getByLabelText('Empty Trash')).toBeInTheDocument();
   });
 
   it('does not show Empty Trash button when empty', () => {
     render(<TrashView />);
-    expect(screen.queryByText('Empty Trash')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Empty Trash')).not.toBeInTheDocument();
   });
 
   it('does not call emptyTrash on first click — shows confirmation', () => {
     mockStore.trashedTasks = [fakeTask()];
     render(<TrashView />);
-    fireEvent.click(screen.getByText('Empty Trash'));
+    fireEvent.click(screen.getByLabelText('Empty Trash'));
     expect(mockStore.emptyTrash).not.toHaveBeenCalled();
-    expect(screen.getByText('Are you sure?')).toBeInTheDocument();
+    expect(screen.getByText('Confirm?')).toBeInTheDocument();
+    expect(screen.getByLabelText('Confirm empty trash')).toBeInTheDocument();
+    expect(screen.getByLabelText('Cancel empty trash')).toBeInTheDocument();
   });
 
-  it('calls emptyTrash on confirmation click', () => {
+  it('calls emptyTrash when Yes clicked', () => {
     mockStore.trashedTasks = [fakeTask()];
     render(<TrashView />);
-    fireEvent.click(screen.getByText('Empty Trash'));
-    fireEvent.click(screen.getByText('Are you sure?'));
+    fireEvent.click(screen.getByLabelText('Empty Trash'));
+    fireEvent.click(screen.getByLabelText('Confirm empty trash'));
     expect(mockStore.emptyTrash).toHaveBeenCalledOnce();
   });
 
-  it('resets confirmation when Cancel clicked', () => {
+  it('resets confirmation when No clicked', () => {
     mockStore.trashedTasks = [fakeTask()];
     render(<TrashView />);
-    fireEvent.click(screen.getByText('Empty Trash'));
-    expect(screen.getByText('Are you sure?')).toBeInTheDocument();
-    fireEvent.click(screen.getByText('Cancel'));
-    expect(screen.getByText('Empty Trash')).toBeInTheDocument();
-    expect(screen.queryByText('Are you sure?')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText('Empty Trash'));
+    expect(screen.getByText('Confirm?')).toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText('Cancel empty trash'));
+    expect(screen.getByLabelText('Empty Trash')).toBeInTheDocument();
+    expect(screen.queryByText('Confirm?')).not.toBeInTheDocument();
   });
 
   it('calls restoreTask when restore button clicked', () => {

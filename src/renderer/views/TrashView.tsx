@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Trash2, RotateCcw } from 'lucide-react';
+import { Trash2, RotateCcw, Check, X } from 'lucide-react';
 import { useStore } from '../stores';
 
 export function TrashView() {
@@ -29,29 +29,36 @@ export function TrashView() {
             )}
           </div>
           {count > 0 && (
-            <div className="flex items-center gap-3">
-              {confirming && (
+            confirming ? (
+              <div className="flex items-center gap-1.5 rounded-lg bg-accent px-2.5 py-1">
+                <span className="text-sm text-muted-foreground mr-1">Confirm?</span>
                 <button
-                  onClick={() => setConfirming(false)}
-                  className="text-sm text-muted-foreground hover:text-foreground font-medium transition-colors"
-                >
-                  Cancel
-                </button>
-              )}
-              <button
-                onClick={() => {
-                  if (confirming) {
+                  aria-label="Confirm empty trash"
+                  onClick={() => {
                     emptyTrash();
                     setConfirming(false);
-                  } else {
-                    setConfirming(true);
-                  }
-                }}
-                className="text-sm text-destructive hover:text-destructive/80 font-medium transition-colors"
+                  }}
+                  className="p-1 rounded bg-destructive/15 text-destructive hover:bg-destructive/25 transition-colors"
+                >
+                  <Check className="size-3.5" />
+                </button>
+                <button
+                  aria-label="Cancel empty trash"
+                  onClick={() => setConfirming(false)}
+                  className="p-1 rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                >
+                  <X className="size-3.5" />
+                </button>
+              </div>
+            ) : (
+              <button
+                aria-label="Empty Trash"
+                onClick={() => setConfirming(true)}
+                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
               >
-                {confirming ? 'Are you sure?' : 'Empty Trash'}
+                <Trash2 className="size-5" />
               </button>
-            </div>
+            )
           )}
         </div>
 
