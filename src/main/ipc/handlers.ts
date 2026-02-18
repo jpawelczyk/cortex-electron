@@ -19,6 +19,10 @@ export function registerHandlers(db: Database.Database): void {
   ipcMain.handle('tasks:create', async (_, input) => taskService.create(input));
   ipcMain.handle('tasks:update', async (_, id: string, input) => taskService.update(id, input));
   ipcMain.handle('tasks:delete', async (_, id: string) => taskService.delete(id));
+  ipcMain.handle('tasks:listTrashed', async () => taskService.listTrashed());
+  ipcMain.handle('tasks:restore', async (_, id: string) => taskService.restore(id));
+  ipcMain.handle('tasks:emptyTrash', async () => taskService.emptyTrash());
+  ipcMain.handle('tasks:purgeExpiredTrash', async (_, days: number) => taskService.purgeExpiredTrash(days));
 
   // Projects
   ipcMain.handle('projects:list', async () => projectService.getAll());

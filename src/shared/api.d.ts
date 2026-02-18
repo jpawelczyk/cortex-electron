@@ -13,6 +13,10 @@ declare global {
         create(input: CreateTaskInput): Promise<Task>;
         update(id: string, input: UpdateTaskInput): Promise<Task>;
         delete(id: string): Promise<void>;
+        listTrashed(): Promise<Task[]>;
+        restore(id: string): Promise<Task>;
+        emptyTrash(): Promise<void>;
+        purgeExpiredTrash(days: number): Promise<void>;
       };
       projects: {
         list(): Promise<Project[]>;

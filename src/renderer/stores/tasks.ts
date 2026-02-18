@@ -11,6 +11,11 @@ export interface TaskSlice {
   updateTask: (id: string, input: UpdateTaskInput) => Promise<Task>;
   deleteTask: (id: string) => Promise<void>;
 
+  trashedTasks: Task[];
+  fetchTrashedTasks: () => Promise<void>;
+  restoreTask: (id: string) => Promise<void>;
+  emptyTrash: () => Promise<void>;
+
   getTasksByStatus: (status: string) => Task[];
   getTasksByProject: (projectId: string) => Task[];
   getInboxTasks: () => Task[];
@@ -46,10 +51,35 @@ export const createTaskSlice: StateCreator<TaskSlice> = (set, get) => ({
   },
 
   deleteTask: async (id) => {
+    const task = get().tasks.find((t) => t.id === id);
     await window.cortex.tasks.delete(id);
     set((state) => ({
       tasks: state.tasks.filter((t) => t.id !== id),
+      trashedTasks: task
+        ? [...state.trashedTasks, { ...task, deleted_at: new Date().toISOString() }]
+        : state.trashedTasks,
     }));
+  },
+
+  trashedTasks: [],
+
+  fetchTrashedTasks: async () => {
+    window.cortex.tasks.purgeExpiredTrash(30).catch(() => {});
+    const trashedTasks = await window.cortex.tasks.listTrashed() as Task[];
+    set({ trashedTasks });
+  },
+
+  restoreTask: async (id) => {
+    const restored = await window.cortex.tasks.restore(id) as Task;
+    set((state) => ({
+      trashedTasks: state.trashedTasks.filter((t) => t.id !== id),
+      tasks: [...state.tasks, restored],
+    }));
+  },
+
+  emptyTrash: async () => {
+    await window.cortex.tasks.emptyTrash();
+    set({ trashedTasks: [] });
   },
 
   getTasksByStatus: (status) => get().tasks.filter((t) => t.status === status),

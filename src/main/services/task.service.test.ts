@@ -234,4 +234,112 @@ describe('TaskService', () => {
       ).rejects.toThrow('Task not found');
     });
   });
+
+  describe('trash', () => {
+    it('listTrashed returns soft-deleted tasks', async () => {
+      const task1 = await taskService.create({ title: 'Deleted task' });
+      await taskService.create({ title: 'Active task' });
+      await taskService.delete(task1.id);
+
+      const trashed = await taskService.listTrashed();
+
+      expect(trashed).toHaveLength(1);
+      expect(trashed[0].id).toBe(task1.id);
+    });
+
+    it('listTrashed excludes permanently deleted tasks', async () => {
+      const task1 = await taskService.create({ title: 'Trashed' });
+      const task2 = await taskService.create({ title: 'Emptied' });
+      await taskService.delete(task1.id);
+      await taskService.delete(task2.id);
+
+      // Manually set permanently_deleted_at on task2
+      const now = new Date().toISOString();
+      db.db.prepare(
+        'UPDATE tasks SET permanently_deleted_at = ? WHERE id = ?'
+      ).run(now, task2.id);
+
+      const trashed = await taskService.listTrashed();
+
+      expect(trashed).toHaveLength(1);
+      expect(trashed[0].id).toBe(task1.id);
+    });
+
+    it('listTrashed orders by deleted_at descending', async () => {
+      const task1 = await taskService.create({ title: 'First deleted' });
+      const task2 = await taskService.create({ title: 'Second deleted' });
+      await taskService.delete(task1.id);
+      await new Promise(r => setTimeout(r, 10));
+      await taskService.delete(task2.id);
+
+      const trashed = await taskService.listTrashed();
+
+      expect(trashed[0].id).toBe(task2.id);
+      expect(trashed[1].id).toBe(task1.id);
+    });
+
+    it('restore clears deleted_at and returns task to inbox', async () => {
+      const task = await taskService.create({ title: 'To restore', status: 'today' });
+      await taskService.delete(task.id);
+
+      const restored = await taskService.restore(task.id);
+
+      expect(restored.deleted_at).toBeNull();
+      expect(restored.status).toBe('inbox');
+      const raw = db.getRawTask(task.id);
+      expect(raw?.deleted_at).toBeNull();
+    });
+
+    it('restore throws if task is not in trash', async () => {
+      const task = await taskService.create({ title: 'Active' });
+
+      await expect(
+        taskService.restore(task.id)
+      ).rejects.toThrow('Task is not in trash');
+    });
+
+    it('restore throws for non-existent task', async () => {
+      await expect(
+        taskService.restore('non-existent')
+      ).rejects.toThrow('Task is not in trash');
+    });
+
+    it('emptyTrash sets permanently_deleted_at on all trashed tasks', async () => {
+      const task1 = await taskService.create({ title: 'Trash 1' });
+      const task2 = await taskService.create({ title: 'Trash 2' });
+      await taskService.create({ title: 'Active' });
+      await taskService.delete(task1.id);
+      await taskService.delete(task2.id);
+
+      await taskService.emptyTrash();
+
+      const raw1 = db.getRawTask(task1.id);
+      const raw2 = db.getRawTask(task2.id);
+      expect(raw1?.permanently_deleted_at).not.toBeNull();
+      expect(raw2?.permanently_deleted_at).not.toBeNull();
+
+      const trashed = await taskService.listTrashed();
+      expect(trashed).toHaveLength(0);
+    });
+
+    it('purgeExpiredTrash sets permanently_deleted_at for old trashed tasks', async () => {
+      const task1 = await taskService.create({ title: 'Old trash' });
+      const task2 = await taskService.create({ title: 'Recent trash' });
+      await taskService.delete(task1.id);
+      await taskService.delete(task2.id);
+
+      // Backdate task1's deleted_at to 31 days ago
+      const oldDate = new Date(Date.now() - 31 * 24 * 60 * 60 * 1000).toISOString();
+      db.db.prepare(
+        'UPDATE tasks SET deleted_at = ? WHERE id = ?'
+      ).run(oldDate, task1.id);
+
+      await taskService.purgeExpiredTrash(30);
+
+      const raw1 = db.getRawTask(task1.id);
+      const raw2 = db.getRawTask(task2.id);
+      expect(raw1?.permanently_deleted_at).not.toBeNull();
+      expect(raw2?.permanently_deleted_at).toBeNull();
+    });
+  });
 });

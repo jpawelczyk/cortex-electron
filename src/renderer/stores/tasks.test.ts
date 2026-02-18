@@ -29,6 +29,10 @@ const mockCortex = {
     create: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
+    listTrashed: vi.fn(),
+    restore: vi.fn(),
+    emptyTrash: vi.fn(),
+    purgeExpiredTrash: vi.fn(),
   },
 };
 
@@ -141,6 +145,57 @@ describe('TaskSlice', () => {
       mockCortex.tasks.delete.mockResolvedValue(undefined);
 
       const store = createStore({ tasks: [fakeTask()] });
+      await store.deleteTask('task-1');
+
+      expect(mockCortex.tasks.delete).toHaveBeenCalledWith('task-1');
+    });
+  });
+
+  describe('trash', () => {
+    it('starts with empty trashedTasks array', () => {
+      const store = createStore();
+      expect(store.trashedTasks).toEqual([]);
+    });
+
+    it('fetchTrashedTasks populates trashedTasks from IPC', async () => {
+      const trashed = [fakeTask({ id: 'del-1', deleted_at: '2026-02-17T00:00:00.000Z' })];
+      mockCortex.tasks.listTrashed.mockResolvedValue(trashed);
+      mockCortex.tasks.purgeExpiredTrash.mockResolvedValue(undefined);
+
+      const store = createStore();
+      await store.fetchTrashedTasks();
+
+      expect(mockCortex.tasks.listTrashed).toHaveBeenCalledOnce();
+      expect(mockCortex.tasks.purgeExpiredTrash).toHaveBeenCalledWith(30);
+    });
+
+    it('restoreTask calls IPC and moves task from trashedTasks to tasks', async () => {
+      const trashedTask = fakeTask({ id: 'del-1', deleted_at: '2026-02-17T00:00:00.000Z' });
+      const restoredTask = fakeTask({ id: 'del-1', deleted_at: null, status: 'inbox' });
+      mockCortex.tasks.restore.mockResolvedValue(restoredTask);
+
+      const store = createStore({ trashedTasks: [trashedTask], tasks: [] });
+      await store.restoreTask('del-1');
+
+      expect(mockCortex.tasks.restore).toHaveBeenCalledWith('del-1');
+    });
+
+    it('emptyTrash calls IPC and clears trashedTasks', async () => {
+      mockCortex.tasks.emptyTrash.mockResolvedValue(undefined);
+
+      const store = createStore({
+        trashedTasks: [fakeTask({ id: 'del-1', deleted_at: '2026-02-17T00:00:00.000Z' })],
+      });
+      await store.emptyTrash();
+
+      expect(mockCortex.tasks.emptyTrash).toHaveBeenCalledOnce();
+    });
+
+    it('deleteTask pushes removed task into trashedTasks', async () => {
+      mockCortex.tasks.delete.mockResolvedValue(undefined);
+
+      const task = fakeTask({ id: 'task-1' });
+      const store = createStore({ tasks: [task], trashedTasks: [] });
       await store.deleteTask('task-1');
 
       expect(mockCortex.tasks.delete).toHaveBeenCalledWith('task-1');

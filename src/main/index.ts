@@ -4,6 +4,7 @@ import path from 'path';
 import { initDatabase, closeDatabase, getDb } from './db/index.js';
 import { registerHandlers } from './ipc/handlers.js';
 import { registerGlobalShortcuts, unregisterGlobalShortcuts } from './shortcuts.js';
+import { createTaskService } from './services/task.service.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -76,7 +77,13 @@ app.on('second-instance', () => {
 
 app.whenReady().then(() => {
   initDatabase();
-  registerHandlers(getDb());
+  const db = getDb();
+  registerHandlers(db);
+
+  // Auto-purge trash items older than 30 days
+  const taskService = createTaskService({ db } as any);
+  taskService.purgeExpiredTrash(30).catch(() => {});
+
   createWindow();
   registerGlobalShortcuts(mainWindow!);
 

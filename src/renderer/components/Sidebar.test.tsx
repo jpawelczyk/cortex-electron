@@ -8,7 +8,7 @@ describe('Sidebar', () => {
   const defaultProps = {
     activeView: 'inbox' as const,
     onViewChange: vi.fn(),
-    taskCounts: { inbox: 3, today: 1, upcoming: 5, anytime: 2, someday: 0, logbook: 10 },
+    taskCounts: { inbox: 3, today: 1, upcoming: 5, anytime: 2, someday: 0, logbook: 10, trash: 4 },
   };
 
   it('renders navigation items', () => {
@@ -46,5 +46,22 @@ describe('Sidebar', () => {
     const somedayItem = screen.getByText('Someday').closest('button');
     // "0" should not appear as a badge within the someday button
     expect(somedayItem).not.toHaveTextContent('0');
+  });
+
+  it('renders Trash nav item', () => {
+    render(<Sidebar {...defaultProps} />);
+    expect(screen.getByText('Trash')).toBeInTheDocument();
+  });
+
+  it('calls onViewChange with trash when Trash clicked', () => {
+    const onViewChange = vi.fn();
+    render(<Sidebar {...defaultProps} onViewChange={onViewChange} />);
+    fireEvent.click(screen.getByText('Trash'));
+    expect(onViewChange).toHaveBeenCalledWith('trash');
+  });
+
+  it('shows trash count when items exist', () => {
+    render(<Sidebar {...defaultProps} />);
+    expect(screen.getByText('4')).toBeInTheDocument();
   });
 });

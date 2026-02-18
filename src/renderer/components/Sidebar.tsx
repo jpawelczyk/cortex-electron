@@ -1,6 +1,6 @@
-import { Inbox, Sun, Calendar, Layers, Cloud, BookOpen, Settings } from 'lucide-react';
+import { Inbox, Sun, Calendar, Layers, Cloud, BookOpen, Trash2, Settings } from 'lucide-react';
 
-export type SidebarView = 'inbox' | 'today' | 'upcoming' | 'anytime' | 'someday' | 'logbook';
+export type SidebarView = 'inbox' | 'today' | 'upcoming' | 'anytime' | 'someday' | 'logbook' | 'trash';
 
 interface TaskCounts {
   inbox: number;
@@ -9,6 +9,7 @@ interface TaskCounts {
   anytime: number;
   someday: number;
   logbook: number;
+  trash: number;
 }
 
 interface SidebarProps {
@@ -60,8 +61,30 @@ export function Sidebar({ activeView, onViewChange, taskCounts }: SidebarProps) 
         })}
       </div>
 
-      {/* Settings */}
-      <div className="no-drag px-3 py-3">
+      {/* Bottom section: Trash + Settings */}
+      <div className="no-drag px-3 py-3 flex flex-col gap-0.5">
+        {(() => {
+          const isActive = activeView === 'trash';
+          const count = taskCounts.trash;
+          return (
+            <button
+              onClick={() => onViewChange('trash')}
+              className={`flex items-center gap-3 rounded-md px-3 py-1.5 text-[13px] font-medium transition-all duration-150 w-full text-left cursor-default ${
+                isActive
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-muted-foreground hover:bg-accent/40 hover:text-foreground'
+              }`}
+            >
+              <Trash2 className="size-4 shrink-0" strokeWidth={1.75} />
+              <span className="flex-1">Trash</span>
+              {count > 0 && (
+                <span className={`text-xs tabular-nums ${isActive ? 'text-primary/70' : 'text-muted-foreground/70'}`}>
+                  {count}
+                </span>
+              )}
+            </button>
+          );
+        })()}
         <button
           className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
         >

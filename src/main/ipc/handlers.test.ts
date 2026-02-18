@@ -32,12 +32,13 @@ describe('IPC handlers', () => {
     return call[1];
   }
 
-  it('registers all 15 channels', () => {
+  it('registers all expected channels', () => {
     registerHandlers(testDb.db);
 
     const channels = vi.mocked(ipcMain.handle).mock.calls.map(([ch]) => ch);
     const expected = [
       'tasks:list', 'tasks:get', 'tasks:create', 'tasks:update', 'tasks:delete',
+      'tasks:listTrashed', 'tasks:restore', 'tasks:emptyTrash', 'tasks:purgeExpiredTrash',
       'projects:list', 'projects:get', 'projects:create', 'projects:update', 'projects:delete',
       'contexts:list', 'contexts:get', 'contexts:create', 'contexts:update', 'contexts:delete',
     ];
@@ -45,6 +46,7 @@ describe('IPC handlers', () => {
     for (const channel of expected) {
       expect(channels).toContain(channel);
     }
+    expect(channels).toHaveLength(expected.length + 5); // +5 for stakeholder channels
   });
 
   describe('tasks', () => {
@@ -95,6 +97,48 @@ describe('IPC handlers', () => {
       const raw = testDb.getRawTask(created.id);
       expect(raw).toBeDefined();
       expect(raw!.deleted_at).not.toBeNull();
+    });
+
+    it('tasks:listTrashed returns deleted tasks', async () => {
+      registerHandlers(testDb.db);
+      const handlers = Object.fromEntries(
+        vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
+      );
+
+      const created = await handlers['tasks:create']({} as any, { title: 'Trash me' });
+      await handlers['tasks:delete']({} as any, created.id);
+
+      const trashed = await handlers['tasks:listTrashed']({} as any);
+      expect(trashed).toHaveLength(1);
+      expect(trashed[0].id).toBe(created.id);
+    });
+
+    it('tasks:restore brings task back from trash', async () => {
+      registerHandlers(testDb.db);
+      const handlers = Object.fromEntries(
+        vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
+      );
+
+      const created = await handlers['tasks:create']({} as any, { title: 'Restore me' });
+      await handlers['tasks:delete']({} as any, created.id);
+
+      const restored = await handlers['tasks:restore']({} as any, created.id);
+      expect(restored.deleted_at).toBeNull();
+      expect(restored.status).toBe('inbox');
+    });
+
+    it('tasks:emptyTrash permanently deletes all trashed tasks', async () => {
+      registerHandlers(testDb.db);
+      const handlers = Object.fromEntries(
+        vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
+      );
+
+      const created = await handlers['tasks:create']({} as any, { title: 'Emptied' });
+      await handlers['tasks:delete']({} as any, created.id);
+      await handlers['tasks:emptyTrash']({} as any);
+
+      const trashed = await handlers['tasks:listTrashed']({} as any);
+      expect(trashed).toHaveLength(0);
     });
   });
 

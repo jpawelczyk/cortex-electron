@@ -8,6 +8,10 @@ export interface TaskService {
   list(): Promise<Task[]>;
   update(id: string, input: UpdateTaskInput): Promise<Task>;
   delete(id: string): Promise<void>;
+  listTrashed(): Promise<Task[]>;
+  restore(id: string): Promise<Task>;
+  emptyTrash(): Promise<void>;
+  purgeExpiredTrash(days: number): Promise<void>;
 }
 
 export function createTaskService(testDb: TestDb): TaskService {
@@ -134,6 +138,44 @@ export function createTaskService(testDb: TestDb): TaskService {
       db.prepare(
         'UPDATE tasks SET deleted_at = ?, updated_at = ? WHERE id = ?'
       ).run(now, now, id);
+    },
+
+    async listTrashed(): Promise<Task[]> {
+      return db.prepare(
+        'SELECT * FROM tasks WHERE deleted_at IS NOT NULL AND permanently_deleted_at IS NULL ORDER BY deleted_at DESC'
+      ).all() as Task[];
+    },
+
+    async restore(id: string): Promise<Task> {
+      const row = db.prepare(
+        'SELECT * FROM tasks WHERE id = ? AND deleted_at IS NOT NULL AND permanently_deleted_at IS NULL'
+      ).get(id) as Task | undefined;
+
+      if (!row) {
+        throw new Error('Task is not in trash');
+      }
+
+      const now = new Date().toISOString();
+      db.prepare(
+        'UPDATE tasks SET deleted_at = NULL, status = ?, updated_at = ? WHERE id = ?'
+      ).run('inbox', now, id);
+
+      return { ...row, deleted_at: null, status: 'inbox', updated_at: now };
+    },
+
+    async emptyTrash(): Promise<void> {
+      const now = new Date().toISOString();
+      db.prepare(
+        'UPDATE tasks SET permanently_deleted_at = ? WHERE deleted_at IS NOT NULL AND permanently_deleted_at IS NULL'
+      ).run(now);
+    },
+
+    async purgeExpiredTrash(days: number): Promise<void> {
+      const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+      const now = new Date().toISOString();
+      db.prepare(
+        'UPDATE tasks SET permanently_deleted_at = ? WHERE deleted_at IS NOT NULL AND permanently_deleted_at IS NULL AND deleted_at < ?'
+      ).run(now, cutoff);
     },
   };
 }

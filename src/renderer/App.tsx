@@ -1,20 +1,27 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Plus, Search } from 'lucide-react';
 import { useStore } from './stores';
 import { Sidebar, SidebarView } from './components/Sidebar';
 import { InboxView } from './views/InboxView';
 import { TodayView } from './views/TodayView';
+import { TrashView } from './views/TrashView';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
 
 export default function App() {
   const [activeView, setActiveView] = useState<SidebarView>('inbox');
   const tasks = useStore((s) => s.tasks);
+  const trashedTasks = useStore((s) => s.trashedTasks);
+  const fetchTrashedTasks = useStore((s) => s.fetchTrashedTasks);
   const deselectTask = useStore((s) => s.deselectTask);
   const startInlineCreate = useStore((s) => s.startInlineCreate);
 
   useKeyboardShortcuts({ setActiveView, deselectTask, startInlineCreate, activeView });
   useGlobalShortcuts({ setActiveView, startInlineCreate });
+
+  useEffect(() => {
+    fetchTrashedTasks();
+  }, [fetchTrashedTasks]);
 
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
@@ -31,8 +38,9 @@ export default function App() {
       anytime: tasks.filter((t) => t.status === 'anytime').length,
       someday: tasks.filter((t) => t.status === 'someday').length,
       logbook: tasks.filter((t) => t.status === 'logbook').length,
+      trash: trashedTasks.length,
     };
-  }, [tasks, today]);
+  }, [tasks, trashedTasks, today]);
 
   return (
     <div className="flex h-screen bg-background text-foreground overflow-hidden">
@@ -60,7 +68,8 @@ export default function App() {
 
         {activeView === 'inbox' && <InboxView />}
         {activeView === 'today' && <TodayView />}
-        {activeView !== 'inbox' && activeView !== 'today' && (
+        {activeView === 'trash' && <TrashView />}
+        {activeView !== 'inbox' && activeView !== 'today' && activeView !== 'trash' && (
           <div className="flex-1 flex items-center justify-center text-muted-foreground">
             <p className="text-sm">{activeView.charAt(0).toUpperCase() + activeView.slice(1)} — coming soon</p>
           </div>

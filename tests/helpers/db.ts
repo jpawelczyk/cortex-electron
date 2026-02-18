@@ -108,7 +108,8 @@ export function createTestDb(): TestDb {
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL,
       completed_at TEXT,
-      deleted_at TEXT
+      deleted_at TEXT,
+      permanently_deleted_at TEXT
     );
   `);
 

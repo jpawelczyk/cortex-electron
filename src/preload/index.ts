@@ -7,6 +7,10 @@ const api = {
     create: (input: unknown): Promise<unknown> => ipcRenderer.invoke('tasks:create', input),
     update: (id: string, input: unknown): Promise<unknown> => ipcRenderer.invoke('tasks:update', id, input),
     delete: (id: string): Promise<void> => ipcRenderer.invoke('tasks:delete', id),
+    listTrashed: (): Promise<unknown[]> => ipcRenderer.invoke('tasks:listTrashed'),
+    restore: (id: string): Promise<unknown> => ipcRenderer.invoke('tasks:restore', id),
+    emptyTrash: (): Promise<void> => ipcRenderer.invoke('tasks:emptyTrash'),
+    purgeExpiredTrash: (days: number): Promise<void> => ipcRenderer.invoke('tasks:purgeExpiredTrash', days),
   },
 
   projects: {
