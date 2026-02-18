@@ -367,24 +367,12 @@ describe('TaskItem (expanded)', () => {
     expect(screen.getByLabelText('Cancel delete task')).toBeInTheDocument();
   });
 
-  it('delays deleteTask call for exit animation', () => {
-    render(
-      <TaskItem task={fakeTask({ id: 'task-99' })} onComplete={vi.fn()} isExpanded />
-    );
-    fireEvent.click(screen.getByLabelText('Delete task'));
-    fireEvent.click(screen.getByLabelText('Confirm delete task'));
-    expect(mockDeleteTask).not.toHaveBeenCalled();
-    vi.advanceTimersByTime(150);
-    expect(mockDeleteTask).toHaveBeenCalledWith('task-99');
-  });
-
   it('calls deleteTask when confirm button is clicked', () => {
     render(
       <TaskItem task={fakeTask({ id: 'task-99' })} onComplete={vi.fn()} isExpanded />
     );
     fireEvent.click(screen.getByLabelText('Delete task'));
     fireEvent.click(screen.getByLabelText('Confirm delete task'));
-    vi.advanceTimersByTime(150);
     expect(mockDeleteTask).toHaveBeenCalledWith('task-99');
   });
 

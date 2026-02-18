@@ -1,7 +1,12 @@
-import { useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { Task } from '@shared/types';
 import { TaskItem } from './TaskItem';
-import { useFlipAnimation } from '../hooks/useFlipAnimation';
+
+const taskVariants = {
+  initial: { opacity: 0, y: -8 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -8 },
+};
 
 interface TaskListProps {
   tasks: Task[];
@@ -13,9 +18,6 @@ interface TaskListProps {
 }
 
 export function TaskList({ tasks, title, onCompleteTask, onSelectTask, selectedTaskId, completedIds }: TaskListProps) {
-  const listRef = useRef<HTMLDivElement>(null);
-  useFlipAnimation(listRef);
-
   return (
     <div>
       {title && (
@@ -30,18 +32,30 @@ export function TaskList({ tasks, title, onCompleteTask, onSelectTask, selectedT
       {tasks.length === 0 ? (
         <p className="px-3 py-8 text-sm text-muted-foreground text-center">No tasks</p>
       ) : (
-        <div ref={listRef} className="flex flex-col">
-          {tasks.map((task) => (
-            <TaskItem
-              key={task.id}
-              task={task}
-              onComplete={onCompleteTask}
-              onSelect={onSelectTask}
-              isSelected={selectedTaskId === task.id}
-              isExpanded={selectedTaskId === task.id}
-              isCompleted={completedIds?.has(task.id)}
-            />
-          ))}
+        <div className="flex flex-col">
+          <AnimatePresence mode="popLayout">
+            {tasks.map((task) => (
+              <motion.div
+                key={task.id}
+                layout
+                variants={taskVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                transition={{ duration: 0.2, ease: [0.2, 0, 0, 1] }}
+              >
+                <TaskItem
+                  key={task.id}
+                  task={task}
+                  onComplete={onCompleteTask}
+                  onSelect={onSelectTask}
+                  isSelected={selectedTaskId === task.id}
+                  isExpanded={selectedTaskId === task.id}
+                  isCompleted={completedIds?.has(task.id)}
+                />
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
       )}
     </div>

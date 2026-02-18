@@ -7,7 +7,6 @@ import { DatePickerButton } from './DatePickerButton';
 import { cn } from '../lib/utils';
 
 const DEBOUNCE_MS = 500;
-const EXIT_DURATION_MS = 150;
 
 const PRIORITY_COLORS: Record<string, string> = {
   P0: 'text-red-500',
@@ -31,7 +30,6 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, i
   const deselectTask = useStore((s) => s.deselectTask);
 
   const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const [isExiting, setIsExiting] = useState(false);
   const isCompleted = isCompletedProp ?? (task.status === 'logbook');
   const cardRef = useRef<HTMLDivElement>(null);
   const notesRef = useRef<HTMLTextAreaElement>(null);
@@ -104,10 +102,7 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, i
   const handleDelete = useCallback(() => {
     flushTitle();
     flushNotes();
-    setIsExiting(true);
-    setTimeout(() => {
-      deleteTask(task.id);
-    }, EXIT_DURATION_MS);
+    deleteTask(task.id);
   }, [flushTitle, flushNotes, deleteTask, task.id]);
 
   // Click-outside handler
@@ -175,18 +170,16 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, i
     <div
       ref={cardRef}
       data-testid="task-item"
-      data-flip-key={task.id}
       onClick={handleRowClick}
       className={cn(
         'rounded-xl cursor-default border',
-        'transition-[background-color,border-color,box-shadow,opacity,transform] duration-200 ease-out',
+        'transition-[background-color,border-color,box-shadow] duration-200 ease-out',
         isExpanded
           ? 'bg-card border-border shadow-sm my-2'
           : cn(
               'group border-transparent',
               isSelected ? 'bg-accent' : 'hover:bg-accent/40',
             ),
-        isExiting && 'opacity-0 -translate-y-2 pointer-events-none duration-150',
       )}
     >
       {/* Title row */}
