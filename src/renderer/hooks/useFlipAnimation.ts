@@ -13,10 +13,10 @@ const FLIP_EASING = 'cubic-bezier(0.2, 0, 0, 1)';
  * How it works (all in a single useLayoutEffect, before paint):
  * 1. Cancel any in-flight FLIP animations (so getBoundingClientRect
  *    returns the true layout position, not a mid-animation offset).
- * 2. Read each child's current bounding rect (the "Last" position).
- * 3. Compare with stored "First" positions from the previous render.
+ * 2. Snapshot current positions BEFORE starting new animations
+ *    (avoids polluting stored rects with animation transforms).
+ * 3. Compare with stored positions from the previous render.
  * 4. Animate the delta via Web Animations API.
- * 5. Store current positions for the next render.
  */
 export function useFlipAnimation(containerRef: RefObject<HTMLElement | null>) {
   const positions = useRef(new Map<string, DOMRect>());
@@ -38,7 +38,19 @@ export function useFlipAnimation(containerRef: RefObject<HTMLElement | null>) {
 
     const oldPositions = positions.current;
 
-    // 2-3. Read new positions and animate deltas
+    // 2. Snapshot current positions BEFORE starting new animations.
+    //    This is critical: getBoundingClientRect() includes Web Animation
+    //    transforms, so reading after el.animate() would store the animated
+    //    offset instead of the true layout position, causing animations to
+    //    restart incorrectly on rapid re-renders.
+    const newPositions = new Map<string, DOMRect>();
+    for (const child of container.children) {
+      const key = (child as HTMLElement).dataset.flipKey;
+      if (key) newPositions.set(key, child.getBoundingClientRect());
+    }
+    positions.current = newPositions;
+
+    // 3-4. Compare with old positions and animate deltas
     if (supportsAnimate && oldPositions.size > 0) {
       for (const child of container.children) {
         const el = child as HTMLElement;
@@ -60,7 +72,9 @@ export function useFlipAnimation(containerRef: RefObject<HTMLElement | null>) {
           continue;
         }
 
-        const newRect = el.getBoundingClientRect();
+        const newRect = newPositions.get(key);
+        if (!newRect) continue;
+
         const deltaY = oldRect.top - newRect.top;
         if (Math.abs(deltaY) < 1) continue;
 
@@ -75,13 +89,5 @@ export function useFlipAnimation(containerRef: RefObject<HTMLElement | null>) {
         animation.onfinish = () => activeAnimations.current.delete(key);
       }
     }
-
-    // 4. Snapshot positions for next render
-    const next = new Map<string, DOMRect>();
-    for (const child of container.children) {
-      const key = (child as HTMLElement).dataset.flipKey;
-      if (key) next.set(key, child.getBoundingClientRect());
-    }
-    positions.current = next;
   });
 }

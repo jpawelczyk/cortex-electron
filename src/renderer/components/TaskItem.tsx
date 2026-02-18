@@ -179,7 +179,7 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, i
       onClick={handleRowClick}
       className={cn(
         'rounded-xl cursor-default border',
-        'transition-[background-color,border-color,box-shadow,margin,opacity,transform] duration-200 ease-out',
+        'transition-[background-color,border-color,box-shadow,opacity,transform] duration-200 ease-out',
         isExpanded
           ? 'bg-card border-border shadow-sm my-2'
           : cn(
