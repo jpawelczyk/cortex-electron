@@ -5,6 +5,7 @@ import { Sidebar, SidebarView } from './components/Sidebar';
 import { InboxView } from './views/InboxView';
 import { TodayView } from './views/TodayView';
 import { TrashView } from './views/TrashView';
+import { LogbookView } from './views/LogbookView';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
 
@@ -69,7 +70,8 @@ export default function App() {
         {activeView === 'inbox' && <InboxView />}
         {activeView === 'today' && <TodayView />}
         {activeView === 'trash' && <TrashView />}
-        {activeView !== 'inbox' && activeView !== 'today' && activeView !== 'trash' && (
+        {activeView === 'logbook' && <LogbookView />}
+        {activeView !== 'inbox' && activeView !== 'today' && activeView !== 'trash' && activeView !== 'logbook' && (
           <div className="flex-1 flex items-center justify-center text-muted-foreground">
             <p className="text-sm">{activeView.charAt(0).toUpperCase() + activeView.slice(1)} — coming soon</p>
           </div>
