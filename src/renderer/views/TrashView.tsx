@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Trash2, RotateCcw } from 'lucide-react';
 import { useStore } from '../stores';
 
@@ -7,6 +7,8 @@ export function TrashView() {
   const fetchTrashedTasks = useStore((s) => s.fetchTrashedTasks);
   const restoreTask = useStore((s) => s.restoreTask);
   const emptyTrash = useStore((s) => s.emptyTrash);
+
+  const [confirming, setConfirming] = useState(false);
 
   useEffect(() => {
     fetchTrashedTasks();
@@ -27,12 +29,29 @@ export function TrashView() {
             )}
           </div>
           {count > 0 && (
-            <button
-              onClick={() => emptyTrash()}
-              className="text-sm text-destructive hover:text-destructive/80 font-medium transition-colors"
-            >
-              Empty Trash
-            </button>
+            <div className="flex items-center gap-3">
+              {confirming && (
+                <button
+                  onClick={() => setConfirming(false)}
+                  className="text-sm text-muted-foreground hover:text-foreground font-medium transition-colors"
+                >
+                  Cancel
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  if (confirming) {
+                    emptyTrash();
+                    setConfirming(false);
+                  } else {
+                    setConfirming(true);
+                  }
+                }}
+                className="text-sm text-destructive hover:text-destructive/80 font-medium transition-colors"
+              >
+                {confirming ? 'Are you sure?' : 'Empty Trash'}
+              </button>
+            </div>
           )}
         </div>
 

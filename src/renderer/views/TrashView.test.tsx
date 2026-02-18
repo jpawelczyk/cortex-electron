@@ -87,11 +87,30 @@ describe('TrashView', () => {
     expect(screen.queryByText('Empty Trash')).not.toBeInTheDocument();
   });
 
-  it('calls emptyTrash when Empty Trash clicked', () => {
+  it('does not call emptyTrash on first click — shows confirmation', () => {
     mockStore.trashedTasks = [fakeTask()];
     render(<TrashView />);
     fireEvent.click(screen.getByText('Empty Trash'));
+    expect(mockStore.emptyTrash).not.toHaveBeenCalled();
+    expect(screen.getByText('Are you sure?')).toBeInTheDocument();
+  });
+
+  it('calls emptyTrash on confirmation click', () => {
+    mockStore.trashedTasks = [fakeTask()];
+    render(<TrashView />);
+    fireEvent.click(screen.getByText('Empty Trash'));
+    fireEvent.click(screen.getByText('Are you sure?'));
     expect(mockStore.emptyTrash).toHaveBeenCalledOnce();
+  });
+
+  it('resets confirmation when Cancel clicked', () => {
+    mockStore.trashedTasks = [fakeTask()];
+    render(<TrashView />);
+    fireEvent.click(screen.getByText('Empty Trash'));
+    expect(screen.getByText('Are you sure?')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('Cancel'));
+    expect(screen.getByText('Empty Trash')).toBeInTheDocument();
+    expect(screen.queryByText('Are you sure?')).not.toBeInTheDocument();
   });
 
   it('calls restoreTask when restore button clicked', () => {
