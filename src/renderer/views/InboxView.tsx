@@ -1,10 +1,22 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Inbox } from 'lucide-react';
+import type { Task } from '@shared/types';
 import { useStore } from '../stores';
 import { TaskList } from '../components/TaskList';
 import { InlineTaskCard } from '../components/InlineTaskCard';
 
 const SORT_DELAY_MS = 400;
+
+function isCompletedToday(task: Task): boolean {
+  if (!task.completed_at) return false;
+  const completed = new Date(task.completed_at);
+  const now = new Date();
+  return (
+    completed.getFullYear() === now.getFullYear() &&
+    completed.getMonth() === now.getMonth() &&
+    completed.getDate() === now.getDate()
+  );
+}
 
 export function InboxView() {
   const tasks = useStore((s) => s.tasks);
@@ -32,18 +44,24 @@ export function InboxView() {
 
   const inboxTasks = useMemo(() => {
     const visible = tasks.filter(
-      (t) => t.status === 'inbox' || (t.status === 'logbook' && everCompletedIds.current.has(t.id)),
+      (t) =>
+        t.status === 'inbox' ||
+        (t.status === 'logbook' &&
+          (isCompletedToday(t) || everCompletedIds.current.has(t.id))),
     );
     return visible.sort((a, b) => {
       const aIdx = settledIds.indexOf(a.id);
       const bIdx = settledIds.indexOf(b.id);
-      const aSettled = aIdx >= 0 ? 1 : 0;
-      const bSettled = bIdx >= 0 ? 1 : 0;
+      // A task is "settled" (sorted to bottom) if:
+      // - It passed the sort delay after in-session completion, OR
+      // - It's a logbook task loaded from the store (not completed in this session)
+      const aSettled = aIdx >= 0 || (a.status === 'logbook' && !completedIds.has(a.id)) ? 1 : 0;
+      const bSettled = bIdx >= 0 || (b.status === 'logbook' && !completedIds.has(b.id)) ? 1 : 0;
       if (aSettled !== bSettled) return aSettled - bSettled;
-      if (aSettled && bSettled) return aIdx - bIdx;
+      if (aSettled && bSettled && aIdx >= 0 && bIdx >= 0) return aIdx - bIdx;
       return 0;
     });
-  }, [tasks, completedIds, settledIds]); // completedIds included as recalc trigger
+  }, [tasks, completedIds, settledIds]);
 
   useEffect(() => {
     fetchTasks();
@@ -51,7 +69,10 @@ export function InboxView() {
 
   const handleComplete = useCallback(
     (id: string) => {
-      if (completedIds.has(id)) {
+      const task = tasks.find((t) => t.id === id);
+      const isAlreadyDone = completedIds.has(id) || task?.status === 'logbook';
+
+      if (isAlreadyDone) {
         // Uncomplete: restore to inbox
         updateTask(id, { status: 'inbox' });
         setCompletedIds((prev) => {
@@ -77,7 +98,7 @@ export function InboxView() {
         sortTimers.current.set(id, timer);
       }
     },
-    [completedIds, updateTask],
+    [tasks, completedIds, updateTask],
   );
 
   return (

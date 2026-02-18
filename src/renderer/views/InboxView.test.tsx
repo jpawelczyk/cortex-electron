@@ -231,15 +231,69 @@ describe('InboxView', () => {
       expect(screen.getByText('Task B')).toBeInTheDocument();
     });
 
-    it('does not show logbook tasks that were not completed in this session', () => {
+    it('shows logbook tasks completed today on fresh mount', () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-02-18T12:00:00'));
+
       mockTasks = [
-        fakeTask({ id: '1', title: 'Old completed', status: 'logbook', completed_at: '2026-01-01T00:00:00.000Z' }),
+        fakeTask({ id: '1', title: 'Done today', status: 'logbook', completed_at: '2026-02-18T10:00:00.000Z' }),
         fakeTask({ id: '2', title: 'Inbox task', status: 'inbox' }),
       ];
       render(<InboxView />);
 
-      expect(screen.queryByText('Old completed')).not.toBeInTheDocument();
+      expect(screen.getByText('Done today')).toBeInTheDocument();
       expect(screen.getByText('Inbox task')).toBeInTheDocument();
+
+      vi.useRealTimers();
+    });
+
+    it('sorts tasks completed today to the bottom on fresh mount', () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-02-18T12:00:00'));
+
+      mockTasks = [
+        fakeTask({ id: '1', title: 'Done today', status: 'logbook', completed_at: '2026-02-18T09:00:00.000Z' }),
+        fakeTask({ id: '2', title: 'Inbox task', status: 'inbox' }),
+      ];
+      render(<InboxView />);
+
+      const items = screen.getAllByTestId('task-item');
+      expect(items[0]).toHaveTextContent('Inbox task');
+      expect(items[1]).toHaveTextContent('Done today');
+
+      vi.useRealTimers();
+    });
+
+    it('does not show logbook tasks completed on previous days', () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-02-18T12:00:00'));
+
+      mockTasks = [
+        fakeTask({ id: '1', title: 'Done yesterday', status: 'logbook', completed_at: '2026-02-17T10:00:00.000Z' }),
+        fakeTask({ id: '2', title: 'Inbox task', status: 'inbox' }),
+      ];
+      render(<InboxView />);
+
+      expect(screen.queryByText('Done yesterday')).not.toBeInTheDocument();
+      expect(screen.getByText('Inbox task')).toBeInTheDocument();
+
+      vi.useRealTimers();
+    });
+
+    it('uncompletes a store-loaded logbook task on checkbox click', () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-02-18T12:00:00'));
+
+      mockTasks = [
+        fakeTask({ id: '1', title: 'Done today', status: 'logbook', completed_at: '2026-02-18T09:00:00.000Z' }),
+      ];
+      render(<InboxView />);
+
+      // Click checkbox on the already-completed task
+      screen.getByRole('checkbox').click();
+      expect(mockUpdateTask).toHaveBeenCalledWith('1', { status: 'inbox' });
+
+      vi.useRealTimers();
     });
   });
 });
