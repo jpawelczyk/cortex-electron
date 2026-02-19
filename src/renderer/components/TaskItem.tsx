@@ -215,7 +215,7 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, i
           />
         ) : (
           <span
-            className={`flex-1 text-[13px] leading-snug truncate line-through transition-[color,text-decoration-color] duration-300 ${isCompleted ? 'text-muted-foreground decoration-muted-foreground' : 'text-foreground decoration-transparent'}`}
+            className={`flex-1 text-[13px] leading-snug truncate transition-[color,text-decoration-line,text-decoration-color] duration-300 ${isCompleted ? 'line-through text-muted-foreground decoration-muted-foreground' : 'text-foreground'}`}
           >
             {task.title}
           </span>
