@@ -122,7 +122,14 @@ export function InboxView() {
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-5xl mx-auto px-8 py-8">
-        <h2 className="text-xl font-semibold text-foreground mb-6">Inbox</h2>
+        <div className="flex items-center gap-3 mb-6">
+          <h2 className="text-xl font-semibold text-foreground">Inbox</h2>
+          {inboxTasks.filter((t) => t.status !== 'logbook').length > 0 && (
+            <span className="text-xs text-muted-foreground bg-accent rounded-full size-5 inline-flex items-center justify-center">
+              {inboxTasks.filter((t) => t.status !== 'logbook').length}
+            </span>
+          )}
+        </div>
 
         {isInlineCreating && <InlineTaskCard />}
 
