@@ -49,7 +49,7 @@ export function InboxView() {
   const inboxTasks = useMemo(() => {
     const visible = tasks.filter(
       (t) =>
-        t.status === 'inbox' ||
+        (t.status === 'inbox' && !t.when_date) ||
         (t.status === 'logbook' &&
           (isCompletedToday(t) || everCompletedIds.current.has(t.id))),
     );

@@ -81,6 +81,16 @@ describe('InboxView', () => {
     expect(screen.queryByText('Today task')).not.toBeInTheDocument();
   });
 
+  it('excludes inbox tasks that have a when_date (already triaged)', () => {
+    mockTasks = [
+      fakeTask({ id: '1', title: 'Untriaged', status: 'inbox', when_date: null }),
+      fakeTask({ id: '2', title: 'Scheduled', status: 'inbox', when_date: '2026-02-19' }),
+    ];
+    render(<InboxView />);
+    expect(screen.getByText('Untriaged')).toBeInTheDocument();
+    expect(screen.queryByText('Scheduled')).not.toBeInTheDocument();
+  });
+
   it('shows inline task card when isInlineCreating is true', () => {
     mockIsInlineCreating = true;
     render(<InboxView />);
