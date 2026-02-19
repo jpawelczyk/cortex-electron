@@ -94,13 +94,15 @@ describe('TaskItem (collapsed)', () => {
     vi.useRealTimers();
   });
 
-  it('shows red deadline when overdue', () => {
+  it('shows overdue styling when deadline has passed', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-02-19T12:00:00'));
     render(
       <TaskItem task={fakeTask({ deadline: '2026-02-18' })} onComplete={vi.fn()} />
     );
-    expect(screen.getByTestId('deadline-badge').querySelector('.text-red-500')).not.toBeNull();
+    const badge = screen.getByTestId('deadline-badge');
+    expect(badge.querySelector('.bg-red-500\\/10')).not.toBeNull();
+    expect(badge.querySelector('.text-red-500')).not.toBeNull();
     vi.useRealTimers();
   });
 

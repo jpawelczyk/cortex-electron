@@ -14,7 +14,8 @@ function getDeadlineUrgency(deadline: string | null): string | undefined {
   today.setHours(0, 0, 0, 0);
   const deadlineDate = new Date(deadline + 'T00:00:00');
   const diffDays = Math.round((deadlineDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-  if (diffDays <= 0) return 'text-red-500';
+  if (diffDays < 0) return 'bg-red-500/10 text-red-500 rounded-md';
+  if (diffDays === 0) return 'text-red-500';
   if (diffDays === 1) return 'text-orange-500';
   return undefined;
 }
