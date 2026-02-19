@@ -34,12 +34,12 @@ export function DatePickerButton({ value, onChange, icon, label, className }: Da
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <div className={cn("inline-flex items-center rounded-md text-xs text-muted-foreground hover:bg-accent/60 transition-colors", className)}>
+      <div className={cn("inline-flex items-center rounded-md border border-transparent text-xs text-muted-foreground hover:bg-accent/60 transition-colors", className)}>
         <PopoverTrigger asChild>
           <button
             type="button"
             aria-label={label}
-            className="inline-flex items-center gap-1 px-1.5 py-1 cursor-pointer"
+            className={cn("inline-flex items-center gap-1 px-1.5 py-1 cursor-pointer", value && "w-[4.5rem] justify-center")}
           >
             {icon}
             {value && <span>{format(parseISO(value), 'MMM d')}</span>}

@@ -92,7 +92,7 @@ describe('TaskItem (collapsed)', () => {
     );
     const el = screen.getByTestId('deadline-badge').querySelector('.text-red-500');
     expect(el).not.toBeNull();
-    expect(el).not.toHaveClass('border');
+    expect(el).not.toHaveClass('border-red-500/30');
     vi.useRealTimers();
   });
 
@@ -105,7 +105,7 @@ describe('TaskItem (collapsed)', () => {
     const badge = screen.getByTestId('deadline-badge');
     const el = badge.querySelector('.text-red-500');
     expect(el).not.toBeNull();
-    expect(el).toHaveClass('border');
+    expect(el).toHaveClass('border-red-500/30');
     vi.useRealTimers();
   });
 
@@ -145,6 +145,16 @@ describe('TaskItem (collapsed)', () => {
       <TaskItem task={fakeTask({ when_date: '2026-03-10' })} onComplete={vi.fn()} />
     );
     expect(screen.getByTestId('when-date')).toHaveTextContent('Mar 10');
+  });
+
+  it('date picker buttons have fixed width only when value is set', () => {
+    render(
+      <TaskItem task={fakeTask({ when_date: null, deadline: '2026-12-25' })} onComplete={vi.fn()} />
+    );
+    const whenButton = within(screen.getByTestId('when-date')).getByRole('button');
+    const deadlineButton = within(screen.getByTestId('deadline-badge')).getByRole('button');
+    expect(whenButton).not.toHaveClass('w-[4.5rem]');
+    expect(deadlineButton).toHaveClass('w-[4.5rem]');
   });
 
   it('shows when_date icon without text when null', () => {
