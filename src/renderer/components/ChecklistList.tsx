@@ -40,7 +40,7 @@ function ChecklistItemRow({
     [item.id, item.title, taskId, updateChecklistItem],
   );
 
-  const { debouncedFn: debouncedSaveTitle, flush: flushTitle } =
+  const { debouncedFn: debouncedSaveTitle, flush: flushTitle, cancel: cancelTitle } =
     useDebouncedCallback(saveTitle, DEBOUNCE_MS);
 
   // Sync local state when item changes externally
@@ -78,14 +78,17 @@ function ChecklistItemRow({
     }
     if (e.key === 'Backspace' && title === '') {
       e.preventDefault();
+      cancelTitle();
       onBackspaceEmpty(item.id);
     }
   };
 
   const handleBlur = () => {
-    flushTitle();
     if (title.trim() === '') {
+      cancelTitle();
       onBackspaceEmpty(item.id);
+    } else {
+      flushTitle();
     }
   };
 
