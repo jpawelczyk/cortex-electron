@@ -28,25 +28,28 @@ describe('Global shortcuts', () => {
     vi.mocked(globalShortcut.unregisterAll).mockClear();
   });
 
-  it('registers CommandOrControl+Shift+Space', () => {
+  it.each([
+    'CommandOrControl+Shift+Space',
+    'CommandOrControl+Shift+N',
+  ])('registers %s', (accelerator) => {
     registerGlobalShortcuts(mockWindow as unknown as BrowserWindow);
     expect(globalShortcut.register).toHaveBeenCalledWith(
-      'CommandOrControl+Shift+Space',
+      accelerator,
       expect.any(Function),
     );
   });
 
-  it('shows and focuses window on shortcut trigger', () => {
+  it.each([0, 1])('shortcut %i shows and focuses window', (callIndex) => {
     registerGlobalShortcuts(mockWindow as unknown as BrowserWindow);
-    const callback = vi.mocked(globalShortcut.register).mock.calls[0][1];
+    const callback = vi.mocked(globalShortcut.register).mock.calls[callIndex][1];
     callback();
     expect(mockWindow.show).toHaveBeenCalled();
     expect(mockWindow.focus).toHaveBeenCalled();
   });
 
-  it('sends focus-task-input to renderer', () => {
+  it.each([0, 1])('shortcut %i sends focus-task-input to renderer', (callIndex) => {
     registerGlobalShortcuts(mockWindow as unknown as BrowserWindow);
-    const callback = vi.mocked(globalShortcut.register).mock.calls[0][1];
+    const callback = vi.mocked(globalShortcut.register).mock.calls[callIndex][1];
     callback();
     expect(mockWindow.webContents.send).toHaveBeenCalledWith('focus-task-input');
   });
