@@ -5,15 +5,22 @@ import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
 import { cn } from '../lib/utils';
 
+export interface DatePickerAction {
+  label: string;
+  icon: ReactNode;
+  onClick: () => void;
+}
+
 interface DatePickerButtonProps {
   value: string | null;
   onChange: (date: string | null) => void;
   icon: ReactNode;
   label: string;
   className?: string;
+  actions?: DatePickerAction[];
 }
 
-export function DatePickerButton({ value, onChange, icon, label, className }: DatePickerButtonProps) {
+export function DatePickerButton({ value, onChange, icon, label, className, actions }: DatePickerButtonProps) {
   const [open, setOpen] = useState(false);
 
   const selected = value ? parseISO(value) : undefined;
@@ -52,16 +59,35 @@ export function DatePickerButton({ value, onChange, icon, label, className }: Da
           selected={selected}
           onSelect={handleSelect}
         />
-        {value && (
-          <button
-            type="button"
-            aria-label={`Clear ${label.toLowerCase()}`}
-            onClick={handleClear}
-            className="flex items-center gap-1.5 w-full px-3 py-2 text-xs text-muted-foreground hover:bg-accent transition-colors border-t border-border cursor-pointer"
-          >
-            <X className="size-3" />
-            Clear
-          </button>
+        {(actions?.length || value) && (
+          <div className="border-t border-border">
+            {actions?.map((action) => (
+              <button
+                key={action.label}
+                type="button"
+                aria-label={action.label}
+                onClick={() => {
+                  action.onClick();
+                  setOpen(false);
+                }}
+                className="flex items-center gap-1.5 w-full px-3 py-2 text-xs text-muted-foreground hover:bg-accent transition-colors cursor-pointer"
+              >
+                {action.icon}
+                {action.label}
+              </button>
+            ))}
+            {value && (
+              <button
+                type="button"
+                aria-label={`Clear ${label.toLowerCase()}`}
+                onClick={handleClear}
+                className="flex items-center gap-1.5 w-full px-3 py-2 text-xs text-muted-foreground hover:bg-accent transition-colors cursor-pointer"
+              >
+                <X className="size-3" />
+                Clear
+              </button>
+            )}
+          </div>
         )}
       </PopoverContent>
     </Popover>

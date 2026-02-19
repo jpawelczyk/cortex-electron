@@ -197,6 +197,56 @@ describe('TaskItem (collapsed)', () => {
     expect(screen.getByRole('grid')).toBeInTheDocument();
   });
 
+  it('shows Someday and Anytime buttons in when-date popover', () => {
+    render(
+      <TaskItem task={fakeTask()} onComplete={vi.fn()} />
+    );
+    const whenButton = within(screen.getByTestId('when-date')).getByRole('button');
+    fireEvent.click(whenButton);
+    expect(screen.getByRole('button', { name: 'Someday' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Anytime' })).toBeInTheDocument();
+  });
+
+  it('sets status to someday when Someday button is clicked in when-date popover', () => {
+    render(
+      <TaskItem task={fakeTask({ id: 'task-1' })} onComplete={vi.fn()} />
+    );
+    const whenButton = within(screen.getByTestId('when-date')).getByRole('button');
+    fireEvent.click(whenButton);
+    fireEvent.click(screen.getByRole('button', { name: 'Someday' }));
+    expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { status: 'someday' });
+  });
+
+  it('sets status to anytime when Anytime button is clicked in when-date popover', () => {
+    render(
+      <TaskItem task={fakeTask({ id: 'task-1' })} onComplete={vi.fn()} />
+    );
+    const whenButton = within(screen.getByTestId('when-date')).getByRole('button');
+    fireEvent.click(whenButton);
+    fireEvent.click(screen.getByRole('button', { name: 'Anytime' }));
+    expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { status: 'anytime' });
+  });
+
+  it('closes popover after clicking Someday', () => {
+    render(
+      <TaskItem task={fakeTask()} onComplete={vi.fn()} />
+    );
+    const whenButton = within(screen.getByTestId('when-date')).getByRole('button');
+    fireEvent.click(whenButton);
+    fireEvent.click(screen.getByRole('button', { name: 'Someday' }));
+    expect(screen.queryByRole('grid')).not.toBeInTheDocument();
+  });
+
+  it('does NOT show Someday/Anytime buttons in deadline popover', () => {
+    render(
+      <TaskItem task={fakeTask()} onComplete={vi.fn()} />
+    );
+    const deadlineButton = within(screen.getByTestId('deadline-badge')).getByRole('button');
+    fireEvent.click(deadlineButton);
+    expect(screen.queryByRole('button', { name: 'Someday' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Anytime' })).not.toBeInTheDocument();
+  });
+
   it('shows clear button inside when_date popover when set', () => {
     render(
       <TaskItem task={fakeTask({ when_date: '2026-03-10' })} onComplete={vi.fn()} />

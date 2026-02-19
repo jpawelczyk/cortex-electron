@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { Circle, CheckCircle2, Calendar, Flag, Trash2, Check, X } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { Circle, CheckCircle2, Calendar, Flag, Trash2, Check, X, Cloud, Layers } from 'lucide-react';
 import type { Task } from '@shared/types';
 import { useStore } from '../stores';
 import { useDebouncedCallback } from '../hooks/useDebouncedCallback';
-import { DatePickerButton } from './DatePickerButton';
+import { DatePickerButton, type DatePickerAction } from './DatePickerButton';
 import { cn } from '../lib/utils';
 
 const DEBOUNCE_MS = 500;
@@ -172,6 +172,19 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, i
     updateTask(task.id, { deadline: value });
   };
 
+  const whenDateActions: DatePickerAction[] = useMemo(() => [
+    {
+      label: 'Anytime',
+      icon: <Layers className="size-3" />,
+      onClick: () => updateTask(task.id, { status: 'anytime' }),
+    },
+    {
+      label: 'Someday',
+      icon: <Cloud className="size-3" />,
+      onClick: () => updateTask(task.id, { status: 'someday' }),
+    },
+  ], [task.id, updateTask]);
+
   const handleRowClick = () => {
     if (!isExpanded) {
       onSelect?.(task.id);
@@ -250,6 +263,7 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, i
               onChange={handleWhenDateChange}
               icon={<Calendar className="size-3.5" />}
               label="When date"
+              actions={whenDateActions}
             />
           </span>
           <span data-testid="deadline-badge">
