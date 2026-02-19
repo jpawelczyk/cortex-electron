@@ -211,7 +211,7 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, i
       )}
     >
       {/* Title row */}
-      <div className="flex items-center gap-3 px-4 py-2.5">
+      <div className="flex items-center gap-3 px-4 pt-2.5 pb-1.5">
         <button
           role="checkbox"
           aria-checked={isCompleted}
@@ -287,20 +287,20 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, i
         style={{ gridTemplateRows: isExpanded ? '1fr' : '0fr' }}
       >
         <div className="overflow-hidden min-h-0">
-          <div className="pr-4 pt-1 pb-3" style={{ paddingLeft: 46 }}>
+          <div className="pr-4" style={{ paddingLeft: 46 }}>
             <ChecklistList taskId={task.id} isExpanded={isExpanded} />
-            <textarea
-              ref={notesRef}
-              value={notes}
-              onChange={(e) => handleNotesChange(e.target.value)}
-              placeholder="Notes"
-              rows={1}
-              tabIndex={isExpanded ? 0 : -1}
-              className="w-full bg-transparent text-[13px] text-foreground/80 placeholder:text-muted-foreground/40 outline-none resize-none leading-relaxed overflow-hidden"
-            />
-            <div className="flex justify-end mt-1">
+            <div className="flex items-end gap-1 pb-3.5">
+              <textarea
+                ref={notesRef}
+                value={notes}
+                onChange={(e) => handleNotesChange(e.target.value)}
+                placeholder="Notes"
+                rows={1}
+                tabIndex={isExpanded ? 0 : -1}
+                className="flex-1 bg-transparent text-[13px] text-foreground/80 placeholder:text-muted-foreground/40 outline-none resize-none leading-snug overflow-hidden min-w-0"
+              />
               {confirmingDelete ? (
-                <div className="flex items-center gap-1.5 rounded-lg bg-accent px-2.5 py-1">
+                <div className="flex items-center gap-1.5 rounded-lg bg-accent px-2.5 py-1 shrink-0">
                   <span className="text-sm text-muted-foreground mr-1">Confirm?</span>
                   <button
                     aria-label="Confirm delete task"
@@ -332,7 +332,7 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, i
                     e.stopPropagation();
                     setConfirmingDelete(true);
                   }}
-                  className="p-1 rounded text-muted-foreground/40 hover:text-destructive transition-colors"
+                  className="p-1 rounded text-muted-foreground/40 hover:text-destructive transition-colors shrink-0"
                 >
                   <Trash2 className="size-3.5" />
                 </button>

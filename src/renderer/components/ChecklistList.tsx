@@ -163,7 +163,7 @@ export function ChecklistList({ taskId, isExpanded }: ChecklistListProps) {
   // Don't render if no items and not adding
   if (sorted.length === 0 && !isAdding) {
     return (
-      <div className="mb-1">
+      <div className="mb-3">
         <button
           onClick={() => setIsAdding(true)}
           tabIndex={tabIndex}
@@ -176,7 +176,7 @@ export function ChecklistList({ taskId, isExpanded }: ChecklistListProps) {
   }
 
   return (
-    <div className="mb-2">
+    <div className="mb-3">
       {sorted.map((item) => (
         <ChecklistItemRow
           key={item.id}
