@@ -87,7 +87,7 @@ describe('StaleView', () => {
     mockTasks = [fakeTask({ id: 'task-42', title: 'Complete me' })];
     render(<StaleView />);
     const checkbox = screen.getByRole('checkbox');
-    checkbox.click();
+    act(() => { checkbox.click(); });
     expect(mockUpdateTask).toHaveBeenCalledWith('task-42', { status: 'logbook' });
   });
 
@@ -95,7 +95,7 @@ describe('StaleView', () => {
     mockTasks = [fakeTask({ id: '1', title: 'Just completed' })];
     const { rerender } = render(<StaleView />);
 
-    screen.getByRole('checkbox').click();
+    act(() => { screen.getByRole('checkbox').click(); });
     expect(mockUpdateTask).toHaveBeenCalledWith('1', { status: 'logbook' });
 
     mockTasks = [fakeTask({ id: '1', title: 'Just completed', status: 'logbook', completed_at: '2026-02-18T00:00:00.000Z' })];
@@ -109,7 +109,7 @@ describe('StaleView', () => {
     mockTasks = [fakeTask({ id: '1', title: 'Stale task' })];
     const { rerender } = render(<StaleView />);
 
-    screen.getByRole('checkbox').click();
+    act(() => { screen.getByRole('checkbox').click(); });
 
     mockTasks = [
       fakeTask({ id: '1', title: 'Done task', status: 'logbook', completed_at: '2026-02-18T00:00:00.000Z' }),

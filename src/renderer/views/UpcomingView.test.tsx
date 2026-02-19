@@ -161,7 +161,7 @@ describe('UpcomingView', () => {
     mockTasks = [fakeTask({ id: 'task-42', title: 'Complete me' })];
     render(<UpcomingView />);
     const checkbox = screen.getByRole('checkbox');
-    checkbox.click();
+    act(() => { checkbox.click(); });
     expect(mockUpdateTask).toHaveBeenCalledWith('task-42', { status: 'logbook' });
   });
 
@@ -169,7 +169,7 @@ describe('UpcomingView', () => {
     mockTasks = [fakeTask({ id: '1', title: 'Just completed' })];
     const { rerender } = render(<UpcomingView />);
 
-    screen.getByRole('checkbox').click();
+    act(() => { screen.getByRole('checkbox').click(); });
     expect(mockUpdateTask).toHaveBeenCalledWith('1', { status: 'logbook' });
 
     // Store updates: task is now logbook
@@ -187,7 +187,7 @@ describe('UpcomingView', () => {
     ];
     const { rerender } = render(<UpcomingView />);
 
-    screen.getAllByRole('checkbox')[0].click();
+    act(() => { screen.getAllByRole('checkbox')[0].click(); });
 
     mockTasks = [
       fakeTask({ id: '1', title: 'First task', status: 'logbook', completed_at: '2026-02-18T00:00:00.000Z' }),
@@ -208,7 +208,7 @@ describe('UpcomingView', () => {
     mockTasks = [fakeTask({ id: '1', title: 'Active task' })];
     const { rerender } = render(<UpcomingView />);
 
-    screen.getByRole('checkbox').click();
+    act(() => { screen.getByRole('checkbox').click(); });
 
     mockTasks = [
       fakeTask({ id: '1', title: 'Done task', status: 'logbook', completed_at: '2026-02-18T00:00:00.000Z' }),
@@ -231,14 +231,14 @@ describe('UpcomingView', () => {
     mockTasks = [fakeTask({ id: '1', title: 'Task' })];
     const { rerender } = render(<UpcomingView />);
 
-    screen.getByRole('checkbox').click();
+    act(() => { screen.getByRole('checkbox').click(); });
     expect(mockUpdateTask).toHaveBeenCalledWith('1', { status: 'logbook' });
 
     mockTasks = [fakeTask({ id: '1', title: 'Task', status: 'logbook', completed_at: '2026-02-18T00:00:00.000Z' })];
     rerender(<UpcomingView />);
 
     vi.clearAllMocks();
-    screen.getByRole('checkbox').click();
+    act(() => { screen.getByRole('checkbox').click(); });
     expect(mockUpdateTask).toHaveBeenCalledWith('1', { status: 'upcoming' });
   });
 

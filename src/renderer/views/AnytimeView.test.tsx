@@ -88,7 +88,7 @@ describe('AnytimeView', () => {
     mockTasks = [fakeTask({ id: 'task-42', title: 'Complete me' })];
     render(<AnytimeView />);
     const checkbox = screen.getByRole('checkbox');
-    checkbox.click();
+    act(() => { checkbox.click(); });
     expect(mockUpdateTask).toHaveBeenCalledWith('task-42', { status: 'logbook' });
   });
 
@@ -97,7 +97,7 @@ describe('AnytimeView', () => {
       mockTasks = [fakeTask({ id: '1', title: 'Just completed' })];
       const { rerender } = render(<AnytimeView />);
 
-      screen.getByRole('checkbox').click();
+      act(() => { screen.getByRole('checkbox').click(); });
       expect(mockUpdateTask).toHaveBeenCalledWith('1', { status: 'logbook' });
 
       // Store updates: task is now logbook
@@ -112,7 +112,7 @@ describe('AnytimeView', () => {
       mockTasks = [fakeTask({ id: '1', title: 'Active task' })];
       const { rerender } = render(<AnytimeView />);
 
-      screen.getByRole('checkbox').click();
+      act(() => { screen.getByRole('checkbox').click(); });
 
       mockTasks = [
         fakeTask({ id: '1', title: 'Done task', status: 'logbook', completed_at: '2026-02-18T00:00:00.000Z' }),
@@ -135,14 +135,14 @@ describe('AnytimeView', () => {
       mockTasks = [fakeTask({ id: '1', title: 'Task' })];
       const { rerender } = render(<AnytimeView />);
 
-      screen.getByRole('checkbox').click();
+      act(() => { screen.getByRole('checkbox').click(); });
       expect(mockUpdateTask).toHaveBeenCalledWith('1', { status: 'logbook' });
 
       mockTasks = [fakeTask({ id: '1', title: 'Task', status: 'logbook', completed_at: '2026-02-18T00:00:00.000Z' })];
       rerender(<AnytimeView />);
 
       vi.clearAllMocks();
-      screen.getByRole('checkbox').click();
+      act(() => { screen.getByRole('checkbox').click(); });
       expect(mockUpdateTask).toHaveBeenCalledWith('1', { status: 'anytime' });
     });
 

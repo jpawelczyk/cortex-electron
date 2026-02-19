@@ -195,7 +195,7 @@ describe('InboxView', () => {
 
       // Simulate completing via checkbox
       const checkbox = screen.getByRole('checkbox');
-      checkbox.click();
+      act(() => { checkbox.click(); });
       expect(mockUpdateTask).toHaveBeenCalledWith('1', { status: 'logbook' });
 
       // Store updates: task is now logbook
@@ -214,7 +214,7 @@ describe('InboxView', () => {
       const { rerender } = render(<InboxView />);
 
       // Complete the first task
-      screen.getAllByRole('checkbox')[0].click();
+      act(() => { screen.getAllByRole('checkbox')[0].click(); });
 
       mockTasks = [
         fakeTask({ id: '1', title: 'First task', status: 'logbook', completed_at: '2026-02-18T00:00:00.000Z' }),
@@ -236,7 +236,7 @@ describe('InboxView', () => {
       const { rerender } = render(<InboxView />);
 
       // Complete the task
-      screen.getByRole('checkbox').click();
+      act(() => { screen.getByRole('checkbox').click(); });
 
       // Store updates with completed task + a new inbox task
       mockTasks = [
@@ -261,7 +261,7 @@ describe('InboxView', () => {
       const { rerender } = render(<InboxView />);
 
       // Complete
-      screen.getByRole('checkbox').click();
+      act(() => { screen.getByRole('checkbox').click(); });
       expect(mockUpdateTask).toHaveBeenCalledWith('1', { status: 'logbook' });
 
       // Store updates to logbook
@@ -270,7 +270,7 @@ describe('InboxView', () => {
 
       // Uncomplete
       vi.clearAllMocks();
-      screen.getByRole('checkbox').click();
+      act(() => { screen.getByRole('checkbox').click(); });
       expect(mockUpdateTask).toHaveBeenCalledWith('1', { status: 'inbox' });
     });
 
@@ -282,14 +282,14 @@ describe('InboxView', () => {
       const { rerender } = render(<InboxView />);
 
       // Complete both tasks
-      screen.getAllByRole('checkbox')[0].click();
+      act(() => { screen.getAllByRole('checkbox')[0].click(); });
       mockTasks = [
         fakeTask({ id: '1', title: 'Task A', status: 'logbook', completed_at: '2026-02-18T00:00:00.000Z' }),
         fakeTask({ id: '2', title: 'Task B', status: 'inbox' }),
       ];
       rerender(<InboxView />);
 
-      screen.getAllByRole('checkbox')[1].click();
+      act(() => { screen.getAllByRole('checkbox')[1].click(); });
       mockTasks = [
         fakeTask({ id: '1', title: 'Task A', status: 'logbook', completed_at: '2026-02-18T00:00:00.000Z' }),
         fakeTask({ id: '2', title: 'Task B', status: 'logbook', completed_at: '2026-02-18T00:00:00.000Z' }),
@@ -301,7 +301,7 @@ describe('InboxView', () => {
       expect(screen.getByText('Task B')).toBeInTheDocument();
 
       // Uncomplete Task A — store still shows logbook (async IPC pending)
-      screen.getAllByRole('checkbox')[0].click();
+      act(() => { screen.getAllByRole('checkbox')[0].click(); });
       // Re-render WITHOUT changing mockTasks (simulates store not yet updated)
       rerender(<InboxView />);
 
@@ -383,7 +383,7 @@ describe('InboxView', () => {
       render(<InboxView />);
 
       // Click checkbox on the already-completed task
-      screen.getByRole('checkbox').click();
+      act(() => { screen.getByRole('checkbox').click(); });
       expect(mockUpdateTask).toHaveBeenCalledWith('1', { status: 'inbox' });
 
       vi.useRealTimers();

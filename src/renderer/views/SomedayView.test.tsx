@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { SomedayView } from './SomedayView';
 
@@ -86,7 +86,7 @@ describe('SomedayView', () => {
     mockTasks = [fakeTask({ id: 'task-42', title: 'Complete me' })];
     render(<SomedayView />);
     const checkbox = screen.getByRole('checkbox');
-    checkbox.click();
+    act(() => { checkbox.click(); });
     expect(mockUpdateTask).toHaveBeenCalledWith('task-42', { status: 'logbook' });
   });
 
@@ -94,7 +94,7 @@ describe('SomedayView', () => {
     mockTasks = [fakeTask({ id: '1', title: 'Just completed' })];
     const { rerender } = render(<SomedayView />);
 
-    screen.getByRole('checkbox').click();
+    act(() => { screen.getByRole('checkbox').click(); });
     expect(mockUpdateTask).toHaveBeenCalledWith('1', { status: 'logbook' });
 
     mockTasks = [fakeTask({ id: '1', title: 'Just completed', status: 'logbook', completed_at: '2026-02-18T00:00:00.000Z' })];
