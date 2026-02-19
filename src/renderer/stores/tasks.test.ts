@@ -230,5 +230,17 @@ describe('TaskSlice', () => {
       expect(inboxTasks).toHaveLength(2);
       expect(inboxTasks.every((t) => t.status === 'inbox')).toBe(true);
     });
+
+    it('getInboxTasks excludes inbox tasks with a when_date', () => {
+      const store = createStore({
+        tasks: [
+          fakeTask({ id: '1', status: 'inbox', when_date: null }),
+          fakeTask({ id: '2', status: 'inbox', when_date: '2026-02-19' }),
+        ],
+      });
+      const inboxTasks = store.getInboxTasks();
+      expect(inboxTasks).toHaveLength(1);
+      expect(inboxTasks[0].id).toBe('1');
+    });
   });
 });

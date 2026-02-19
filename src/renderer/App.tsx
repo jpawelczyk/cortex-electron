@@ -33,7 +33,7 @@ export default function App() {
     }).length;
 
     return {
-      inbox: tasks.filter((t) => t.status === 'inbox').length,
+      inbox: tasks.filter((t) => t.status === 'inbox' && !t.when_date).length,
       today: todayCount,
       upcoming: tasks.filter((t) => t.status === 'upcoming').length,
       anytime: tasks.filter((t) => t.status === 'anytime').length,

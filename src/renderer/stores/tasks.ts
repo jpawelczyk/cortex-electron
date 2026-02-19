@@ -84,5 +84,5 @@ export const createTaskSlice: StateCreator<TaskSlice> = (set, get) => ({
 
   getTasksByStatus: (status) => get().tasks.filter((t) => t.status === status),
   getTasksByProject: (projectId) => get().tasks.filter((t) => t.project_id === projectId),
-  getInboxTasks: () => get().tasks.filter((t) => t.status === 'inbox'),
+  getInboxTasks: () => get().tasks.filter((t) => t.status === 'inbox' && !t.when_date),
 });
