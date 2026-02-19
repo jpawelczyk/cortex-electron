@@ -211,7 +211,7 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, i
       )}
     >
       {/* Title row */}
-      <div className="flex items-center gap-3 px-4 pt-2.5 pb-1.5">
+      <div className="flex items-center gap-3 px-4 py-2">
         <button
           role="checkbox"
           aria-checked={isCompleted}
