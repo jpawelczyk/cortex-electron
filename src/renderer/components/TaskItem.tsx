@@ -177,11 +177,13 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, i
       label: 'Anytime',
       icon: <Layers className="size-3" />,
       onClick: () => updateTask(task.id, { status: 'anytime' }),
+      active: task.status === 'anytime',
     },
     {
       label: 'Someday',
       icon: <Cloud className="size-3" />,
       onClick: () => updateTask(task.id, { status: 'someday' }),
+      active: task.status === 'someday',
     },
   ], [task.id, updateTask]);
 
@@ -261,7 +263,7 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, i
             <DatePickerButton
               value={task.when_date}
               onChange={handleWhenDateChange}
-              icon={<Calendar className="size-3.5" />}
+              icon={task.status === 'anytime' ? <Layers className="size-3.5" /> : task.status === 'someday' ? <Cloud className="size-3.5" /> : <Calendar className="size-3.5" />}
               label="When date"
               actions={whenDateActions}
             />

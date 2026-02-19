@@ -157,6 +157,32 @@ describe('TaskItem (collapsed)', () => {
     expect(deadlineButton).toHaveClass('w-[4.5rem]');
   });
 
+  it('shows Layers icon for when-date button when status is anytime', () => {
+    render(
+      <TaskItem task={fakeTask({ status: 'anytime' })} onComplete={vi.fn()} />
+    );
+    const whenDate = screen.getByTestId('when-date');
+    expect(whenDate.querySelector('.lucide-layers')).toBeInTheDocument();
+    expect(whenDate.querySelector('.lucide-calendar')).not.toBeInTheDocument();
+  });
+
+  it('shows Cloud icon for when-date button when status is someday', () => {
+    render(
+      <TaskItem task={fakeTask({ status: 'someday' })} onComplete={vi.fn()} />
+    );
+    const whenDate = screen.getByTestId('when-date');
+    expect(whenDate.querySelector('.lucide-cloud')).toBeInTheDocument();
+    expect(whenDate.querySelector('.lucide-calendar')).not.toBeInTheDocument();
+  });
+
+  it('shows Calendar icon for when-date button when status is not anytime or someday', () => {
+    render(
+      <TaskItem task={fakeTask({ status: 'inbox' })} onComplete={vi.fn()} />
+    );
+    const whenDate = screen.getByTestId('when-date');
+    expect(whenDate.querySelector('.lucide-calendar')).toBeInTheDocument();
+  });
+
   it('shows when_date icon without text when null', () => {
     render(
       <TaskItem task={fakeTask({ when_date: null })} onComplete={vi.fn()} />
@@ -205,6 +231,30 @@ describe('TaskItem (collapsed)', () => {
     fireEvent.click(whenButton);
     expect(screen.getByRole('button', { name: 'Someday' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Anytime' })).toBeInTheDocument();
+  });
+
+  it('shows Anytime as active in popover when status is anytime', () => {
+    render(
+      <TaskItem task={fakeTask({ status: 'anytime' })} onComplete={vi.fn()} />
+    );
+    const whenButton = within(screen.getByTestId('when-date')).getByRole('button');
+    fireEvent.click(whenButton);
+    const anytimeBtn = screen.getByRole('button', { name: 'Anytime' });
+    const somedayBtn = screen.getByRole('button', { name: 'Someday' });
+    expect(anytimeBtn).toHaveClass('text-foreground');
+    expect(somedayBtn).not.toHaveClass('text-foreground');
+  });
+
+  it('shows Someday as active in popover when status is someday', () => {
+    render(
+      <TaskItem task={fakeTask({ status: 'someday' })} onComplete={vi.fn()} />
+    );
+    const whenButton = within(screen.getByTestId('when-date')).getByRole('button');
+    fireEvent.click(whenButton);
+    const somedayBtn = screen.getByRole('button', { name: 'Someday' });
+    const anytimeBtn = screen.getByRole('button', { name: 'Anytime' });
+    expect(somedayBtn).toHaveClass('text-foreground');
+    expect(anytimeBtn).not.toHaveClass('text-foreground');
   });
 
   it('sets status to someday when Someday button is clicked in when-date popover', () => {

@@ -9,6 +9,7 @@ export interface DatePickerAction {
   label: string;
   icon: ReactNode;
   onClick: () => void;
+  active?: boolean;
 }
 
 interface DatePickerButtonProps {
@@ -70,7 +71,7 @@ export function DatePickerButton({ value, onChange, icon, label, className, acti
                   action.onClick();
                   setOpen(false);
                 }}
-                className="flex items-center gap-1.5 w-full px-3 py-2 text-xs text-muted-foreground hover:bg-accent transition-colors cursor-pointer"
+                className={cn("flex items-center gap-1.5 w-full px-3 py-2 text-xs text-muted-foreground hover:bg-accent transition-colors cursor-pointer", action.active && "text-foreground bg-accent/60")}
               >
                 {action.icon}
                 {action.label}
