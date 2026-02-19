@@ -31,7 +31,8 @@ export function TodayView() {
   const sortTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
 
   useEffect(() => {
-    return () => sortTimers.current.forEach(clearTimeout);
+    const timers = sortTimers.current;
+    return () => timers.forEach(clearTimeout);
   }, []);
 
   const todayTasks = useMemo(() => {
@@ -51,7 +52,7 @@ export function TodayView() {
       if (aSettled && bSettled) return aIdx - bIdx;
       return 0;
     });
-  }, [tasks, today, completedIds, settledIds]); // completedIds included as recalc trigger
+  }, [tasks, today, settledIds]);
 
   useEffect(() => {
     fetchTasks();

@@ -8,7 +8,7 @@ const mockCreateTask = vi.fn();
 const mockCancelInlineCreate = vi.fn();
 
 vi.mock('../stores', () => ({
-  useStore: (selector: (state: any) => any) => {
+  useStore: (selector: (state: Record<string, unknown>) => unknown) => {
     const state = {
       createTask: mockCreateTask,
       cancelInlineCreate: mockCancelInlineCreate,

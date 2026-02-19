@@ -52,7 +52,7 @@ describe('IPC handlers', () => {
   describe('tasks', () => {
     it('tasks:list returns empty array initially', async () => {
       const handler = getHandler('tasks:list');
-      const result = await handler({} as any);
+      const result = await handler({} as Electron.IpcMainInvokeEvent);
       expect(result).toEqual([]);
     });
 
@@ -62,11 +62,11 @@ describe('IPC handlers', () => {
         vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
       );
 
-      const created = await handlers['tasks:create']({} as any, { title: 'Buy milk' });
+      const created = await handlers['tasks:create']({} as Electron.IpcMainInvokeEvent, { title: 'Buy milk' });
       expect(created).toMatchObject({ title: 'Buy milk', status: 'inbox' });
       expect(created.id).toBeDefined();
 
-      const fetched = await handlers['tasks:get']({} as any, created.id);
+      const fetched = await handlers['tasks:get']({} as Electron.IpcMainInvokeEvent, created.id);
       expect(fetched).toMatchObject({ title: 'Buy milk' });
     });
 
@@ -76,8 +76,8 @@ describe('IPC handlers', () => {
         vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
       );
 
-      const created = await handlers['tasks:create']({} as any, { title: 'Original' });
-      const updated = await handlers['tasks:update']({} as any, created.id, { title: 'Changed' });
+      const created = await handlers['tasks:create']({} as Electron.IpcMainInvokeEvent, { title: 'Original' });
+      const updated = await handlers['tasks:update']({} as Electron.IpcMainInvokeEvent, created.id, { title: 'Changed' });
       expect(updated.title).toBe('Changed');
     });
 
@@ -87,10 +87,10 @@ describe('IPC handlers', () => {
         vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
       );
 
-      const created = await handlers['tasks:create']({} as any, { title: 'To delete' });
-      await handlers['tasks:delete']({} as any, created.id);
+      const created = await handlers['tasks:create']({} as Electron.IpcMainInvokeEvent, { title: 'To delete' });
+      await handlers['tasks:delete']({} as Electron.IpcMainInvokeEvent, created.id);
 
-      const result = await handlers['tasks:get']({} as any, created.id);
+      const result = await handlers['tasks:get']({} as Electron.IpcMainInvokeEvent, created.id);
       expect(result).toBeNull();
 
       // Still in DB (soft delete)
@@ -105,10 +105,10 @@ describe('IPC handlers', () => {
         vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
       );
 
-      const created = await handlers['tasks:create']({} as any, { title: 'Trash me' });
-      await handlers['tasks:delete']({} as any, created.id);
+      const created = await handlers['tasks:create']({} as Electron.IpcMainInvokeEvent, { title: 'Trash me' });
+      await handlers['tasks:delete']({} as Electron.IpcMainInvokeEvent, created.id);
 
-      const trashed = await handlers['tasks:listTrashed']({} as any);
+      const trashed = await handlers['tasks:listTrashed']({} as Electron.IpcMainInvokeEvent);
       expect(trashed).toHaveLength(1);
       expect(trashed[0].id).toBe(created.id);
     });
@@ -119,10 +119,10 @@ describe('IPC handlers', () => {
         vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
       );
 
-      const created = await handlers['tasks:create']({} as any, { title: 'Restore me' });
-      await handlers['tasks:delete']({} as any, created.id);
+      const created = await handlers['tasks:create']({} as Electron.IpcMainInvokeEvent, { title: 'Restore me' });
+      await handlers['tasks:delete']({} as Electron.IpcMainInvokeEvent, created.id);
 
-      const restored = await handlers['tasks:restore']({} as any, created.id);
+      const restored = await handlers['tasks:restore']({} as Electron.IpcMainInvokeEvent, created.id);
       expect(restored.deleted_at).toBeNull();
       expect(restored.status).toBe('inbox');
     });
@@ -133,11 +133,11 @@ describe('IPC handlers', () => {
         vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
       );
 
-      const created = await handlers['tasks:create']({} as any, { title: 'Emptied' });
-      await handlers['tasks:delete']({} as any, created.id);
-      await handlers['tasks:emptyTrash']({} as any);
+      const created = await handlers['tasks:create']({} as Electron.IpcMainInvokeEvent, { title: 'Emptied' });
+      await handlers['tasks:delete']({} as Electron.IpcMainInvokeEvent, created.id);
+      await handlers['tasks:emptyTrash']({} as Electron.IpcMainInvokeEvent);
 
-      const trashed = await handlers['tasks:listTrashed']({} as any);
+      const trashed = await handlers['tasks:listTrashed']({} as Electron.IpcMainInvokeEvent);
       expect(trashed).toHaveLength(0);
     });
   });
@@ -145,7 +145,7 @@ describe('IPC handlers', () => {
   describe('projects', () => {
     it('projects:list returns empty array initially', async () => {
       const handler = getHandler('projects:list');
-      const result = await handler({} as any);
+      const result = await handler({} as Electron.IpcMainInvokeEvent);
       expect(result).toEqual([]);
     });
 
@@ -155,10 +155,10 @@ describe('IPC handlers', () => {
         vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
       );
 
-      const created = await handlers['projects:create']({} as any, { title: 'My Project' });
+      const created = await handlers['projects:create']({} as Electron.IpcMainInvokeEvent, { title: 'My Project' });
       expect(created).toMatchObject({ title: 'My Project', status: 'active' });
 
-      const fetched = await handlers['projects:get']({} as any, created.id);
+      const fetched = await handlers['projects:get']({} as Electron.IpcMainInvokeEvent, created.id);
       expect(fetched).toMatchObject({ title: 'My Project' });
     });
 
@@ -168,10 +168,10 @@ describe('IPC handlers', () => {
         vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
       );
 
-      const created = await handlers['projects:create']({} as any, { title: 'Doomed' });
-      await handlers['projects:delete']({} as any, created.id);
+      const created = await handlers['projects:create']({} as Electron.IpcMainInvokeEvent, { title: 'Doomed' });
+      await handlers['projects:delete']({} as Electron.IpcMainInvokeEvent, created.id);
 
-      const result = await handlers['projects:get']({} as any, created.id);
+      const result = await handlers['projects:get']({} as Electron.IpcMainInvokeEvent, created.id);
       expect(result).toBeNull();
 
       const raw = testDb.getRawProject(created.id);
@@ -182,7 +182,7 @@ describe('IPC handlers', () => {
   describe('contexts', () => {
     it('contexts:list returns empty array initially', async () => {
       const handler = getHandler('contexts:list');
-      const result = await handler({} as any);
+      const result = await handler({} as Electron.IpcMainInvokeEvent);
       expect(result).toEqual([]);
     });
 
@@ -192,10 +192,10 @@ describe('IPC handlers', () => {
         vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
       );
 
-      const created = await handlers['contexts:create']({} as any, { name: 'Work' });
+      const created = await handlers['contexts:create']({} as Electron.IpcMainInvokeEvent, { name: 'Work' });
       expect(created).toMatchObject({ name: 'Work' });
 
-      const fetched = await handlers['contexts:get']({} as any, created.id);
+      const fetched = await handlers['contexts:get']({} as Electron.IpcMainInvokeEvent, created.id);
       expect(fetched).toMatchObject({ name: 'Work' });
     });
 
@@ -205,10 +205,10 @@ describe('IPC handlers', () => {
         vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
       );
 
-      const created = await handlers['contexts:create']({} as any, { name: 'Temp' });
-      await handlers['contexts:delete']({} as any, created.id);
+      const created = await handlers['contexts:create']({} as Electron.IpcMainInvokeEvent, { name: 'Temp' });
+      await handlers['contexts:delete']({} as Electron.IpcMainInvokeEvent, created.id);
 
-      const result = await handlers['contexts:get']({} as any, created.id);
+      const result = await handlers['contexts:get']({} as Electron.IpcMainInvokeEvent, created.id);
       expect(result).toBeNull();
 
       const raw = testDb.getRawContext(created.id);

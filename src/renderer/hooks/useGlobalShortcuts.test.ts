@@ -24,7 +24,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  delete (window as any).cortex;
+  delete (window as unknown as Record<string, unknown>).cortex;
 });
 
 describe('useGlobalShortcuts', () => {

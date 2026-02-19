@@ -5,9 +5,10 @@ import { createProjectService } from '../services/project.service';
 import { createContextService } from '../services/context.service';
 import { createStakeholderService } from '../services/stakeholder.service';
 import { createChecklistService } from '../services/checklist.service';
+import type { TestDb } from '../../../tests/helpers/db';
 
 export function registerHandlers(db: Database.Database): void {
-  const dbProvider = { db } as any;
+  const dbProvider = { db } as TestDb;
 
   const taskService = createTaskService(dbProvider);
   const projectService = createProjectService(dbProvider);

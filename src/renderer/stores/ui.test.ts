@@ -13,7 +13,12 @@ function createStore(overrides?: Partial<UISlice>): UISlice & { _set: ReturnType
 
   const get = () => state;
 
-  Object.assign(state, createUISlice(set as any, get as any, {} as any), overrides);
+  const creator = createUISlice as unknown as (
+    set: SetFn,
+    get: () => UISlice,
+    api: Record<string, never>,
+  ) => UISlice;
+  Object.assign(state, creator(set, get, {}), overrides);
   state._set = set;
 
   return state;

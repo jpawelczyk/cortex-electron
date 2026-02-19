@@ -50,13 +50,11 @@ export function TaskDetail({ task }: TaskDetailProps) {
   const {
     debouncedFn: debouncedSaveTitle,
     flush: flushTitle,
-    cancel: cancelTitle,
   } = useDebouncedCallback(saveTitle, DEBOUNCE_MS);
 
   const {
     debouncedFn: debouncedSaveNotes,
     flush: flushNotes,
-    cancel: cancelNotes,
   } = useDebouncedCallback(saveNotes, DEBOUNCE_MS);
 
   // Reset local state when task changes; flush pending saves first

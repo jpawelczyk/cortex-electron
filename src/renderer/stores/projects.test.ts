@@ -1,18 +1,26 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createProjectSlice, ProjectSlice } from './projects';
 
+type SetFn = (partial: Partial<ProjectSlice> | ((s: ProjectSlice) => Partial<ProjectSlice>)) => void;
+type GetFn = () => ProjectSlice;
+
 function createStore(overrides?: Partial<ProjectSlice>): ProjectSlice {
   let state: ProjectSlice;
 
-  const set = (partial: Partial<ProjectSlice> | ((s: ProjectSlice) => Partial<ProjectSlice>)) => {
+  const set: SetFn = (partial) => {
     const update = typeof partial === 'function' ? partial(state) : partial;
     state = { ...state, ...update };
   };
 
-  const get = () => state;
+  const get: GetFn = () => state;
 
+  const creator = createProjectSlice as unknown as (
+    set: SetFn,
+    get: GetFn,
+    api: Record<string, never>,
+  ) => ProjectSlice;
   state = {
-    ...createProjectSlice(set as any, get as any, {} as any),
+    ...creator(set, get, {}),
     ...overrides,
   };
 
@@ -29,7 +37,10 @@ const mockCortex = {
   },
 };
 
-(globalThis as any).window = { ...((globalThis as any).window || {}), cortex: { ...((globalThis as any).window?.cortex || {}), ...mockCortex } };
+{
+  const g = globalThis as unknown as Record<string, Record<string, unknown>>;
+  g.window = { ...(g.window || {}), cortex: { ...(g.window?.cortex as Record<string, unknown> || {}), ...mockCortex } };
+}
 
 const fakeProject = (overrides = {}) => ({
   id: 'proj-1',

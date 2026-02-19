@@ -74,6 +74,6 @@ function runMigrations(database: Database.Database): void {
       ).run(name, new Date().toISOString());
     })();
 
-    console.log(`Migration applied: ${name}`);
+    console.warn(`Migration applied: ${name}`);
   }
 }

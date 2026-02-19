@@ -12,7 +12,7 @@ export interface ChecklistSlice {
   reorderChecklistItems: (taskId: string, itemIds: string[]) => Promise<void>;
 }
 
-export const createChecklistSlice: StateCreator<ChecklistSlice> = (set, get) => ({
+export const createChecklistSlice: StateCreator<ChecklistSlice> = (set, _get) => ({
   checklistItems: {},
   checklistsLoading: {},
 

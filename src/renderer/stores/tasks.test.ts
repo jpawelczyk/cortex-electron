@@ -1,20 +1,28 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createTaskSlice, TaskSlice } from './tasks';
 
+type SetFn = (partial: Partial<TaskSlice> | ((s: TaskSlice) => Partial<TaskSlice>)) => void;
+type GetFn = () => TaskSlice;
+
 // Helper to create a standalone store from the slice
 function createStore(overrides?: Partial<TaskSlice>): TaskSlice {
   let state: TaskSlice;
 
-  const set = (partial: Partial<TaskSlice> | ((s: TaskSlice) => Partial<TaskSlice>)) => {
+  const set: SetFn = (partial) => {
     const update = typeof partial === 'function' ? partial(state) : partial;
     state = { ...state, ...update };
   };
 
-  const get = () => state;
+  const get: GetFn = () => state;
 
-  // Initialize via the slice creator
+  // Initialize via the slice creator — cast to match Zustand's StateCreator signature
+  const creator = createTaskSlice as unknown as (
+    set: SetFn,
+    get: GetFn,
+    api: Record<string, never>,
+  ) => TaskSlice;
   state = {
-    ...createTaskSlice(set as any, get as any, {} as any),
+    ...creator(set, get, {}),
     ...overrides,
   };
 
@@ -36,7 +44,7 @@ const mockCortex = {
   },
 };
 
-(globalThis as any).window = { cortex: mockCortex };
+(globalThis as unknown as Record<string, unknown>).window = { cortex: mockCortex };
 
 const fakeTask = (overrides = {}) => ({
   id: 'task-1',
@@ -54,6 +62,7 @@ const fakeTask = (overrides = {}) => ({
   updated_at: '2026-02-17T00:00:00.000Z',
   completed_at: null,
   deleted_at: null,
+  stale_at: null,
   ...overrides,
 });
 
@@ -96,7 +105,7 @@ describe('TaskSlice', () => {
       const tasks = [fakeTask({ id: 'a' }), fakeTask({ id: 'b' })];
       mockCortex.tasks.list.mockResolvedValue(tasks);
 
-      let store = createStore();
+      const store = createStore();
       await store.fetchTasks();
 
       // We need to verify the mock was called

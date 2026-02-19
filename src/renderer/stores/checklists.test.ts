@@ -1,18 +1,26 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createChecklistSlice, ChecklistSlice } from './checklists';
 
+type SetFn = (partial: Partial<ChecklistSlice> | ((s: ChecklistSlice) => Partial<ChecklistSlice>)) => void;
+type GetFn = () => ChecklistSlice;
+
 function createStore(overrides?: Partial<ChecklistSlice>): ChecklistSlice {
   let state: ChecklistSlice;
 
-  const set = (partial: Partial<ChecklistSlice> | ((s: ChecklistSlice) => Partial<ChecklistSlice>)) => {
+  const set: SetFn = (partial) => {
     const update = typeof partial === 'function' ? partial(state) : partial;
     state = { ...state, ...update };
   };
 
-  const get = () => state;
+  const get: GetFn = () => state;
 
+  const creator = createChecklistSlice as unknown as (
+    set: SetFn,
+    get: GetFn,
+    api: Record<string, never>,
+  ) => ChecklistSlice;
   state = {
-    ...createChecklistSlice(set as any, get as any, {} as any),
+    ...creator(set, get, {}),
     ...overrides,
   };
 
@@ -29,7 +37,7 @@ const mockCortex = {
   },
 };
 
-(globalThis as any).window = { cortex: mockCortex };
+(globalThis as unknown as Record<string, unknown>).window = { cortex: mockCortex };
 
 const fakeItem = (overrides = {}) => ({
   id: 'item-1',

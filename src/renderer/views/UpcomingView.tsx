@@ -55,7 +55,8 @@ export function UpcomingView() {
   const sortTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
 
   useEffect(() => {
-    return () => sortTimers.current.forEach(clearTimeout);
+    const timers = sortTimers.current;
+    return () => timers.forEach(clearTimeout);
   }, []);
 
   useEffect(() => {
@@ -68,7 +69,7 @@ export function UpcomingView() {
       if (t.status === 'upcoming') return true;
       return false;
     });
-  }, [tasks, completedIds]); // completedIds included as recalc trigger
+  }, [tasks]);
 
   const groupedTasks = useMemo(() => {
     const groups: DateGroup[] = [];

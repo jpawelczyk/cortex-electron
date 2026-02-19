@@ -21,6 +21,7 @@ const fakeTask = (overrides: Partial<Task> = {}): Task => ({
   updated_at: '2026-02-17T00:00:00.000Z',
   completed_at: null,
   deleted_at: null,
+  stale_at: null,
   ...overrides,
 });
 

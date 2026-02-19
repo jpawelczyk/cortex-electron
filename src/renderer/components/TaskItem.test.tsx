@@ -15,7 +15,7 @@ const mockDeleteChecklistItem = vi.fn();
 const mockUpdateChecklistItem = vi.fn();
 
 vi.mock('../stores', () => ({
-  useStore: (selector: any) => {
+  useStore: (selector: (state: Record<string, unknown>) => unknown) => {
     const state = {
       updateTask: mockUpdateTask,
       deselectTask: mockDeselectTask,
@@ -47,6 +47,7 @@ const fakeTask = (overrides: Partial<Task> = {}): Task => ({
   updated_at: '2026-02-17T00:00:00.000Z',
   completed_at: null,
   deleted_at: null,
+  stale_at: null,
   ...overrides,
 });
 

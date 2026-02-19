@@ -1,18 +1,26 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createContextSlice, ContextSlice } from './contexts';
 
+type SetFn = (partial: Partial<ContextSlice> | ((s: ContextSlice) => Partial<ContextSlice>)) => void;
+type GetFn = () => ContextSlice;
+
 function createStore(overrides?: Partial<ContextSlice>): ContextSlice {
   let state: ContextSlice;
 
-  const set = (partial: Partial<ContextSlice> | ((s: ContextSlice) => Partial<ContextSlice>)) => {
+  const set: SetFn = (partial) => {
     const update = typeof partial === 'function' ? partial(state) : partial;
     state = { ...state, ...update };
   };
 
-  const get = () => state;
+  const get: GetFn = () => state;
 
+  const creator = createContextSlice as unknown as (
+    set: SetFn,
+    get: GetFn,
+    api: Record<string, never>,
+  ) => ContextSlice;
   state = {
-    ...createContextSlice(set as any, get as any, {} as any),
+    ...creator(set, get, {}),
     ...overrides,
   };
 
@@ -29,7 +37,10 @@ const mockCortex = {
   },
 };
 
-(globalThis as any).window = { ...((globalThis as any).window || {}), cortex: { ...((globalThis as any).window?.cortex || {}), ...mockCortex } };
+{
+  const g = globalThis as unknown as Record<string, Record<string, unknown>>;
+  g.window = { ...(g.window || {}), cortex: { ...(g.window?.cortex as Record<string, unknown> || {}), ...mockCortex } };
+}
 
 const fakeContext = (overrides = {}) => ({
   id: 'ctx-1',

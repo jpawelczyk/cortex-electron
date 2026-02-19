@@ -1,16 +1,16 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { TodayView } from './TodayView';
 
-let mockTasks: any[] = [];
+let mockTasks: Record<string, unknown>[] = [];
 const mockFetchTasks = vi.fn();
 const mockUpdateTask = vi.fn();
 const mockSelectTask = vi.fn();
 
 vi.mock('../stores', () => ({
-  useStore: (selector: (state: any) => any) => {
+  useStore: (selector: (state: Record<string, unknown>) => unknown) => {
     const state = {
       tasks: mockTasks,
       tasksLoading: false,

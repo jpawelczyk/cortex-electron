@@ -8,6 +8,7 @@ vi.mock('electron', () => ({
 }));
 
 import { globalShortcut } from 'electron';
+import type { BrowserWindow } from 'electron';
 import { registerGlobalShortcuts, unregisterGlobalShortcuts } from './shortcuts';
 
 describe('Global shortcuts', () => {
@@ -28,7 +29,7 @@ describe('Global shortcuts', () => {
   });
 
   it('registers CommandOrControl+Shift+Space', () => {
-    registerGlobalShortcuts(mockWindow as any);
+    registerGlobalShortcuts(mockWindow as unknown as BrowserWindow);
     expect(globalShortcut.register).toHaveBeenCalledWith(
       'CommandOrControl+Shift+Space',
       expect.any(Function),
@@ -36,7 +37,7 @@ describe('Global shortcuts', () => {
   });
 
   it('shows and focuses window on shortcut trigger', () => {
-    registerGlobalShortcuts(mockWindow as any);
+    registerGlobalShortcuts(mockWindow as unknown as BrowserWindow);
     const callback = vi.mocked(globalShortcut.register).mock.calls[0][1];
     callback();
     expect(mockWindow.show).toHaveBeenCalled();
@@ -44,7 +45,7 @@ describe('Global shortcuts', () => {
   });
 
   it('sends focus-task-input to renderer', () => {
-    registerGlobalShortcuts(mockWindow as any);
+    registerGlobalShortcuts(mockWindow as unknown as BrowserWindow);
     const callback = vi.mocked(globalShortcut.register).mock.calls[0][1];
     callback();
     expect(mockWindow.webContents.send).toHaveBeenCalledWith('focus-task-input');

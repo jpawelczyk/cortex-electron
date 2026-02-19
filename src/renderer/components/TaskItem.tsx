@@ -186,7 +186,7 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, i
       onClick: () => updateTask(task.id, { status: 'someday' }),
       active: task.status === 'someday',
     },
-  ], [task.id, updateTask]);
+  ], [task.id, task.status, updateTask]);
 
   const handleRowClick = () => {
     if (!isExpanded) {
@@ -258,7 +258,6 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, i
           </span>
         )}
 
-        {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events */}
         <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
           <span data-testid="when-date">
             <DatePickerButton

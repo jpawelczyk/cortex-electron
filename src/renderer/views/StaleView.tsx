@@ -18,7 +18,8 @@ export function StaleView() {
   const sortTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
 
   useEffect(() => {
-    return () => sortTimers.current.forEach(clearTimeout);
+    const timers = sortTimers.current;
+    return () => timers.forEach(clearTimeout);
   }, []);
 
   useEffect(() => {
@@ -40,7 +41,7 @@ export function StaleView() {
       if (aSettled && bSettled) return aIdx - bIdx;
       return 0;
     });
-  }, [tasks, completedIds, settledIds]); // completedIds included as recalc trigger
+  }, [tasks, settledIds]);
 
   const handleComplete = useCallback(
     (id: string) => {
