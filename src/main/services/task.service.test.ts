@@ -500,9 +500,33 @@ describe('TaskService', () => {
         expect(task.status).toBe('today');
       });
 
-      it('create with both when_date and status → trusts both', async () => {
+      it('create with when_date and status=anytime → clears when_date', async () => {
         const task = await taskService.create({ title: 'T', when_date: future, status: 'anytime' });
         expect(task.status).toBe('anytime');
+        expect(task.when_date).toBeNull();
+      });
+
+      it('create with when_date and status=someday → clears when_date', async () => {
+        const task = await taskService.create({ title: 'T', when_date: future, status: 'someday' });
+        expect(task.status).toBe('someday');
+        expect(task.when_date).toBeNull();
+      });
+
+      it('create with when_date and status=inbox → clears when_date', async () => {
+        const task = await taskService.create({ title: 'T', when_date: future, status: 'inbox' });
+        expect(task.status).toBe('inbox');
+        expect(task.when_date).toBeNull();
+      });
+
+      it('create with when_date and status=today → keeps when_date', async () => {
+        const task = await taskService.create({ title: 'T', when_date: future, status: 'today' });
+        expect(task.status).toBe('today');
+        expect(task.when_date).toBe(future);
+      });
+
+      it('create with when_date and status=upcoming → keeps when_date', async () => {
+        const task = await taskService.create({ title: 'T', when_date: future, status: 'upcoming' });
+        expect(task.status).toBe('upcoming');
         expect(task.when_date).toBe(future);
       });
 

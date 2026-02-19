@@ -53,11 +53,15 @@ export function createTaskService(testDb: TestDb): TaskService {
         contextId = input.context_id ?? null;
       }
 
-      // Auto-sync: derive status from when_date if when_date provided without explicit status
+      // Auto-sync: enforce when_date ↔ status invariant
       let status: TaskStatus = input.status ?? 'inbox';
-      const whenDate = input.when_date ?? null;
+      let whenDate: string | null = input.when_date ?? null;
       if (whenDate && !input.status) {
         status = deriveStatusFromDate(whenDate);
+      }
+      // Clear when_date for statuses that don't use scheduling
+      if (status === 'inbox' || status === 'anytime' || status === 'someday') {
+        whenDate = null;
       }
 
       const task: Task = {
