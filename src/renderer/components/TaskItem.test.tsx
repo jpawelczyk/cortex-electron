@@ -184,37 +184,41 @@ describe('TaskItem (collapsed)', () => {
     expect(screen.getByRole('grid')).toBeInTheDocument();
   });
 
-  it('shows clear button on when_date when set', () => {
+  it('shows clear button inside when_date popover when set', () => {
     render(
       <TaskItem task={fakeTask({ when_date: '2026-03-10' })} onComplete={vi.fn()} />
     );
-    const badge = screen.getByTestId('when-date');
-    expect(within(badge).getByLabelText('Clear when date')).toBeInTheDocument();
+    const whenButton = within(screen.getByTestId('when-date')).getByRole('button');
+    fireEvent.click(whenButton);
+    expect(screen.getByLabelText('Clear when date')).toBeInTheDocument();
   });
 
-  it('does not show clear button on when_date when null', () => {
+  it('does not show clear button inside when_date popover when null', () => {
     render(
       <TaskItem task={fakeTask({ when_date: null })} onComplete={vi.fn()} />
     );
-    const badge = screen.getByTestId('when-date');
-    expect(within(badge).queryByLabelText('Clear when date')).not.toBeInTheDocument();
+    const whenButton = within(screen.getByTestId('when-date')).getByRole('button');
+    fireEvent.click(whenButton);
+    expect(screen.queryByLabelText('Clear when date')).not.toBeInTheDocument();
   });
 
-  it('clears when_date when clear button is clicked', () => {
+  it('clears when_date when clear button in popover is clicked', () => {
     render(
       <TaskItem task={fakeTask({ when_date: '2026-03-10' })} onComplete={vi.fn()} />
     );
-    const badge = screen.getByTestId('when-date');
-    fireEvent.click(within(badge).getByLabelText('Clear when date'));
+    const whenButton = within(screen.getByTestId('when-date')).getByRole('button');
+    fireEvent.click(whenButton);
+    fireEvent.click(screen.getByLabelText('Clear when date'));
     expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { when_date: null });
   });
 
-  it('clears deadline when clear button is clicked', () => {
+  it('clears deadline when clear button in popover is clicked', () => {
     render(
       <TaskItem task={fakeTask({ deadline: '2026-03-20' })} onComplete={vi.fn()} />
     );
-    const badge = screen.getByTestId('deadline-badge');
-    fireEvent.click(within(badge).getByLabelText('Clear deadline'));
+    const deadlineButton = within(screen.getByTestId('deadline-badge')).getByRole('button');
+    fireEvent.click(deadlineButton);
+    fireEvent.click(screen.getByLabelText('Clear deadline'));
     expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { deadline: null });
   });
 

@@ -27,24 +27,14 @@ export function DatePickerButton({ value, onChange, icon, label, className }: Da
     setOpen(false);
   };
 
-  const handleClear = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleClear = () => {
     onChange(null);
+    setOpen(false);
   };
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <div className={cn("group/date inline-flex items-center rounded-md text-xs text-muted-foreground hover:bg-accent/60 transition-colors", className)}>
-        {value && (
-          <button
-            type="button"
-            aria-label={`Clear ${label.toLowerCase()}`}
-            onClick={handleClear}
-            className="inline-flex items-center justify-center pl-1 py-1 text-muted-foreground/0 group-hover/date:text-muted-foreground/60 hover:!text-muted-foreground transition-colors cursor-pointer"
-          >
-            <X className="size-3" />
-          </button>
-        )}
+      <div className={cn("inline-flex items-center rounded-md text-xs text-muted-foreground hover:bg-accent/60 transition-colors", className)}>
         <PopoverTrigger asChild>
           <button
             type="button"
@@ -62,6 +52,17 @@ export function DatePickerButton({ value, onChange, icon, label, className }: Da
           selected={selected}
           onSelect={handleSelect}
         />
+        {value && (
+          <button
+            type="button"
+            aria-label={`Clear ${label.toLowerCase()}`}
+            onClick={handleClear}
+            className="flex items-center gap-1.5 w-full px-3 py-2 text-xs text-muted-foreground hover:bg-accent transition-colors border-t border-border cursor-pointer"
+          >
+            <X className="size-3" />
+            Clear
+          </button>
+        )}
       </PopoverContent>
     </Popover>
   );
