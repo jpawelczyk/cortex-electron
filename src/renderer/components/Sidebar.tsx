@@ -63,11 +63,11 @@ export function Sidebar({ activeView, onViewChange, taskCounts }: SidebarProps) 
       </div>
 
       {/* Bottom section */}
-      <div className="no-drag px-3 py-3 flex flex-col gap-0.5">
+      <div className="no-drag px-3 py-3">
         <button
           className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
         >
-          <Settings className="size-5" />
+          <Settings className="size-4" />
         </button>
       </div>
     </nav>

@@ -23,8 +23,8 @@ export function TrashView() {
           <div className="flex items-center gap-3">
             <h2 className="text-xl font-semibold text-foreground">Trash</h2>
             {count > 0 && (
-              <span className="text-sm text-muted-foreground">
-                {count} {count === 1 ? 'item' : 'items'}
+              <span className="text-xs text-muted-foreground bg-accent rounded-full size-5 inline-flex items-center justify-center">
+                {count}
               </span>
             )}
           </div>
@@ -56,7 +56,7 @@ export function TrashView() {
                 onClick={() => setConfirming(true)}
                 className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
               >
-                <Trash2 className="size-5" />
+                <Trash2 className="size-4" />
               </button>
             )
           )}
@@ -64,7 +64,7 @@ export function TrashView() {
 
         {count === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-            <Trash2 className="size-10 mb-3 opacity-30" strokeWidth={1.25} />
+            <Trash2 className="size-8 mb-3 opacity-30" strokeWidth={1.25} />
             <p className="text-sm">Trash is empty</p>
           </div>
         ) : (
@@ -77,11 +77,6 @@ export function TrashView() {
                 <span className="flex-1 text-sm text-muted-foreground line-through truncate">
                   {task.title}
                 </span>
-                {task.deleted_at && (
-                  <span className="text-xs text-muted-foreground/60 shrink-0">
-                    {new Date(task.deleted_at).toLocaleDateString()}
-                  </span>
-                )}
                 <button
                   onClick={() => restoreTask(task.id)}
                   aria-label="Restore task"
@@ -89,6 +84,11 @@ export function TrashView() {
                 >
                   <RotateCcw className="size-3.5" />
                 </button>
+                {task.deleted_at && (
+                  <span className="text-xs text-muted-foreground/60 shrink-0">
+                    {new Date(task.deleted_at).toLocaleDateString()}
+                  </span>
+                )}
               </div>
             ))}
           </div>
