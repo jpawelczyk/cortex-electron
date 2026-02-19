@@ -4,9 +4,10 @@ import { createTaskSlice, TaskSlice } from './tasks';
 import { createProjectSlice, ProjectSlice } from './projects';
 import { createContextSlice, ContextSlice } from './contexts';
 import { createStakeholderSlice, StakeholderSlice } from './stakeholders';
+import { createChecklistSlice, ChecklistSlice } from './checklists';
 import { createUISlice, UISlice } from './ui';
 
-export type StoreState = TaskSlice & ProjectSlice & ContextSlice & StakeholderSlice & UISlice;
+export type StoreState = TaskSlice & ProjectSlice & ContextSlice & StakeholderSlice & ChecklistSlice & UISlice;
 
 export const useStore = create<StoreState>()(
   devtools(
@@ -16,6 +17,7 @@ export const useStore = create<StoreState>()(
         ...createProjectSlice(...a),
         ...createContextSlice(...a),
         ...createStakeholderSlice(...a),
+        ...createChecklistSlice(...a),
         ...createUISlice(...a),
       }),
       {

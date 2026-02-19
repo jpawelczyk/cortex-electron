@@ -7,11 +7,20 @@ import type { Task } from '@shared/types';
 const mockUpdateTask = vi.fn();
 const mockDeselectTask = vi.fn();
 
+const mockFetchChecklistItems = vi.fn();
+const mockCreateChecklistItem = vi.fn();
+const mockDeleteChecklistItem = vi.fn();
+
 vi.mock('../stores', () => ({
   useStore: (selector: any) => {
     const state = {
       updateTask: mockUpdateTask,
       deselectTask: mockDeselectTask,
+      checklistItems: {},
+      checklistsLoading: {},
+      fetchChecklistItems: mockFetchChecklistItems,
+      createChecklistItem: mockCreateChecklistItem,
+      deleteChecklistItem: mockDeleteChecklistItem,
     };
     return selector(state);
   },

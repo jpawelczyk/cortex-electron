@@ -46,7 +46,7 @@ describe('IPC handlers', () => {
     for (const channel of expected) {
       expect(channels).toContain(channel);
     }
-    expect(channels).toHaveLength(expected.length + 5); // +5 for stakeholder channels
+    expect(channels).toHaveLength(expected.length + 5 + 5); // +5 for stakeholder channels, +5 for checklist channels
   });
 
   describe('tasks', () => {

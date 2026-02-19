@@ -4,6 +4,7 @@ import type { Task } from '@shared/types';
 import { useStore } from '../stores';
 import { useDebouncedCallback } from '../hooks/useDebouncedCallback';
 import { DatePickerButton, type DatePickerAction } from './DatePickerButton';
+import { ChecklistList } from './ChecklistList';
 import { cn } from '../lib/utils';
 
 const DEBOUNCE_MS = 500;
@@ -287,6 +288,7 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, i
       >
         <div className="overflow-hidden min-h-0">
           <div className="pr-4 pt-1 pb-3" style={{ paddingLeft: 46 }}>
+            <ChecklistList taskId={task.id} isExpanded={isExpanded} />
             <textarea
               ref={notesRef}
               value={notes}

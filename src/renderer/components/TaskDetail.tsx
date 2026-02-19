@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import type { Task, TaskStatus } from '@shared/types';
 import { useStore } from '../stores';
 import { useDebouncedCallback } from '../hooks/useDebouncedCallback';
+import { ChecklistList } from './ChecklistList';
 
 const DEBOUNCE_MS = 500;
 
@@ -124,6 +125,10 @@ export function TaskDetail({ task }: TaskDetailProps) {
             onChange={(e) => handleTitleChange(e.target.value)}
             className="w-full bg-transparent text-foreground text-sm font-medium px-2 py-1.5 rounded-md border border-transparent focus:border-border focus:outline-none focus:ring-1 focus:ring-ring"
           />
+        </div>
+
+        <div>
+          <ChecklistList taskId={task.id} />
         </div>
 
         <div>

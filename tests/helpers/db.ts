@@ -17,6 +17,7 @@ export interface TestDb {
   getRawProject(id: string): RawProject | undefined;
   getRawContext(id: string): RawContext | undefined;
   getRawStakeholder(id: string): RawStakeholder | undefined;
+  getRawChecklistItem(id: string): RawChecklistItem | undefined;
 
   // Cleanup
   close(): void;
@@ -46,6 +47,16 @@ interface RawContext {
 interface RawStakeholder {
   id: string;
   name: string;
+  deleted_at: string | null;
+  [key: string]: unknown;
+}
+
+export interface RawChecklistItem {
+  id: string;
+  task_id: string;
+  title: string;
+  is_done: number;
+  sort_order: number;
   deleted_at: string | null;
   [key: string]: unknown;
 }
@@ -112,6 +123,17 @@ export function createTestDb(): TestDb {
       permanently_deleted_at TEXT,
       stale_at TEXT
     );
+
+    CREATE TABLE task_checklists (
+      id TEXT PRIMARY KEY,
+      task_id TEXT NOT NULL REFERENCES tasks(id),
+      title TEXT NOT NULL,
+      is_done INTEGER NOT NULL DEFAULT 0,
+      sort_order INTEGER DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      deleted_at TEXT
+    );
   `);
 
   return {
@@ -151,6 +173,10 @@ export function createTestDb(): TestDb {
 
     getRawStakeholder(id: string) {
       return db.prepare('SELECT * FROM stakeholders WHERE id = ?').get(id) as RawStakeholder | undefined;
+    },
+
+    getRawChecklistItem(id: string) {
+      return db.prepare('SELECT * FROM task_checklists WHERE id = ?').get(id) as RawChecklistItem | undefined;
     },
 
     close() {

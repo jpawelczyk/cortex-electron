@@ -2,6 +2,7 @@ import type {
   Task, CreateTaskInput, UpdateTaskInput,
   Project, CreateProjectInput, UpdateProjectInput,
   Context, CreateContextInput, UpdateContextInput,
+  ChecklistItem, CreateChecklistItemInput, UpdateChecklistItemInput,
 } from './types';
 
 declare global {
@@ -45,6 +46,13 @@ declare global {
         create(input: unknown): Promise<unknown>;
         update(id: string, input: unknown): Promise<unknown>;
         delete(id: string): Promise<void>;
+      };
+      checklists: {
+        list(taskId: string): Promise<ChecklistItem[]>;
+        create(input: CreateChecklistItemInput): Promise<ChecklistItem>;
+        update(id: string, input: UpdateChecklistItemInput): Promise<ChecklistItem>;
+        delete(id: string): Promise<void>;
+        reorder(taskId: string, itemIds: string[]): Promise<void>;
       };
       stakeholders: {
         list(): Promise<unknown[]>;

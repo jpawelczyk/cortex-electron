@@ -143,3 +143,25 @@ export interface UpdateStakeholderInput {
   notes?: string | null;
   avatar_url?: string | null;
 }
+
+export interface ChecklistItem {
+  id: string;
+  task_id: string;
+  title: string;
+  is_done: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+export interface CreateChecklistItemInput {
+  task_id: string;
+  title: string;
+}
+
+export interface UpdateChecklistItemInput {
+  title?: string;
+  is_done?: boolean;
+  sort_order?: number;
+}

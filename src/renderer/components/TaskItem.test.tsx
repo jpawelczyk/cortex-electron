@@ -9,12 +9,23 @@ const mockUpdateTask = vi.fn();
 const mockDeselectTask = vi.fn();
 const mockDeleteTask = vi.fn();
 
+const mockFetchChecklistItems = vi.fn();
+const mockCreateChecklistItem = vi.fn();
+const mockDeleteChecklistItem = vi.fn();
+const mockUpdateChecklistItem = vi.fn();
+
 vi.mock('../stores', () => ({
   useStore: (selector: any) => {
     const state = {
       updateTask: mockUpdateTask,
       deselectTask: mockDeselectTask,
       deleteTask: mockDeleteTask,
+      checklistItems: {},
+      checklistsLoading: {},
+      fetchChecklistItems: mockFetchChecklistItems,
+      createChecklistItem: mockCreateChecklistItem,
+      deleteChecklistItem: mockDeleteChecklistItem,
+      updateChecklistItem: mockUpdateChecklistItem,
     };
     return selector(state);
   },

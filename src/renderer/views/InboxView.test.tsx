@@ -24,6 +24,12 @@ vi.mock('../stores', () => ({
       cancelInlineCreate: mockCancelInlineCreate,
       selectTask: vi.fn(),
       selectedTaskId: null,
+      checklistItems: {},
+      checklistsLoading: {},
+      fetchChecklistItems: vi.fn(),
+      createChecklistItem: vi.fn(),
+      deleteChecklistItem: vi.fn(),
+      updateChecklistItem: vi.fn(),
     };
     return selector(state);
   },

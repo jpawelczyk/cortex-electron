@@ -45,6 +45,14 @@ const api = {
     delete: (id: string): Promise<void> => ipcRenderer.invoke('meetings:delete', id),
   },
 
+  checklists: {
+    list: (taskId: string): Promise<unknown[]> => ipcRenderer.invoke('checklists:list', taskId),
+    create: (input: unknown): Promise<unknown> => ipcRenderer.invoke('checklists:create', input),
+    update: (id: string, input: unknown): Promise<unknown> => ipcRenderer.invoke('checklists:update', id, input),
+    delete: (id: string): Promise<void> => ipcRenderer.invoke('checklists:delete', id),
+    reorder: (taskId: string, itemIds: string[]): Promise<void> => ipcRenderer.invoke('checklists:reorder', taskId, itemIds),
+  },
+
   stakeholders: {
     list: (): Promise<unknown[]> => ipcRenderer.invoke('stakeholders:list'),
     get: (id: string): Promise<unknown> => ipcRenderer.invoke('stakeholders:get', id),
