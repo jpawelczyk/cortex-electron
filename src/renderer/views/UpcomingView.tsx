@@ -24,7 +24,6 @@ function formatUpcomingDate(dateStr: string): string {
     return target.toLocaleDateString('en-US', { weekday: 'long' });
   }
   return target.toLocaleDateString('en-US', {
-    weekday: 'long',
     month: 'long',
     day: 'numeric',
     year: 'numeric',
