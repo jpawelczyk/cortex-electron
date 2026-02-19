@@ -22,9 +22,9 @@ describe('useKeyboardShortcuts', () => {
     vi.restoreAllMocks();
   });
 
-  function renderShortcuts(activeView: string = 'inbox') {
+  function renderShortcuts() {
     return renderHook(() =>
-      useKeyboardShortcuts({ setActiveView, deselectTask, startInlineCreate, activeView })
+      useKeyboardShortcuts({ setActiveView, deselectTask, startInlineCreate })
     );
   }
 
@@ -89,16 +89,11 @@ describe('useKeyboardShortcuts', () => {
   });
 
   describe('Cmd+N → new task', () => {
-    it('calls startInlineCreate on inbox view', () => {
-      renderShortcuts('inbox');
+    it('navigates to inbox and starts inline create', () => {
+      renderShortcuts();
       fireKey('n', { metaKey: true });
+      expect(setActiveView).toHaveBeenCalledWith('inbox');
       expect(startInlineCreate).toHaveBeenCalled();
-    });
-
-    it('does not call startInlineCreate on other views', () => {
-      renderShortcuts('today');
-      fireKey('n', { metaKey: true });
-      expect(startInlineCreate).not.toHaveBeenCalled();
     });
   });
 

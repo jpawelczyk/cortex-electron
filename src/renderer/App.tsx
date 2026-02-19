@@ -22,7 +22,7 @@ export default function App() {
   const deselectTask = useStore((s) => s.deselectTask);
   const startInlineCreate = useStore((s) => s.startInlineCreate);
 
-  useKeyboardShortcuts({ setActiveView, deselectTask, startInlineCreate, activeView });
+  useKeyboardShortcuts({ setActiveView, deselectTask, startInlineCreate });
   useGlobalShortcuts({ setActiveView, startInlineCreate });
 
   useEffect(() => {
@@ -84,7 +84,7 @@ export default function App() {
           </button>
           <button
             onMouseDown={(e) => e.stopPropagation()}
-            onClick={() => startInlineCreate()}
+            onClick={() => { setActiveView('inbox'); startInlineCreate(); }}
             className="no-drag p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
           >
             <Plus className="size-5" />

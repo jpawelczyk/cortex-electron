@@ -5,7 +5,6 @@ interface KeyboardShortcutDeps {
   setActiveView: (view: SidebarView) => void;
   deselectTask: () => void;
   startInlineCreate: () => void;
-  activeView: string;
 }
 
 const VIEW_KEYS: Record<string, SidebarView> = {
@@ -18,7 +17,6 @@ export function useKeyboardShortcuts({
   setActiveView,
   deselectTask,
   startInlineCreate,
-  activeView,
 }: KeyboardShortcutDeps) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -42,8 +40,9 @@ export function useKeyboardShortcuts({
           return;
         }
 
-        if (e.key === 'n' && activeView === 'inbox') {
+        if (e.key === 'n') {
           e.preventDefault();
+          setActiveView('inbox');
           startInlineCreate();
           return;
         }
@@ -57,5 +56,5 @@ export function useKeyboardShortcuts({
 
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [setActiveView, deselectTask, startInlineCreate, activeView]);
+  }, [setActiveView, deselectTask, startInlineCreate]);
 }
