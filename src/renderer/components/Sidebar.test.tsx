@@ -41,11 +41,16 @@ describe('Sidebar', () => {
     expect(screen.getByText('5')).toBeInTheDocument(); // upcoming
   });
 
-  it('does not show count badge when count is 0', () => {
-    render(<Sidebar {...defaultProps} taskCounts={{ ...defaultProps.taskCounts, someday: 0 }} />);
+  it('does not show count for anytime', () => {
+    render(<Sidebar {...defaultProps} taskCounts={{ ...defaultProps.taskCounts, anytime: 9 }} />);
+    const anytimeItem = screen.getByText('Anytime').closest('button');
+    expect(anytimeItem).not.toHaveTextContent('9');
+  });
+
+  it('does not show count for someday', () => {
+    render(<Sidebar {...defaultProps} taskCounts={{ ...defaultProps.taskCounts, someday: 8 }} />);
     const somedayItem = screen.getByText('Someday').closest('button');
-    // "0" should not appear as a badge within the someday button
-    expect(somedayItem).not.toHaveTextContent('0');
+    expect(somedayItem).not.toHaveTextContent('8');
   });
 
   it('renders Stale nav item', () => {
