@@ -1,6 +1,6 @@
 import { v4 as uuid } from 'uuid';
 import type { Task, CreateTaskInput, UpdateTaskInput, TaskStatus } from '@shared/types';
-import type { TestDb } from '../../../tests/helpers/db';
+import type { DbContext } from '../db/types';
 
 function getToday(): string {
   return new Date().toISOString().split('T')[0];
@@ -27,8 +27,8 @@ export interface TaskService {
   markStaleTasks(thresholdDays: number): Promise<number>;
 }
 
-export function createTaskService(testDb: TestDb): TaskService {
-  const { db } = testDb;
+export function createTaskService(ctx: DbContext): TaskService {
+  const { db } = ctx;
 
   /**
    * Get project's context_id for inheritance

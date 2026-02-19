@@ -1,6 +1,6 @@
 import { v4 as uuid } from 'uuid';
 import type { Stakeholder, CreateStakeholderInput, UpdateStakeholderInput } from '@shared/types';
-import type { TestDb } from '../../../tests/helpers/db';
+import type { DbContext } from '../db/types';
 
 export interface StakeholderService {
   create(input: CreateStakeholderInput): Promise<Stakeholder>;
@@ -10,8 +10,8 @@ export interface StakeholderService {
   delete(id: string): Promise<void>;
 }
 
-export function createStakeholderService(testDb: TestDb): StakeholderService {
-  const { db } = testDb;
+export function createStakeholderService(ctx: DbContext): StakeholderService {
+  const { db } = ctx;
 
   return {
     async create(input: CreateStakeholderInput): Promise<Stakeholder> {

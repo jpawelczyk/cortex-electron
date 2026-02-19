@@ -1,6 +1,6 @@
 import { v4 as uuid } from 'uuid';
 import type { Project, Task, ProjectStatus, CreateProjectInput, UpdateProjectInput } from '@shared/types';
-import type { TestDb } from '../../../tests/helpers/db';
+import type { DbContext } from '../db/types';
 
 export interface ProjectService {
   create(input: CreateProjectInput): Promise<Project>;
@@ -12,8 +12,8 @@ export interface ProjectService {
   getTasksForProject(projectId: string): Promise<Task[]>;
 }
 
-export function createProjectService(testDb: TestDb): ProjectService {
-  const { db } = testDb;
+export function createProjectService(ctx: DbContext): ProjectService {
+  const { db } = ctx;
 
   return {
     async create(input: CreateProjectInput): Promise<Project> {

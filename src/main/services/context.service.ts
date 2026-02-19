@@ -1,6 +1,6 @@
 import { v4 as uuid } from 'uuid';
 import type { Context, Project, Task, CreateContextInput, UpdateContextInput } from '@shared/types';
-import type { TestDb } from '../../../tests/helpers/db';
+import type { DbContext } from '../db/types';
 
 export interface ContextService {
   create(input: CreateContextInput): Promise<Context>;
@@ -12,8 +12,8 @@ export interface ContextService {
   getTasksForContext(contextId: string): Promise<Task[]>;
 }
 
-export function createContextService(testDb: TestDb): ContextService {
-  const { db } = testDb;
+export function createContextService(ctx: DbContext): ContextService {
+  const { db } = ctx;
 
   return {
     async create(input: CreateContextInput): Promise<Context> {

@@ -1,13 +1,12 @@
 import Database from 'better-sqlite3';
 import { v4 as uuid } from 'uuid';
+import type { DbContext } from '../../src/main/db/types';
 
 /**
  * In-memory SQLite database for testing.
- * Provides helper methods for setting up test fixtures.
+ * Extends DbContext with helper methods for setting up test fixtures.
  */
-export interface TestDb {
-  db: Database.Database;
-  
+export interface TestDb extends DbContext {
   // Fixture helpers
   createContext(data: { name: string; color?: string }): string;
   createProject(data: { title: string; context_id?: string }): string;

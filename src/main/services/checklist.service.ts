@@ -1,6 +1,6 @@
 import { v4 as uuid } from 'uuid';
 import type { ChecklistItem, CreateChecklistItemInput, UpdateChecklistItemInput } from '@shared/types';
-import type { TestDb } from '../../../tests/helpers/db';
+import type { DbContext } from '../db/types';
 
 export interface ChecklistService {
   listByTask(taskId: string): Promise<ChecklistItem[]>;
@@ -25,8 +25,8 @@ function toChecklistItem(row: RawChecklistRow): ChecklistItem {
   return { ...row, is_done: !!row.is_done };
 }
 
-export function createChecklistService(testDb: TestDb): ChecklistService {
-  const { db } = testDb;
+export function createChecklistService(ctx: DbContext): ChecklistService {
+  const { db } = ctx;
 
   return {
     async create(input: CreateChecklistItemInput): Promise<ChecklistItem> {

@@ -5,16 +5,16 @@ import { createProjectService } from '../services/project.service';
 import { createContextService } from '../services/context.service';
 import { createStakeholderService } from '../services/stakeholder.service';
 import { createChecklistService } from '../services/checklist.service';
-import type { TestDb } from '../../../tests/helpers/db';
+import type { DbContext } from '../db/types';
 
 export function registerHandlers(db: Database.Database): void {
-  const dbProvider = { db } as TestDb;
+  const ctx: DbContext = { db };
 
-  const taskService = createTaskService(dbProvider);
-  const projectService = createProjectService(dbProvider);
-  const contextService = createContextService(dbProvider);
-  const stakeholderService = createStakeholderService(dbProvider);
-  const checklistService = createChecklistService(dbProvider);
+  const taskService = createTaskService(ctx);
+  const projectService = createProjectService(ctx);
+  const contextService = createContextService(ctx);
+  const stakeholderService = createStakeholderService(ctx);
+  const checklistService = createChecklistService(ctx);
 
   // Tasks
   ipcMain.handle('tasks:list', async () => taskService.list());

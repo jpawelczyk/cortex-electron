@@ -5,7 +5,7 @@ import { initDatabase, closeDatabase, getDb } from './db/index.js';
 import { registerHandlers } from './ipc/handlers.js';
 import { registerGlobalShortcuts, unregisterGlobalShortcuts } from './shortcuts.js';
 import { createTaskService } from './services/task.service.js';
-import type { TestDb } from '../../tests/helpers/db.js';
+import type { DbContext } from './db/types.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -82,7 +82,8 @@ app.whenReady().then(() => {
   registerHandlers(db);
 
   // Auto-purge trash items older than 30 days
-  const taskService = createTaskService({ db } as TestDb);
+  const ctx: DbContext = { db };
+  const taskService = createTaskService(ctx);
   taskService.purgeExpiredTrash(30).catch(() => {});
 
   // Mark stale tasks on startup
