@@ -8,7 +8,6 @@ export function registerGlobalShortcuts(mainWindow: BrowserWindow): void {
   };
 
   globalShortcut.register('CommandOrControl+Shift+Space', quickCapture);
-  globalShortcut.register('CommandOrControl+Shift+N', quickCapture);
 }
 
 export function unregisterGlobalShortcuts(): void {
