@@ -1,32 +1,19 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { Sun } from 'lucide-react';
+import { Clock } from 'lucide-react';
 import { useStore } from '../stores';
 import { TaskList } from '../components/TaskList';
 
 const SORT_DELAY_MS = 400;
 
-function getToday(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
-export function TodayView() {
+export function StaleView() {
   const tasks = useStore((s) => s.tasks);
   const fetchTasks = useStore((s) => s.fetchTasks);
   const updateTask = useStore((s) => s.updateTask);
   const selectTask = useStore((s) => s.selectTask);
   const selectedTaskId = useStore((s) => s.selectedTaskId);
 
-  const today = getToday();
-
-  // Toggle signal: which tasks are currently completed from the UI's perspective.
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
-  // Ordered settled list: newly settled tasks are prepended so they stay at
-  // their current visual position (top of the settled section) and don't cause
-  // a reorder of already-settled tasks.
   const [settledIds, setSettledIds] = useState<string[]>([]);
-  // Filter signal: keeps logbook tasks visible during the async IPC window
-  // after uncomplete (when completedIds no longer has the id but the store
-  // hasn't updated to today yet).
   const everCompletedIds = useRef(new Set<string>());
   const sortTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
 
@@ -34,13 +21,15 @@ export function TodayView() {
     return () => sortTimers.current.forEach(clearTimeout);
   }, []);
 
-  const todayTasks = useMemo(() => {
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
+
+  const staleTasks = useMemo(() => {
     const visible = tasks.filter((t) => {
       if (t.status === 'logbook' && everCompletedIds.current.has(t.id)) return true;
-      if (t.status === 'logbook' || t.status === 'cancelled') return false;
-      // Exclude overdue-by-deadline tasks — those belong in Inbox
-      if (t.deadline && t.deadline < today) return false;
-      return t.status === 'today' || t.when_date === today;
+      if (t.status === 'stale') return true;
+      return false;
     });
     return visible.sort((a, b) => {
       const aIdx = settledIds.indexOf(a.id);
@@ -51,17 +40,18 @@ export function TodayView() {
       if (aSettled && bSettled) return aIdx - bIdx;
       return 0;
     });
-  }, [tasks, today, completedIds, settledIds]); // completedIds included as recalc trigger
+  }, [tasks, completedIds, settledIds]); // completedIds included as recalc trigger
 
-  useEffect(() => {
-    fetchTasks();
-  }, [fetchTasks]);
+  const incompleteCount = useMemo(
+    () => staleTasks.filter((t) => t.status !== 'logbook').length,
+    [staleTasks],
+  );
 
   const handleComplete = useCallback(
     (id: string) => {
       if (completedIds.has(id)) {
-        // Uncomplete: restore to today
-        updateTask(id, { status: 'today' });
+        // Uncomplete: restore to stale
+        updateTask(id, { status: 'stale' });
         setCompletedIds((prev) => {
           const next = new Set(prev);
           next.delete(id);
@@ -92,22 +82,22 @@ export function TodayView() {
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-5xl mx-auto px-8 py-8">
         <div className="flex items-center gap-3 mb-6">
-          <h2 className="text-xl font-semibold text-foreground">Today</h2>
-          {todayTasks.filter((t) => t.status !== 'logbook').length > 0 && (
+          <h2 className="text-xl font-semibold text-foreground">Stale</h2>
+          {incompleteCount > 0 && (
             <span className="text-xs text-muted-foreground bg-accent rounded-full size-5 inline-flex items-center justify-center">
-              {todayTasks.filter((t) => t.status !== 'logbook').length}
+              {incompleteCount}
             </span>
           )}
         </div>
 
-        {todayTasks.length === 0 ? (
+        {staleTasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-            <Sun className="size-10 mb-3 opacity-30" strokeWidth={1.25} />
-            <p className="text-sm">Nothing scheduled for today</p>
+            <Clock className="size-10 mb-3 opacity-30" strokeWidth={1.25} />
+            <p className="text-sm">No stale tasks — you're on track</p>
           </div>
         ) : (
           <TaskList
-            tasks={todayTasks}
+            tasks={staleTasks}
             onCompleteTask={handleComplete}
             onSelectTask={selectTask}
             selectedTaskId={selectedTaskId}

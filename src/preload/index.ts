@@ -64,6 +64,12 @@ const api = {
     return () => { ipcRenderer.removeListener('focus-task-input', listener); };
   },
 
+  onStaleCheckComplete: (callback: () => void) => {
+    const listener = () => callback();
+    ipcRenderer.on('tasks:stale-check-complete', listener);
+    return () => { ipcRenderer.removeListener('tasks:stale-check-complete', listener); };
+  },
+
   system: {
     exportData: (): Promise<unknown> => ipcRenderer.invoke('system:export'),
     importData: (filePath: string): Promise<void> => ipcRenderer.invoke('system:import', filePath),

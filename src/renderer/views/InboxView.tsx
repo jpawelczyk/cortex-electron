@@ -1,9 +1,13 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { Inbox } from 'lucide-react';
+import { Inbox, AlertTriangle } from 'lucide-react';
 import type { Task } from '@shared/types';
 import { useStore } from '../stores';
 import { TaskList } from '../components/TaskList';
 import { InlineTaskCard } from '../components/InlineTaskCard';
+
+function getToday(): string {
+  return new Date().toISOString().slice(0, 10);
+}
 
 const SORT_DELAY_MS = 400;
 
@@ -45,6 +49,19 @@ export function InboxView() {
   useEffect(() => {
     return () => sortTimers.current.forEach(clearTimeout);
   }, []);
+
+  const today = getToday();
+
+  const overdueTasks = useMemo(() => {
+    return tasks.filter(
+      (t) =>
+        t.deadline &&
+        t.deadline < today &&
+        !['logbook', 'cancelled', 'someday'].includes(t.status) &&
+        !t.deleted_at &&
+        !t.completed_at,
+    );
+  }, [tasks, today]);
 
   const inboxTasks = useMemo(() => {
     const visible = tasks.filter(
@@ -131,9 +148,30 @@ export function InboxView() {
           )}
         </div>
 
+        {overdueTasks.length > 0 && (
+          <>
+            <div className="flex items-center gap-2 mb-3">
+              <AlertTriangle className="size-4 text-red-500" strokeWidth={1.75} />
+              <h3 className="text-sm font-medium text-red-500">Overdue</h3>
+            </div>
+            <TaskList
+              tasks={overdueTasks}
+              onCompleteTask={handleComplete}
+              onSelectTask={selectTask}
+              selectedTaskId={selectedTaskId}
+              completedIds={effectiveCompletedIds}
+            />
+            {inboxTasks.length > 0 && (
+              <div className="mt-6 mb-3">
+                <h3 className="text-sm font-medium text-muted-foreground">Inbox</h3>
+              </div>
+            )}
+          </>
+        )}
+
         {isInlineCreating && <InlineTaskCard />}
 
-        {!isInlineCreating && inboxTasks.length === 0 ? (
+        {!isInlineCreating && inboxTasks.length === 0 && overdueTasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
             <Inbox className="size-10 mb-3 opacity-30" strokeWidth={1.25} />
             <p className="text-sm">No tasks in your inbox</p>

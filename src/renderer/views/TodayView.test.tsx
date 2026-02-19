@@ -99,6 +99,30 @@ describe('TodayView', () => {
     expect(screen.queryByText('Tomorrow task')).not.toBeInTheDocument();
   });
 
+  it('excludes tasks with past deadline (overdue belongs in Inbox)', () => {
+    mockTasks = [
+      fakeTask({ id: '1', title: 'Overdue', status: 'today', deadline: '2025-01-01' }),
+    ];
+    render(<TodayView />);
+    expect(screen.queryByText('Overdue')).not.toBeInTheDocument();
+  });
+
+  it('still shows tasks with future deadline', () => {
+    mockTasks = [
+      fakeTask({ id: '1', title: 'Future deadline', status: 'today', deadline: '2099-12-31' }),
+    ];
+    render(<TodayView />);
+    expect(screen.getByText('Future deadline')).toBeInTheDocument();
+  });
+
+  it('still shows tasks with no deadline', () => {
+    mockTasks = [
+      fakeTask({ id: '1', title: 'No deadline', status: 'today', deadline: null }),
+    ];
+    render(<TodayView />);
+    expect(screen.getByText('No deadline')).toBeInTheDocument();
+  });
+
   it('completes a task by setting status to logbook', () => {
     mockTasks = [fakeTask({ id: 'task-42', title: 'Complete me', status: 'today' })];
     render(<TodayView />);

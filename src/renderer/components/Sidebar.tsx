@@ -1,6 +1,6 @@
-import { Inbox, Sun, Calendar, Layers, Cloud, BookOpen, Trash2, Settings } from 'lucide-react';
+import { Inbox, Sun, Calendar, Layers, Cloud, Clock, BookOpen, Trash2, Settings } from 'lucide-react';
 
-export type SidebarView = 'inbox' | 'today' | 'upcoming' | 'anytime' | 'someday' | 'logbook' | 'trash';
+export type SidebarView = 'inbox' | 'today' | 'upcoming' | 'anytime' | 'someday' | 'stale' | 'logbook' | 'trash';
 
 interface TaskCounts {
   inbox: number;
@@ -8,6 +8,7 @@ interface TaskCounts {
   upcoming: number;
   anytime: number;
   someday: number;
+  stale: number;
   logbook: number;
   trash: number;
 }
@@ -24,6 +25,7 @@ const NAV_ITEMS: { view: SidebarView; label: string; icon: typeof Inbox }[] = [
   { view: 'upcoming', label: 'Upcoming', icon: Calendar },
   { view: 'anytime', label: 'Anytime', icon: Layers },
   { view: 'someday', label: 'Someday', icon: Cloud },
+  { view: 'stale', label: 'Stale', icon: Clock },
   { view: 'logbook', label: 'Logbook', icon: BookOpen },
   { view: 'trash', label: 'Trash', icon: Trash2 },
 ];

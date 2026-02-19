@@ -8,6 +8,8 @@ import { TrashView } from './views/TrashView';
 import { LogbookView } from './views/LogbookView';
 import { UpcomingView } from './views/UpcomingView';
 import { AnytimeView } from './views/AnytimeView';
+import { SomedayView } from './views/SomedayView';
+import { StaleView } from './views/StaleView';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
 
@@ -15,6 +17,7 @@ export default function App() {
   const [activeView, setActiveView] = useState<SidebarView>('inbox');
   const tasks = useStore((s) => s.tasks);
   const trashedTasks = useStore((s) => s.trashedTasks);
+  const fetchTasks = useStore((s) => s.fetchTasks);
   const fetchTrashedTasks = useStore((s) => s.fetchTrashedTasks);
   const deselectTask = useStore((s) => s.deselectTask);
   const startInlineCreate = useStore((s) => s.startInlineCreate);
@@ -26,20 +29,39 @@ export default function App() {
     fetchTrashedTasks();
   }, [fetchTrashedTasks]);
 
+  // Refresh tasks when stale check completes on window focus
+  useEffect(() => {
+    const cleanup = window.cortex.onStaleCheckComplete(() => {
+      fetchTasks();
+    });
+    return cleanup;
+  }, [fetchTasks]);
+
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
   const taskCounts = useMemo(() => {
+    const overdueCount = tasks.filter(
+      (t) =>
+        t.deadline &&
+        t.deadline < today &&
+        !['logbook', 'cancelled', 'someday'].includes(t.status) &&
+        !t.deleted_at &&
+        !t.completed_at,
+    ).length;
+
     const todayCount = tasks.filter((t) => {
       if (t.status === 'logbook' || t.status === 'cancelled') return false;
+      if (t.deadline && t.deadline < today) return false;
       return t.status === 'today' || t.when_date === today;
     }).length;
 
     return {
-      inbox: tasks.filter((t) => t.status === 'inbox' && !t.when_date).length,
+      inbox: tasks.filter((t) => t.status === 'inbox' && !t.when_date).length + overdueCount,
       today: todayCount,
       upcoming: tasks.filter((t) => t.status === 'upcoming').length,
       anytime: tasks.filter((t) => t.status === 'anytime').length,
       someday: tasks.filter((t) => t.status === 'someday').length,
+      stale: tasks.filter((t) => t.status === 'stale').length,
       logbook: tasks.filter((t) => t.status === 'logbook').length,
       trash: trashedTasks.length,
     };
@@ -71,15 +93,12 @@ export default function App() {
 
         {activeView === 'inbox' && <InboxView />}
         {activeView === 'today' && <TodayView />}
-        {activeView === 'trash' && <TrashView />}
-        {activeView === 'logbook' && <LogbookView />}
         {activeView === 'upcoming' && <UpcomingView />}
         {activeView === 'anytime' && <AnytimeView />}
-        {activeView !== 'inbox' && activeView !== 'today' && activeView !== 'trash' && activeView !== 'logbook' && activeView !== 'upcoming' && activeView !== 'anytime' && (
-          <div className="flex-1 flex items-center justify-center text-muted-foreground">
-            <p className="text-sm">{activeView.charAt(0).toUpperCase() + activeView.slice(1)} — coming soon</p>
-          </div>
-        )}
+        {activeView === 'someday' && <SomedayView />}
+        {activeView === 'stale' && <StaleView />}
+        {activeView === 'logbook' && <LogbookView />}
+        {activeView === 'trash' && <TrashView />}
       </main>
     </div>
   );

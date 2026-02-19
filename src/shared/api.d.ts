@@ -58,6 +58,7 @@ declare global {
         upsert(date: string, content: string): Promise<unknown>;
       };
       onFocusTaskInput(callback: () => void): () => void;
+      onStaleCheckComplete(callback: () => void): () => void;
       system: {
         exportData(): Promise<unknown>;
         importData(filePath: string): Promise<void>;

@@ -404,6 +404,68 @@ describe('TaskService', () => {
       });
     });
 
+    describe('stale auto-sync', () => {
+      it('rescheduling stale task (when_date to today) → status becomes today, stale_at cleared', async () => {
+        const task = await taskService.create({ title: 'T', status: 'today', when_date: '2026-01-01' });
+        await taskService.markStaleTasks(5);
+        const stale = await taskService.get(task.id);
+        expect(stale?.status).toBe('stale');
+        expect(stale?.stale_at).not.toBeNull();
+
+        const today = new Date().toISOString().split('T')[0];
+        const updated = await taskService.update(task.id, { when_date: today });
+        expect(updated.status).toBe('today');
+        expect(updated.stale_at).toBeNull();
+      });
+
+      it('rescheduling stale task (when_date to future) → status becomes upcoming, stale_at cleared', async () => {
+        const task = await taskService.create({ title: 'T', status: 'today', when_date: '2026-01-01' });
+        await taskService.markStaleTasks(5);
+
+        const updated = await taskService.update(task.id, { when_date: '2099-12-31' });
+        expect(updated.status).toBe('upcoming');
+        expect(updated.stale_at).toBeNull();
+      });
+
+      it('clearing when_date on stale task → status becomes anytime, stale_at cleared', async () => {
+        const task = await taskService.create({ title: 'T', status: 'today', when_date: '2026-01-01' });
+        await taskService.markStaleTasks(5);
+
+        const updated = await taskService.update(task.id, { when_date: null });
+        expect(updated.status).toBe('anytime');
+        expect(updated.stale_at).toBeNull();
+      });
+
+      it('moving stale task to inbox → when_date cleared, stale_at cleared', async () => {
+        const task = await taskService.create({ title: 'T', status: 'today', when_date: '2026-01-01' });
+        await taskService.markStaleTasks(5);
+
+        const updated = await taskService.update(task.id, { status: 'inbox' });
+        expect(updated.when_date).toBeNull();
+        expect(updated.stale_at).toBeNull();
+      });
+
+      it('updating title on stale task → stays stale, stale_at preserved', async () => {
+        const task = await taskService.create({ title: 'T', status: 'today', when_date: '2026-01-01' });
+        await taskService.markStaleTasks(5);
+        const stale = await taskService.get(task.id);
+
+        const updated = await taskService.update(task.id, { title: 'New title' });
+        expect(updated.status).toBe('stale');
+        expect(updated.stale_at).toBe(stale?.stale_at);
+      });
+
+      it('completing stale task → logbook, stale_at cleared', async () => {
+        const task = await taskService.create({ title: 'T', status: 'today', when_date: '2026-01-01' });
+        await taskService.markStaleTasks(5);
+
+        const updated = await taskService.update(task.id, { status: 'logbook' });
+        expect(updated.status).toBe('logbook');
+        expect(updated.stale_at).toBeNull();
+        expect(updated.completed_at).not.toBeNull();
+      });
+    });
+
     describe('both explicit / neither', () => {
       it('both provided → both honored', async () => {
         const task = await taskService.create({ title: 'T' });
@@ -467,6 +529,99 @@ describe('TaskService', () => {
       await expect(
         taskService.delete('non-existent')
       ).rejects.toThrow('Task not found');
+    });
+  });
+
+  describe('markStaleTasks', () => {
+    it('marks task with old when_date and status=today as stale', async () => {
+      const task = await taskService.create({ title: 'Old task', status: 'today', when_date: '2026-01-01' });
+      const count = await taskService.markStaleTasks(5);
+      expect(count).toBe(1);
+      const updated = await taskService.get(task.id);
+      expect(updated?.status).toBe('stale');
+      expect(updated?.stale_at).not.toBeNull();
+    });
+
+    it('marks task with old when_date and status=upcoming as stale', async () => {
+      const task = await taskService.create({ title: 'Old upcoming', status: 'upcoming', when_date: '2026-01-01' });
+      const count = await taskService.markStaleTasks(5);
+      expect(count).toBe(1);
+      const updated = await taskService.get(task.id);
+      expect(updated?.status).toBe('stale');
+    });
+
+    it('does NOT mark anytime tasks', async () => {
+      await taskService.create({ title: 'Anytime', status: 'anytime' });
+      const count = await taskService.markStaleTasks(5);
+      expect(count).toBe(0);
+    });
+
+    it('does NOT mark someday tasks', async () => {
+      await taskService.create({ title: 'Someday', status: 'someday' });
+      const count = await taskService.markStaleTasks(5);
+      expect(count).toBe(0);
+    });
+
+    it('does NOT mark completed/logbook tasks', async () => {
+      const task = await taskService.create({ title: 'Done', status: 'today', when_date: '2026-01-01' });
+      await taskService.update(task.id, { status: 'logbook' });
+      const count = await taskService.markStaleTasks(5);
+      expect(count).toBe(0);
+    });
+
+    it('does NOT mark tasks within threshold', async () => {
+      // 3 days ago is within 5-day threshold
+      const threeDaysAgo = new Date();
+      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+      const whenDate = threeDaysAgo.toISOString().split('T')[0];
+      await taskService.create({ title: 'Recent', status: 'today', when_date: whenDate });
+      const count = await taskService.markStaleTasks(5);
+      expect(count).toBe(0);
+    });
+
+    it('does NOT mark tasks with past deadline (due wins)', async () => {
+      await taskService.create({ title: 'Overdue', status: 'today', when_date: '2026-01-01', deadline: '2026-01-15' });
+      const count = await taskService.markStaleTasks(5);
+      expect(count).toBe(0);
+    });
+
+    it('marks tasks with future deadline (deadline not past)', async () => {
+      const task = await taskService.create({ title: 'Future deadline', status: 'today', when_date: '2026-01-01', deadline: '2099-12-31' });
+      const count = await taskService.markStaleTasks(5);
+      expect(count).toBe(1);
+      const updated = await taskService.get(task.id);
+      expect(updated?.status).toBe('stale');
+    });
+
+    it('preserves existing stale_at (uses COALESCE)', async () => {
+      const task = await taskService.create({ title: 'Already stale', status: 'today', when_date: '2026-01-01' });
+      // First mark
+      await taskService.markStaleTasks(5);
+      const afterFirst = await taskService.get(task.id);
+      const originalStaleAt = afterFirst?.stale_at;
+
+      // Reset status to today to test re-marking
+      db.db.prepare('UPDATE tasks SET status = ? WHERE id = ?').run('today', task.id);
+
+      await new Promise(r => setTimeout(r, 10));
+      await taskService.markStaleTasks(5);
+      const afterSecond = await taskService.get(task.id);
+      expect(afterSecond?.stale_at).toBe(originalStaleAt);
+    });
+
+    it('returns count of affected rows', async () => {
+      await taskService.create({ title: 'Old 1', status: 'today', when_date: '2026-01-01' });
+      await taskService.create({ title: 'Old 2', status: 'upcoming', when_date: '2026-01-02' });
+      await taskService.create({ title: 'Recent', status: 'today', when_date: new Date().toISOString().split('T')[0] });
+      const count = await taskService.markStaleTasks(5);
+      expect(count).toBe(2);
+    });
+
+    it('does NOT mark deleted tasks', async () => {
+      const task = await taskService.create({ title: 'Deleted', status: 'today', when_date: '2026-01-01' });
+      await taskService.delete(task.id);
+      const count = await taskService.markStaleTasks(5);
+      expect(count).toBe(0);
     });
   });
 

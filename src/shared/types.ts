@@ -1,12 +1,13 @@
 // Core entity types
 
-export type TaskStatus = 
-  | 'inbox' 
-  | 'today' 
-  | 'upcoming' 
-  | 'anytime' 
-  | 'someday' 
-  | 'logbook' 
+export type TaskStatus =
+  | 'inbox'
+  | 'today'
+  | 'upcoming'
+  | 'anytime'
+  | 'someday'
+  | 'stale'
+  | 'logbook'
   | 'cancelled';
 
 export type Priority = 'P0' | 'P1' | 'P2' | 'P3';
@@ -27,6 +28,7 @@ export interface Task {
   updated_at: string;
   completed_at: string | null;
   deleted_at: string | null;
+  stale_at: string | null;
 }
 
 export interface CreateTaskInput {

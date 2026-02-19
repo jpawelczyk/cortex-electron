@@ -8,7 +8,7 @@ describe('Sidebar', () => {
   const defaultProps = {
     activeView: 'inbox' as const,
     onViewChange: vi.fn(),
-    taskCounts: { inbox: 3, today: 1, upcoming: 5, anytime: 2, someday: 0, logbook: 10, trash: 4 },
+    taskCounts: { inbox: 3, today: 1, upcoming: 5, anytime: 2, someday: 0, stale: 0, logbook: 10, trash: 4 },
   };
 
   it('renders navigation items', () => {
@@ -46,6 +46,23 @@ describe('Sidebar', () => {
     const somedayItem = screen.getByText('Someday').closest('button');
     // "0" should not appear as a badge within the someday button
     expect(somedayItem).not.toHaveTextContent('0');
+  });
+
+  it('renders Stale nav item', () => {
+    render(<Sidebar {...defaultProps} />);
+    expect(screen.getByText('Stale')).toBeInTheDocument();
+  });
+
+  it('calls onViewChange with stale when Stale clicked', () => {
+    const onViewChange = vi.fn();
+    render(<Sidebar {...defaultProps} onViewChange={onViewChange} />);
+    fireEvent.click(screen.getByText('Stale'));
+    expect(onViewChange).toHaveBeenCalledWith('stale');
+  });
+
+  it('shows stale count when > 0', () => {
+    render(<Sidebar {...defaultProps} taskCounts={{ ...defaultProps.taskCounts, stale: 7 }} />);
+    expect(screen.getByText('7')).toBeInTheDocument();
   });
 
   it('renders Trash nav item', () => {

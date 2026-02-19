@@ -24,6 +24,7 @@ export interface TaskService {
   restore(id: string): Promise<Task>;
   emptyTrash(): Promise<void>;
   purgeExpiredTrash(days: number): Promise<void>;
+  markStaleTasks(thresholdDays: number): Promise<number>;
 }
 
 export function createTaskService(testDb: TestDb): TaskService {
@@ -75,22 +76,23 @@ export function createTaskService(testDb: TestDb): TaskService {
         updated_at: now,
         completed_at: null,
         deleted_at: null,
+        stale_at: null,
       };
 
       db.prepare(`
         INSERT INTO tasks (
           id, title, notes, status, when_date, deadline,
           project_id, heading_id, context_id, priority,
-          sort_order, created_at, updated_at, completed_at, deleted_at
+          sort_order, created_at, updated_at, completed_at, deleted_at, stale_at
         ) VALUES (
           ?, ?, ?, ?, ?, ?,
           ?, ?, ?, ?,
-          ?, ?, ?, ?, ?
+          ?, ?, ?, ?, ?, ?
         )
       `).run(
         task.id, task.title, task.notes, task.status, task.when_date, task.deadline,
         task.project_id, task.heading_id, task.context_id, task.priority,
-        task.sort_order, task.created_at, task.updated_at, task.completed_at, task.deleted_at
+        task.sort_order, task.created_at, task.updated_at, task.completed_at, task.deleted_at, task.stale_at
       );
 
       return task;
@@ -137,6 +139,9 @@ export function createTaskService(testDb: TestDb): TaskService {
         }
       }
 
+      // Rule 1 extension: stale tasks with when_date change → re-derive
+      // (already handled above since stale is not terminal and not inbox/someday)
+
       // Rule 2: status changed, when_date not explicit → derive when_date
       if (statusExplicit && !whenDateExplicit) {
         if (input.status === 'inbox' || input.status === 'anytime' || input.status === 'someday') {
@@ -144,10 +149,15 @@ export function createTaskService(testDb: TestDb): TaskService {
         }
       }
 
+      // Rule 2 extension: setting status to stale → preserve when_date (like today/upcoming)
+
       // Determine if completing or uncompleting (use derivedStatus)
       const isCompleting = derivedStatus === 'logbook' && existing.status !== 'logbook';
       const isUncompleting = derivedStatus !== 'logbook' && existing.status === 'logbook';
       const completedAt = isCompleting ? now : isUncompleting ? null : existing.completed_at;
+
+      // Handle stale_at: clear when leaving stale, preserve when staying stale
+      const staleAt = derivedStatus === 'stale' ? existing.stale_at : null;
 
       // Build update
       const updated: Task = {
@@ -157,18 +167,19 @@ export function createTaskService(testDb: TestDb): TaskService {
         when_date: derivedWhenDate,
         updated_at: now,
         completed_at: completedAt,
+        stale_at: staleAt,
       };
 
       db.prepare(`
         UPDATE tasks SET
           title = ?, notes = ?, status = ?, when_date = ?, deadline = ?,
           project_id = ?, heading_id = ?, context_id = ?, priority = ?,
-          sort_order = ?, updated_at = ?, completed_at = ?
+          sort_order = ?, updated_at = ?, completed_at = ?, stale_at = ?
         WHERE id = ?
       `).run(
         updated.title, updated.notes, updated.status, updated.when_date, updated.deadline,
         updated.project_id, updated.heading_id, updated.context_id, updated.priority,
-        updated.sort_order, updated.updated_at, updated.completed_at,
+        updated.sort_order, updated.updated_at, updated.completed_at, updated.stale_at,
         id
       );
 
@@ -223,6 +234,30 @@ export function createTaskService(testDb: TestDb): TaskService {
       db.prepare(
         'UPDATE tasks SET permanently_deleted_at = ? WHERE deleted_at IS NOT NULL AND permanently_deleted_at IS NULL AND deleted_at < ?'
       ).run(now, cutoff);
+    },
+
+    async markStaleTasks(thresholdDays: number): Promise<number> {
+      const now = new Date().toISOString();
+      const today = getToday();
+      // Calculate the cutoff date: when_date must be before (today - threshold) days
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - thresholdDays);
+      const cutoffDate = cutoff.toISOString().split('T')[0];
+
+      const result = db.prepare(`
+        UPDATE tasks SET
+          status = 'stale',
+          stale_at = COALESCE(stale_at, ?),
+          updated_at = ?
+        WHERE when_date IS NOT NULL
+          AND when_date < ?
+          AND status IN ('today', 'upcoming')
+          AND (deadline IS NULL OR deadline >= ?)
+          AND deleted_at IS NULL
+          AND completed_at IS NULL
+      `).run(now, now, cutoffDate, today);
+
+      return result.changes;
     },
   };
 }

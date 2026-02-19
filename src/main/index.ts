@@ -84,8 +84,20 @@ app.whenReady().then(() => {
   const taskService = createTaskService({ db } as any);
   taskService.purgeExpiredTrash(30).catch(() => {});
 
+  // Mark stale tasks on startup
+  taskService.markStaleTasks(5).catch(() => {});
+
   createWindow();
   registerGlobalShortcuts(mainWindow!);
+
+  // Re-check stale tasks on window focus (handles long-running sessions)
+  mainWindow!.on('focus', () => {
+    taskService.markStaleTasks(5).then((count) => {
+      if (count > 0) {
+        mainWindow?.webContents.send('tasks:stale-check-complete');
+      }
+    }).catch(() => {});
+  });
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

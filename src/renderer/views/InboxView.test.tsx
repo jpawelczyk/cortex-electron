@@ -119,6 +119,69 @@ describe('InboxView', () => {
     expect(screen.queryByText(/no tasks in your inbox/i)).not.toBeInTheDocument();
   });
 
+  describe('overdue by deadline', () => {
+    it('shows tasks with past deadline in inbox', () => {
+      mockTasks = [
+        fakeTask({ id: '1', title: 'Overdue task', status: 'today', deadline: '2025-01-01' }),
+        fakeTask({ id: '2', title: 'Inbox task', status: 'inbox' }),
+      ];
+      render(<InboxView />);
+      expect(screen.getByText('Overdue task')).toBeInTheDocument();
+      expect(screen.getByText('Inbox task')).toBeInTheDocument();
+    });
+
+    it('shows Overdue section header', () => {
+      mockTasks = [
+        fakeTask({ id: '1', title: 'Past due', status: 'today', deadline: '2025-01-01' }),
+      ];
+      render(<InboxView />);
+      expect(screen.getByText('Overdue')).toBeInTheDocument();
+    });
+
+    it('overdue tasks appear above regular inbox tasks', () => {
+      mockTasks = [
+        fakeTask({ id: '1', title: 'Regular inbox', status: 'inbox' }),
+        fakeTask({ id: '2', title: 'Overdue task', status: 'today', deadline: '2025-01-01' }),
+      ];
+      render(<InboxView />);
+      const overdueHeader = screen.getByText('Overdue');
+      const inboxTask = screen.getByText('Regular inbox');
+      expect(overdueHeader.compareDocumentPosition(inboxTask)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    });
+
+    it('someday tasks with past deadline do NOT appear as overdue', () => {
+      mockTasks = [
+        fakeTask({ id: '1', title: 'Someday overdue', status: 'someday', deadline: '2025-01-01' }),
+      ];
+      render(<InboxView />);
+      expect(screen.queryByText('Someday overdue')).not.toBeInTheDocument();
+    });
+
+    it('completed tasks do NOT appear as overdue', () => {
+      mockTasks = [
+        fakeTask({ id: '1', title: 'Done overdue', status: 'logbook', deadline: '2025-01-01', completed_at: '2025-02-01T00:00:00.000Z' }),
+      ];
+      render(<InboxView />);
+      expect(screen.queryByText('Done overdue')).not.toBeInTheDocument();
+    });
+
+    it('tasks with future deadline do NOT appear as overdue', () => {
+      mockTasks = [
+        fakeTask({ id: '1', title: 'Future deadline', status: 'today', deadline: '2099-12-31' }),
+      ];
+      render(<InboxView />);
+      expect(screen.queryByText('Overdue')).not.toBeInTheDocument();
+    });
+
+    it('does not show Overdue header when no overdue tasks', () => {
+      mockTasks = [
+        fakeTask({ id: '1', title: 'Regular inbox', status: 'inbox' }),
+      ];
+      render(<InboxView />);
+      expect(screen.queryByText('Overdue')).not.toBeInTheDocument();
+    });
+  });
+
   describe('completed tasks', () => {
     it('keeps a completed task visible in the list', () => {
       mockTasks = [fakeTask({ id: '1', title: 'Just completed', status: 'inbox' })];
