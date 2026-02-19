@@ -1,14 +1,17 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createTaskService, TaskService } from './task.service';
+import { createChecklistService, ChecklistService } from './checklist.service';
 import { createTestDb, TestDb } from '../../../tests/helpers/db';
 
 describe('TaskService', () => {
   let db: TestDb;
   let taskService: TaskService;
+  let checklistService: ChecklistService;
 
   beforeEach(() => {
     db = createTestDb();
     taskService = createTaskService(db);
+    checklistService = createChecklistService(db);
   });
 
   describe('create', () => {
@@ -553,6 +556,39 @@ describe('TaskService', () => {
       await expect(
         taskService.delete('non-existent')
       ).rejects.toThrow('Task not found');
+    });
+
+    it('soft-deleting a task also soft-deletes its checklist items', async () => {
+      const task = await taskService.create({ title: 'Parent task' });
+      const item1 = await checklistService.create({ task_id: task.id, title: 'Item 1' });
+      const item2 = await checklistService.create({ task_id: task.id, title: 'Item 2' });
+      const item3 = await checklistService.create({ task_id: task.id, title: 'Item 3' });
+
+      await taskService.delete(task.id);
+
+      const rawTask = db.getRawTask(task.id);
+      const rawItem1 = db.getRawChecklistItem(item1.id);
+      const rawItem2 = db.getRawChecklistItem(item2.id);
+      const rawItem3 = db.getRawChecklistItem(item3.id);
+
+      expect(rawTask?.deleted_at).not.toBeNull();
+      expect(rawItem1?.deleted_at).not.toBeNull();
+      expect(rawItem2?.deleted_at).not.toBeNull();
+      expect(rawItem3?.deleted_at).not.toBeNull();
+
+      // All should share the same timestamp
+      expect(rawItem1?.deleted_at).toBe(rawTask?.deleted_at);
+      expect(rawItem2?.deleted_at).toBe(rawTask?.deleted_at);
+      expect(rawItem3?.deleted_at).toBe(rawTask?.deleted_at);
+    });
+
+    it('soft-deleting a task with no checklist items still works', async () => {
+      const task = await taskService.create({ title: 'No checklists' });
+
+      await taskService.delete(task.id);
+
+      const raw = db.getRawTask(task.id);
+      expect(raw?.deleted_at).not.toBeNull();
     });
   });
 

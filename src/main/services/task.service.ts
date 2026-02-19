@@ -197,9 +197,14 @@ export function createTaskService(testDb: TestDb): TaskService {
       }
 
       const now = new Date().toISOString();
-      db.prepare(
-        'UPDATE tasks SET deleted_at = ?, updated_at = ? WHERE id = ?'
-      ).run(now, now, id);
+      db.transaction(() => {
+        db.prepare(
+          'UPDATE tasks SET deleted_at = ?, updated_at = ? WHERE id = ?'
+        ).run(now, now, id);
+        db.prepare(
+          'UPDATE task_checklists SET deleted_at = ?, updated_at = ? WHERE task_id = ? AND deleted_at IS NULL'
+        ).run(now, now, id);
+      })();
     },
 
     async listTrashed(): Promise<Task[]> {
