@@ -7,6 +7,7 @@ import { TodayView } from './views/TodayView';
 import { TrashView } from './views/TrashView';
 import { LogbookView } from './views/LogbookView';
 import { UpcomingView } from './views/UpcomingView';
+import { AnytimeView } from './views/AnytimeView';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
 
@@ -73,7 +74,8 @@ export default function App() {
         {activeView === 'trash' && <TrashView />}
         {activeView === 'logbook' && <LogbookView />}
         {activeView === 'upcoming' && <UpcomingView />}
-        {activeView !== 'inbox' && activeView !== 'today' && activeView !== 'trash' && activeView !== 'logbook' && activeView !== 'upcoming' && (
+        {activeView === 'anytime' && <AnytimeView />}
+        {activeView !== 'inbox' && activeView !== 'today' && activeView !== 'trash' && activeView !== 'logbook' && activeView !== 'upcoming' && activeView !== 'anytime' && (
           <div className="flex-1 flex items-center justify-center text-muted-foreground">
             <p className="text-sm">{activeView.charAt(0).toUpperCase() + activeView.slice(1)} — coming soon</p>
           </div>
