@@ -74,6 +74,48 @@ describe('TaskItem (collapsed)', () => {
     expect(screen.getByTestId('deadline-badge')).toHaveTextContent('Feb 20');
   });
 
+  it('shows orange deadline when due tomorrow', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-02-19T12:00:00'));
+    render(
+      <TaskItem task={fakeTask({ deadline: '2026-02-20' })} onComplete={vi.fn()} />
+    );
+    expect(screen.getByTestId('deadline-badge').querySelector('.text-orange-500')).not.toBeNull();
+    vi.useRealTimers();
+  });
+
+  it('shows red deadline when due today', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-02-19T12:00:00'));
+    render(
+      <TaskItem task={fakeTask({ deadline: '2026-02-19' })} onComplete={vi.fn()} />
+    );
+    expect(screen.getByTestId('deadline-badge').querySelector('.text-red-500')).not.toBeNull();
+    vi.useRealTimers();
+  });
+
+  it('shows red deadline when overdue', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-02-19T12:00:00'));
+    render(
+      <TaskItem task={fakeTask({ deadline: '2026-02-18' })} onComplete={vi.fn()} />
+    );
+    expect(screen.getByTestId('deadline-badge').querySelector('.text-red-500')).not.toBeNull();
+    vi.useRealTimers();
+  });
+
+  it('shows default deadline color when more than 1 day away', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-02-19T12:00:00'));
+    render(
+      <TaskItem task={fakeTask({ deadline: '2026-02-25' })} onComplete={vi.fn()} />
+    );
+    const badge = screen.getByTestId('deadline-badge');
+    expect(badge.querySelector('.text-orange-500')).toBeNull();
+    expect(badge.querySelector('.text-red-500')).toBeNull();
+    vi.useRealTimers();
+  });
+
   it('shows priority indicator when set', () => {
     render(<TaskItem task={fakeTask({ priority: 'P1' })} onComplete={vi.fn()} />);
     expect(screen.getByTestId('priority-indicator')).toBeInTheDocument();

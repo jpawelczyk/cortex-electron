@@ -3,15 +3,17 @@ import { format, parseISO } from 'date-fns';
 import { X } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
+import { cn } from '../lib/utils';
 
 interface DatePickerButtonProps {
   value: string | null;
   onChange: (date: string | null) => void;
   icon: ReactNode;
   label: string;
+  className?: string;
 }
 
-export function DatePickerButton({ value, onChange, icon, label }: DatePickerButtonProps) {
+export function DatePickerButton({ value, onChange, icon, label, className }: DatePickerButtonProps) {
   const [open, setOpen] = useState(false);
 
   const selected = value ? parseISO(value) : undefined;
@@ -32,7 +34,7 @@ export function DatePickerButton({ value, onChange, icon, label }: DatePickerBut
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <div className="group/date inline-flex items-center rounded-md text-xs text-muted-foreground hover:bg-accent/60 transition-colors">
+      <div className={cn("group/date inline-flex items-center rounded-md text-xs text-muted-foreground hover:bg-accent/60 transition-colors", className)}>
         {value && (
           <button
             type="button"

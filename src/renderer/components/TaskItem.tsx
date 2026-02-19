@@ -8,6 +8,17 @@ import { cn } from '../lib/utils';
 
 const DEBOUNCE_MS = 500;
 
+function getDeadlineUrgency(deadline: string | null): string | undefined {
+  if (!deadline) return undefined;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const deadlineDate = new Date(deadline + 'T00:00:00');
+  const diffDays = Math.round((deadlineDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  if (diffDays <= 0) return 'text-red-500';
+  if (diffDays === 1) return 'text-orange-500';
+  return undefined;
+}
+
 const PRIORITY_COLORS: Record<string, string> = {
   P0: 'text-red-500',
   P1: 'text-orange-500',
@@ -246,6 +257,7 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, i
               onChange={handleDeadlineChange}
               icon={<Flag className="size-3.5" />}
               label="Deadline"
+              className={getDeadlineUrgency(task.deadline)}
             />
           </span>
         </div>
