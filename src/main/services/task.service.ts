@@ -1,6 +1,18 @@
 import { v4 as uuid } from 'uuid';
-import type { Task, CreateTaskInput, UpdateTaskInput } from '@shared/types';
+import type { Task, CreateTaskInput, UpdateTaskInput, TaskStatus } from '@shared/types';
 import type { TestDb } from '../../../tests/helpers/db';
+
+function getToday(): string {
+  return new Date().toISOString().split('T')[0];
+}
+
+function isTerminalStatus(s: TaskStatus): boolean {
+  return s === 'logbook' || s === 'cancelled';
+}
+
+function deriveStatusFromDate(whenDate: string): TaskStatus {
+  return whenDate <= getToday() ? 'today' : 'upcoming';
+}
 
 export interface TaskService {
   create(input: CreateTaskInput): Promise<Task>;
@@ -40,12 +52,19 @@ export function createTaskService(testDb: TestDb): TaskService {
         contextId = input.context_id ?? null;
       }
 
+      // Auto-sync: derive status from when_date if when_date provided without explicit status
+      let status: TaskStatus = input.status ?? 'inbox';
+      const whenDate = input.when_date ?? null;
+      if (whenDate && !input.status) {
+        status = deriveStatusFromDate(whenDate);
+      }
+
       const task: Task = {
         id,
         title: input.title,
         notes: input.notes ?? null,
-        status: input.status ?? 'inbox',
-        when_date: input.when_date ?? null,
+        status,
+        when_date: whenDate,
         deadline: input.deadline ?? null,
         project_id: input.project_id ?? null,
         heading_id: input.heading_id ?? null,
@@ -99,16 +118,43 @@ export function createTaskService(testDb: TestDb): TaskService {
       }
 
       const now = new Date().toISOString();
-      
-      // Determine if completing or uncompleting
-      const isCompleting = input.status === 'logbook' && existing.status !== 'logbook';
-      const isUncompleting = input.status && input.status !== 'logbook' && existing.status === 'logbook';
+
+      // Auto-sync when_date ↔ status
+      const statusExplicit = 'status' in input;
+      const whenDateExplicit = 'when_date' in input;
+
+      let derivedStatus: TaskStatus = statusExplicit ? input.status! : existing.status;
+      let derivedWhenDate: string | null = whenDateExplicit ? (input.when_date ?? null) : existing.when_date;
+
+      // Rule 1: when_date changed, status not explicit → derive status
+      if (whenDateExplicit && !statusExplicit && !isTerminalStatus(existing.status)) {
+        if (derivedWhenDate === null) {
+          if (existing.status !== 'inbox' && existing.status !== 'someday') {
+            derivedStatus = 'anytime';
+          }
+        } else {
+          derivedStatus = deriveStatusFromDate(derivedWhenDate);
+        }
+      }
+
+      // Rule 2: status changed, when_date not explicit → derive when_date
+      if (statusExplicit && !whenDateExplicit) {
+        if (input.status === 'inbox' || input.status === 'anytime' || input.status === 'someday') {
+          derivedWhenDate = null;
+        }
+      }
+
+      // Determine if completing or uncompleting (use derivedStatus)
+      const isCompleting = derivedStatus === 'logbook' && existing.status !== 'logbook';
+      const isUncompleting = derivedStatus !== 'logbook' && existing.status === 'logbook';
       const completedAt = isCompleting ? now : isUncompleting ? null : existing.completed_at;
 
       // Build update
       const updated: Task = {
         ...existing,
         ...input,
+        status: derivedStatus,
+        when_date: derivedWhenDate,
         updated_at: now,
         completed_at: completedAt,
       };

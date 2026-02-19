@@ -238,6 +238,220 @@ describe('TaskService', () => {
     });
   });
 
+  describe('when_date/status auto-sync', () => {
+    const today = new Date().toISOString().split('T')[0];
+    const past = '2020-01-01';
+    const future = '2099-12-31';
+    const anotherFuture = '2099-06-15';
+
+    describe('when_date → status derivation (update)', () => {
+      it('setting when_date to today on inbox task → status becomes today', async () => {
+        const task = await taskService.create({ title: 'T' });
+        expect(task.status).toBe('inbox');
+
+        const updated = await taskService.update(task.id, { when_date: today });
+        expect(updated.status).toBe('today');
+      });
+
+      it('setting when_date to future on inbox task → status becomes upcoming', async () => {
+        const task = await taskService.create({ title: 'T' });
+
+        const updated = await taskService.update(task.id, { when_date: future });
+        expect(updated.status).toBe('upcoming');
+      });
+
+      it('clearing when_date on inbox task → stays inbox', async () => {
+        const task = await taskService.create({ title: 'T' });
+
+        const updated = await taskService.update(task.id, { when_date: null });
+        expect(updated.status).toBe('inbox');
+      });
+
+      it('setting when_date to future on today task → becomes upcoming', async () => {
+        const task = await taskService.create({ title: 'T', status: 'today', when_date: today });
+
+        const updated = await taskService.update(task.id, { when_date: future });
+        expect(updated.status).toBe('upcoming');
+      });
+
+      it('setting when_date to today on today task → stays today', async () => {
+        const task = await taskService.create({ title: 'T', status: 'today' });
+
+        const updated = await taskService.update(task.id, { when_date: today });
+        expect(updated.status).toBe('today');
+      });
+
+      it('clearing when_date on today task → becomes anytime', async () => {
+        const task = await taskService.create({ title: 'T', status: 'today', when_date: today });
+
+        const updated = await taskService.update(task.id, { when_date: null });
+        expect(updated.status).toBe('anytime');
+      });
+
+      it('setting when_date to today on upcoming task → becomes today', async () => {
+        const task = await taskService.create({ title: 'T', status: 'upcoming', when_date: future });
+
+        const updated = await taskService.update(task.id, { when_date: today });
+        expect(updated.status).toBe('today');
+      });
+
+      it('changing future date on upcoming task → stays upcoming', async () => {
+        const task = await taskService.create({ title: 'T', status: 'upcoming', when_date: future });
+
+        const updated = await taskService.update(task.id, { when_date: anotherFuture });
+        expect(updated.status).toBe('upcoming');
+      });
+
+      it('clearing when_date on upcoming task → becomes anytime', async () => {
+        const task = await taskService.create({ title: 'T', status: 'upcoming', when_date: future });
+
+        const updated = await taskService.update(task.id, { when_date: null });
+        expect(updated.status).toBe('anytime');
+      });
+
+      it('setting when_date on anytime task → becomes today or upcoming', async () => {
+        const task = await taskService.create({ title: 'T', status: 'anytime' });
+
+        const u1 = await taskService.update(task.id, { when_date: today });
+        expect(u1.status).toBe('today');
+
+        const u2 = await taskService.update(task.id, { when_date: future });
+        expect(u2.status).toBe('upcoming');
+      });
+
+      it('setting when_date on someday task → becomes today or upcoming', async () => {
+        const task = await taskService.create({ title: 'T', status: 'someday' });
+
+        const u1 = await taskService.update(task.id, { when_date: today });
+        expect(u1.status).toBe('today');
+
+        const u2 = await taskService.update(task.id, { when_date: future });
+        expect(u2.status).toBe('upcoming');
+      });
+
+      it('clearing when_date on someday task → stays someday', async () => {
+        const task = await taskService.create({ title: 'T', status: 'someday' });
+
+        const updated = await taskService.update(task.id, { when_date: null });
+        expect(updated.status).toBe('someday');
+      });
+
+      it('setting when_date on logbook task → status unchanged', async () => {
+        const task = await taskService.create({ title: 'T' });
+        await taskService.update(task.id, { status: 'logbook' });
+
+        const updated = await taskService.update(task.id, { when_date: future });
+        expect(updated.status).toBe('logbook');
+        expect(updated.completed_at).not.toBeNull();
+      });
+
+      it('setting when_date on cancelled task → status unchanged', async () => {
+        const task = await taskService.create({ title: 'T', status: 'cancelled' });
+
+        const updated = await taskService.update(task.id, { when_date: future });
+        expect(updated.status).toBe('cancelled');
+      });
+
+      it('past when_date treated same as today', async () => {
+        const task = await taskService.create({ title: 'T' });
+
+        const updated = await taskService.update(task.id, { when_date: past });
+        expect(updated.status).toBe('today');
+      });
+    });
+
+    describe('status → when_date derivation (update)', () => {
+      it('status to inbox → clears when_date', async () => {
+        const task = await taskService.create({ title: 'T', status: 'today', when_date: today });
+
+        const updated = await taskService.update(task.id, { status: 'inbox' });
+        expect(updated.when_date).toBeNull();
+      });
+
+      it('status to anytime → clears when_date', async () => {
+        const task = await taskService.create({ title: 'T', status: 'today', when_date: today });
+
+        const updated = await taskService.update(task.id, { status: 'anytime' });
+        expect(updated.when_date).toBeNull();
+      });
+
+      it('status to someday → clears when_date', async () => {
+        const task = await taskService.create({ title: 'T', status: 'today', when_date: today });
+
+        const updated = await taskService.update(task.id, { status: 'someday' });
+        expect(updated.when_date).toBeNull();
+      });
+
+      it('status to today → preserves when_date', async () => {
+        const task = await taskService.create({ title: 'T', status: 'upcoming', when_date: future });
+
+        const updated = await taskService.update(task.id, { status: 'today' });
+        expect(updated.when_date).toBe(future);
+      });
+
+      it('status to upcoming → preserves when_date', async () => {
+        const task = await taskService.create({ title: 'T', status: 'today', when_date: today });
+
+        const updated = await taskService.update(task.id, { status: 'upcoming' });
+        expect(updated.when_date).toBe(today);
+      });
+
+      it('status to logbook → preserves when_date', async () => {
+        const task = await taskService.create({ title: 'T', status: 'today', when_date: today });
+
+        const updated = await taskService.update(task.id, { status: 'logbook' });
+        expect(updated.when_date).toBe(today);
+      });
+    });
+
+    describe('both explicit / neither', () => {
+      it('both provided → both honored', async () => {
+        const task = await taskService.create({ title: 'T' });
+
+        const updated = await taskService.update(task.id, { status: 'upcoming', when_date: future });
+        expect(updated.status).toBe('upcoming');
+        expect(updated.when_date).toBe(future);
+      });
+
+      it('title-only update → no side effects', async () => {
+        const task = await taskService.create({ title: 'T', status: 'upcoming', when_date: future });
+
+        const updated = await taskService.update(task.id, { title: 'New title' });
+        expect(updated.status).toBe('upcoming');
+        expect(updated.when_date).toBe(future);
+      });
+    });
+
+    describe('create() auto-sync', () => {
+      it('create with when_date today and no status → derives today', async () => {
+        const task = await taskService.create({ title: 'T', when_date: today });
+        expect(task.status).toBe('today');
+      });
+
+      it('create with when_date future and no status → derives upcoming', async () => {
+        const task = await taskService.create({ title: 'T', when_date: future });
+        expect(task.status).toBe('upcoming');
+      });
+
+      it('create with past when_date and no status → derives today', async () => {
+        const task = await taskService.create({ title: 'T', when_date: past });
+        expect(task.status).toBe('today');
+      });
+
+      it('create with both when_date and status → trusts both', async () => {
+        const task = await taskService.create({ title: 'T', when_date: future, status: 'anytime' });
+        expect(task.status).toBe('anytime');
+        expect(task.when_date).toBe(future);
+      });
+
+      it('create with neither → inbox, null when_date', async () => {
+        const task = await taskService.create({ title: 'T' });
+        expect(task.status).toBe('inbox');
+        expect(task.when_date).toBeNull();
+      });
+    });
+  });
+
   describe('delete', () => {
     it('soft deletes by setting deleted_at', async () => {
       const task = await taskService.create({ title: 'To delete' });
