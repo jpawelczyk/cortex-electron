@@ -60,7 +60,7 @@ export function DatePickerButton({ value, onChange, icon, label, className, acti
           onSelect={handleSelect}
         />
         {(actions?.length || value) && (
-          <div className="border-t border-border">
+          <div className="border-t border-border overflow-hidden rounded-b-lg">
             {actions?.map((action) => (
               <button
                 key={action.label}
