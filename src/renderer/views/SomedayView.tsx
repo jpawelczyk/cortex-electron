@@ -42,11 +42,6 @@ export function SomedayView() {
     });
   }, [tasks, completedIds, settledIds]); // completedIds included as recalc trigger
 
-  const incompleteCount = useMemo(
-    () => somedayTasks.filter((t) => t.status !== 'logbook').length,
-    [somedayTasks],
-  );
-
   const handleComplete = useCallback(
     (id: string) => {
       if (completedIds.has(id)) {
@@ -83,11 +78,6 @@ export function SomedayView() {
       <div className="max-w-5xl mx-auto px-8 py-8">
         <div className="flex items-center gap-3 mb-6">
           <h2 className="text-xl font-semibold text-foreground">Someday</h2>
-          {incompleteCount > 0 && (
-            <span className="text-xs text-muted-foreground bg-accent rounded-full size-5 inline-flex items-center justify-center">
-              {incompleteCount}
-            </span>
-          )}
         </div>
 
         {somedayTasks.length === 0 ? (

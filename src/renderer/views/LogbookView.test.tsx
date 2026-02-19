@@ -70,24 +70,6 @@ describe('LogbookView', () => {
     expect(screen.queryByText('Today task')).not.toBeInTheDocument();
   });
 
-  it('shows item count badge', () => {
-    mockTasks = [
-      fakeTask({ id: '1', title: 'Task A' }),
-      fakeTask({ id: '2', title: 'Task B' }),
-      fakeTask({ id: '3', title: 'Task C' }),
-    ];
-    render(<LogbookView />);
-    const heading = screen.getByText('Logbook').closest('div');
-    expect(heading).toHaveTextContent('3');
-  });
-
-  it('shows item count badge for one task', () => {
-    mockTasks = [fakeTask({ id: '1', title: 'Only task' })];
-    render(<LogbookView />);
-    const heading = screen.getByText('Logbook').closest('div');
-    expect(heading).toHaveTextContent('1');
-  });
-
   it('groups tasks by completion date with correct headers', () => {
     const today = new Date();
     const yesterday = new Date(today);

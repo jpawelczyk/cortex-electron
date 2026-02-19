@@ -22,11 +22,6 @@ export function TrashView() {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <h2 className="text-xl font-semibold text-foreground">Trash</h2>
-            {count > 0 && (
-              <span className="text-xs text-muted-foreground bg-accent rounded-full size-5 inline-flex items-center justify-center">
-                {count}
-              </span>
-            )}
           </div>
           {count > 0 && (
             confirming ? (

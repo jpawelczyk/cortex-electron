@@ -78,15 +78,6 @@ describe('AnytimeView', () => {
     expect(screen.getByText('Anytime task')).toBeInTheDocument();
   });
 
-  it('shows task count badge for incomplete tasks', () => {
-    mockTasks = [
-      fakeTask({ id: '1', title: 'Task A' }),
-      fakeTask({ id: '2', title: 'Task B' }),
-    ];
-    render(<AnytimeView />);
-    expect(screen.getByText('2')).toBeInTheDocument();
-  });
-
   it('completes a task by setting status to logbook', () => {
     mockTasks = [fakeTask({ id: 'task-42', title: 'Complete me' })];
     render(<AnytimeView />);

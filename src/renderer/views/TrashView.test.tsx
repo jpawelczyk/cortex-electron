@@ -61,22 +61,6 @@ describe('TrashView', () => {
     expect(screen.getByText('Second deleted')).toBeInTheDocument();
   });
 
-  it('shows item count badge in header', () => {
-    mockStore.trashedTasks = [fakeTask()];
-    render(<TrashView />);
-    const heading = screen.getByText('Trash').closest('div');
-    expect(heading).toHaveTextContent('1');
-  });
-
-  it('shows item count badge for multiple items', () => {
-    mockStore.trashedTasks = [
-      fakeTask({ id: '1' }),
-      fakeTask({ id: '2' }),
-    ];
-    render(<TrashView />);
-    expect(screen.getByText('2')).toBeInTheDocument();
-  });
-
   it('shows Empty Trash button when items exist', () => {
     mockStore.trashedTasks = [fakeTask()];
     render(<TrashView />);

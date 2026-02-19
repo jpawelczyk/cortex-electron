@@ -97,11 +97,6 @@ export function LogbookView() {
       <div className="max-w-5xl mx-auto px-8 py-8">
         <div className="flex items-center gap-3 mb-6">
           <h2 className="text-xl font-semibold text-foreground">Logbook</h2>
-          {count > 0 && (
-            <span className="text-xs text-muted-foreground bg-accent rounded-full size-5 inline-flex items-center justify-center">
-              {count}
-            </span>
-          )}
         </div>
 
         {count === 0 ? (

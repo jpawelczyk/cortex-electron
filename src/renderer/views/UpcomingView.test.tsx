@@ -152,22 +152,6 @@ describe('UpcomingView', () => {
     expect(groups[0]).toHaveTextContent('Tomorrow');
   });
 
-  it('count badge shows incomplete tasks only', () => {
-    mockTasks = [
-      fakeTask({ id: '1', title: 'Active' }),
-      fakeTask({ id: '2', title: 'Another active' }),
-    ];
-    render(<UpcomingView />);
-    const heading = screen.getByText('Upcoming').closest('div');
-    expect(heading).toHaveTextContent('2');
-  });
-
-  it('does not show count badge when no incomplete tasks', () => {
-    render(<UpcomingView />);
-    const heading = screen.getByText('Upcoming').closest('div');
-    expect(heading?.textContent).toBe('Upcoming');
-  });
-
   it('completes a task by setting status to logbook', () => {
     mockTasks = [fakeTask({ id: 'task-42', title: 'Complete me' })];
     render(<UpcomingView />);
