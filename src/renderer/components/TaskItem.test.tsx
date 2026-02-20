@@ -704,6 +704,122 @@ describe('TaskItem project picker (expanded)', () => {
     render(
       <TaskItem task={fakeTask({ project_id: 'proj-1' })} onComplete={vi.fn()} isExpanded />
     );
-    expect(screen.getByText('Work')).toBeInTheDocument();
+    expect(screen.getAllByText('Work').length).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe('TaskItem context picker (expanded)', () => {
+  function makeProject(overrides?: Partial<Project>): Project {
+    return {
+      id: 'proj-1',
+      title: 'My Project',
+      description: null,
+      status: 'active',
+      context_id: null,
+      sort_order: 0,
+      created_at: '2026-01-01T00:00:00.000Z',
+      updated_at: '2026-01-01T00:00:00.000Z',
+      completed_at: null,
+      deleted_at: null,
+      ...overrides,
+    };
+  }
+
+  function makeContext(overrides?: Partial<Context>): Context {
+    return {
+      id: 'ctx-1',
+      name: 'Work',
+      color: '#3b82f6',
+      icon: null,
+      sort_order: 0,
+      created_at: '2026-01-01T00:00:00.000Z',
+      updated_at: '2026-01-01T00:00:00.000Z',
+      deleted_at: null,
+      ...overrides,
+    };
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+    mockProjects = [];
+    mockContexts = [];
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    mockProjects = [];
+    mockContexts = [];
+  });
+
+  it('shows "No context" when task has no context and no project', () => {
+    render(
+      <TaskItem task={fakeTask({ context_id: null, project_id: null })} onComplete={vi.fn()} isExpanded />
+    );
+    const btn = screen.getByRole('button', { name: /context/i });
+    expect(btn.textContent).toContain('No context');
+  });
+
+  it('shows context name when task has direct context_id', () => {
+    mockContexts = [makeContext({ id: 'ctx-1', name: 'Work' })];
+    render(
+      <TaskItem task={fakeTask({ project_id: null, context_id: 'ctx-1' })} onComplete={vi.fn()} isExpanded />
+    );
+    const btn = screen.getByRole('button', { name: /context/i });
+    expect(btn.textContent).toContain('Work');
+  });
+
+  it('shows editable context picker with options when task has no project', () => {
+    mockContexts = [
+      makeContext({ id: 'ctx-1', name: 'Work' }),
+      makeContext({ id: 'ctx-2', name: 'Personal' }),
+    ];
+    render(
+      <TaskItem task={fakeTask({ project_id: null, context_id: null })} onComplete={vi.fn()} isExpanded />
+    );
+    fireEvent.click(screen.getByRole('button', { name: /context/i }));
+    expect(screen.getByRole('option', { name: /work/i })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: /personal/i })).toBeInTheDocument();
+  });
+
+  it('calls updateTask with context_id when selecting context', () => {
+    mockContexts = [makeContext({ id: 'ctx-1', name: 'Work' })];
+    render(
+      <TaskItem task={fakeTask({ project_id: null, context_id: null })} onComplete={vi.fn()} isExpanded />
+    );
+    fireEvent.click(screen.getByRole('button', { name: /context/i }));
+    fireEvent.click(screen.getByRole('option', { name: /work/i }));
+    expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { context_id: 'ctx-1' });
+  });
+
+  it('calls updateTask with null when "None" selected', () => {
+    mockContexts = [makeContext({ id: 'ctx-1', name: 'Work' })];
+    render(
+      <TaskItem task={fakeTask({ project_id: null, context_id: 'ctx-1' })} onComplete={vi.fn()} isExpanded />
+    );
+    fireEvent.click(screen.getByRole('button', { name: /context/i }));
+    fireEvent.click(screen.getByRole('option', { name: /none/i }));
+    expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { context_id: null });
+  });
+
+  it('shows read-only inherited context when project has context', () => {
+    mockProjects = [makeProject({ id: 'proj-1', context_id: 'ctx-1' })];
+    mockContexts = [makeContext({ id: 'ctx-1', name: 'Work' })];
+    render(
+      <TaskItem task={fakeTask({ project_id: 'proj-1', context_id: null })} onComplete={vi.fn()} isExpanded />
+    );
+    // Should show "(project)" indicator
+    expect(screen.getByText(/project/)).toBeInTheDocument();
+    // Should NOT have a clickable context button
+    expect(screen.queryByRole('button', { name: /context/i })).not.toBeInTheDocument();
+  });
+
+  it('shows editable picker when task has project without context', () => {
+    mockProjects = [makeProject({ id: 'proj-1', context_id: null })];
+    mockContexts = [makeContext({ id: 'ctx-1', name: 'Work' })];
+    render(
+      <TaskItem task={fakeTask({ project_id: 'proj-1', context_id: null })} onComplete={vi.fn()} isExpanded />
+    );
+    expect(screen.getByRole('button', { name: /context/i })).toBeInTheDocument();
   });
 });

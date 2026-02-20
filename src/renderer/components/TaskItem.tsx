@@ -48,6 +48,7 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, i
 
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [projectOpen, setProjectOpen] = useState(false);
+  const [contextOpen, setContextOpen] = useState(false);
   const isCompleted = isCompletedProp ?? (task.status === 'logbook');
   const cardRef = useRef<HTMLDivElement>(null);
   const notesRef = useRef<HTMLTextAreaElement>(null);
@@ -132,8 +133,10 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, i
         flushNotes();
         // If clicking another task, let its handler set the new selection
         // directly (avoids a layout shift that would swallow the click event)
-        const clickedTask = (e.target as Element).closest?.('[data-testid="task-item"]');
-        if (!clickedTask) {
+        const el = e.target as Element;
+        const clickedTask = el.closest?.('[data-testid="task-item"]');
+        const clickedPopover = el.closest?.('[data-radix-popper-content-wrapper]');
+        if (!clickedTask && !clickedPopover) {
           deselectTask();
         }
       }
@@ -215,9 +218,21 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, i
     [currentProject, contexts],
   );
 
+  const isContextInherited = !!currentProject?.context_id;
+
+  const effectiveContext = useMemo(() => {
+    const contextId = currentProject?.context_id ?? task.context_id;
+    return contextId ? contexts.find((c) => c.id === contextId) ?? null : null;
+  }, [currentProject, task.context_id, contexts]);
+
   const handleProjectChange = (projectId: string | null) => {
     updateTask(task.id, { project_id: projectId });
     setProjectOpen(false);
+  };
+
+  const handleContextChange = (contextId: string | null) => {
+    updateTask(task.id, { context_id: contextId });
+    setContextOpen(false);
   };
 
   const handleRowClick = () => {
@@ -330,6 +345,7 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, i
               className="w-full bg-transparent text-[13px] text-foreground/80 placeholder:text-muted-foreground/40 outline-none resize-none leading-snug overflow-hidden min-w-0"
             />
             <div className="flex items-center justify-between pt-1 pb-2.5">
+              <div className="flex items-center gap-1">
               <Popover open={projectOpen} onOpenChange={setProjectOpen}>
                 <PopoverTrigger asChild>
                   <button
@@ -378,6 +394,67 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, i
                   })}
                 </PopoverContent>
               </Popover>
+              {isContextInherited ? (
+                <div className="inline-flex items-center gap-1.5 px-1.5 py-1 text-xs text-muted-foreground">
+                  <span
+                    className="size-2 rounded-full shrink-0"
+                    style={{ backgroundColor: effectiveContext?.color ?? undefined }}
+                  />
+                  <span>{effectiveContext?.name}</span>
+                  <span className="text-muted-foreground/50">(project)</span>
+                </div>
+              ) : (
+                <Popover open={contextOpen} onOpenChange={setContextOpen}>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label="Context"
+                      tabIndex={isExpanded ? 0 : -1}
+                      className="inline-flex items-center gap-1.5 px-1.5 py-1 text-xs text-muted-foreground hover:bg-accent/60 rounded-md transition-colors cursor-pointer"
+                    >
+                      {effectiveContext ? (
+                        <>
+                          <span
+                            className="size-2 rounded-full shrink-0"
+                            style={{ backgroundColor: effectiveContext.color ?? undefined }}
+                          />
+                          <span>{effectiveContext.name}</span>
+                        </>
+                      ) : (
+                        <span>No context</span>
+                      )}
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-48 p-1" align="start">
+                    <button
+                      role="option"
+                      aria-label="None"
+                      type="button"
+                      onClick={() => handleContextChange(null)}
+                      className="flex items-center w-full px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent rounded-md cursor-pointer"
+                    >
+                      None
+                    </button>
+                    {contexts.map((ctx) => (
+                      <button
+                        key={ctx.id}
+                        role="option"
+                        aria-label={ctx.name}
+                        type="button"
+                        onClick={() => handleContextChange(ctx.id)}
+                        className="flex items-center gap-2 w-full px-2 py-1.5 text-sm text-foreground hover:bg-accent rounded-md cursor-pointer"
+                      >
+                        <span
+                          className="size-2 rounded-full shrink-0"
+                          style={{ backgroundColor: ctx.color ?? undefined }}
+                        />
+                        <span>{ctx.name}</span>
+                      </button>
+                    ))}
+                  </PopoverContent>
+                </Popover>
+              )}
+              </div>
               {confirmingDelete ? (
                 <div className="flex items-center gap-1.5 rounded-lg bg-accent px-2.5 py-1">
                   <span className="text-sm text-muted-foreground mr-1">Confirm?</span>
