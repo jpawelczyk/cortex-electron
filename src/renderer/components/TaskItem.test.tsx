@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { TaskItem } from './TaskItem';
-import type { Task } from '@shared/types';
+import type { Task, Project, Context } from '@shared/types';
 
 const mockUpdateTask = vi.fn();
 const mockDeselectTask = vi.fn();
@@ -13,6 +13,11 @@ const mockFetchChecklistItems = vi.fn();
 const mockCreateChecklistItem = vi.fn();
 const mockDeleteChecklistItem = vi.fn();
 const mockUpdateChecklistItem = vi.fn();
+
+const mockFetchProjects = vi.fn();
+
+let mockProjects: Project[] = [];
+let mockContexts: Context[] = [];
 
 vi.mock('../stores', () => ({
   useStore: (selector: (state: Record<string, unknown>) => unknown) => {
@@ -26,6 +31,9 @@ vi.mock('../stores', () => ({
       createChecklistItem: mockCreateChecklistItem,
       deleteChecklistItem: mockDeleteChecklistItem,
       updateChecklistItem: mockUpdateChecklistItem,
+      projects: mockProjects,
+      contexts: mockContexts,
+      fetchProjects: mockFetchProjects,
     };
     return selector(state);
   },
@@ -592,5 +600,110 @@ describe('TaskItem (expanded)', () => {
     );
     fireEvent.keyDown(document, { key: 'Backspace', metaKey: true });
     expect(mockDeleteTask).not.toHaveBeenCalled();
+  });
+});
+
+describe('TaskItem project picker (expanded)', () => {
+  function makeProject(overrides?: Partial<Project>): Project {
+    return {
+      id: 'proj-1',
+      title: 'My Project',
+      description: null,
+      status: 'active',
+      context_id: null,
+      sort_order: 0,
+      created_at: '2026-01-01T00:00:00.000Z',
+      updated_at: '2026-01-01T00:00:00.000Z',
+      completed_at: null,
+      deleted_at: null,
+      ...overrides,
+    };
+  }
+
+  function makeContext(overrides?: Partial<Context>): Context {
+    return {
+      id: 'ctx-1',
+      name: 'Work',
+      color: null,
+      icon: null,
+      sort_order: 0,
+      created_at: '2026-01-01T00:00:00.000Z',
+      updated_at: '2026-01-01T00:00:00.000Z',
+      deleted_at: null,
+      ...overrides,
+    };
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+    mockProjects = [];
+    mockContexts = [];
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    mockProjects = [];
+    mockContexts = [];
+  });
+
+  it('shows "No project" when task.project_id is null', () => {
+    render(
+      <TaskItem task={fakeTask({ project_id: null })} onComplete={vi.fn()} isExpanded />
+    );
+    const btn = screen.getByRole('button', { name: /project/i });
+    expect(btn.textContent).toContain('No project');
+  });
+
+  it('shows project name when task has project_id', () => {
+    mockProjects = [makeProject({ id: 'proj-1', title: 'Launch Campaign' })];
+    render(
+      <TaskItem task={fakeTask({ project_id: 'proj-1' })} onComplete={vi.fn()} isExpanded />
+    );
+    expect(screen.getByText('Launch Campaign')).toBeInTheDocument();
+  });
+
+  it('only shows active projects in picker (not completed/archived)', () => {
+    mockProjects = [
+      makeProject({ id: 'proj-active', title: 'Active Project', status: 'active' }),
+      makeProject({ id: 'proj-done', title: 'Done Project', status: 'completed' }),
+      makeProject({ id: 'proj-arch', title: 'Archived Project', status: 'archived' }),
+    ];
+    render(
+      <TaskItem task={fakeTask()} onComplete={vi.fn()} isExpanded />
+    );
+    fireEvent.click(screen.getByRole('button', { name: /project/i }));
+    expect(screen.getByText('Active Project')).toBeInTheDocument();
+    expect(screen.queryByText('Done Project')).not.toBeInTheDocument();
+    expect(screen.queryByText('Archived Project')).not.toBeInTheDocument();
+  });
+
+  it('calls updateTask with new project_id on selection', () => {
+    mockProjects = [makeProject({ id: 'proj-1', title: 'My Project' })];
+    render(
+      <TaskItem task={fakeTask({ project_id: null })} onComplete={vi.fn()} isExpanded />
+    );
+    fireEvent.click(screen.getByRole('button', { name: /project/i }));
+    fireEvent.click(screen.getByRole('option', { name: /my project/i }));
+    expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { project_id: 'proj-1' });
+  });
+
+  it('calls updateTask with null when "None" selected', () => {
+    mockProjects = [makeProject({ id: 'proj-1', title: 'My Project' })];
+    render(
+      <TaskItem task={fakeTask({ project_id: 'proj-1' })} onComplete={vi.fn()} isExpanded />
+    );
+    fireEvent.click(screen.getByRole('button', { name: /project/i }));
+    fireEvent.click(screen.getByRole('option', { name: /none/i }));
+    expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { project_id: null });
+  });
+
+  it('shows inherited context badge when project has context_id', () => {
+    mockProjects = [makeProject({ id: 'proj-1', title: 'My Project', context_id: 'ctx-1' })];
+    mockContexts = [makeContext({ id: 'ctx-1', name: 'Work' })];
+    render(
+      <TaskItem task={fakeTask({ project_id: 'proj-1' })} onComplete={vi.fn()} isExpanded />
+    );
+    expect(screen.getByText('Work')).toBeInTheDocument();
   });
 });

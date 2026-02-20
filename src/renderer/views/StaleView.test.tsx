@@ -24,6 +24,9 @@ vi.mock('../stores', () => ({
       createChecklistItem: vi.fn(),
       deleteChecklistItem: vi.fn(),
       updateChecklistItem: vi.fn(),
+      projects: [],
+      contexts: [],
+      fetchProjects: vi.fn(),
     };
     return selector(state);
   },

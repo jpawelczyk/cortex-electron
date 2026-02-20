@@ -5,6 +5,7 @@ import { useStore } from '../stores';
 import { useDebouncedCallback } from '../hooks/useDebouncedCallback';
 import { DatePickerButton, type DatePickerAction } from './DatePickerButton';
 import { ChecklistList } from './ChecklistList';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { cn } from '../lib/utils';
 
 const DEBOUNCE_MS = 500;
@@ -41,8 +42,12 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, i
   const updateTask = useStore((s) => s.updateTask);
   const deleteTask = useStore((s) => s.deleteTask);
   const deselectTask = useStore((s) => s.deselectTask);
+  const projects = useStore((s) => s.projects);
+  const contexts = useStore((s) => s.contexts);
+  const fetchProjects = useStore((s) => s.fetchProjects);
 
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [projectOpen, setProjectOpen] = useState(false);
   const isCompleted = isCompletedProp ?? (task.status === 'logbook');
   const cardRef = useRef<HTMLDivElement>(null);
   const notesRef = useRef<HTMLTextAreaElement>(null);
@@ -188,6 +193,33 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, i
     },
   ], [task.id, task.status, updateTask]);
 
+  // Fetch projects on mount if not loaded
+  useEffect(() => {
+    if (projects.length === 0) {
+      fetchProjects();
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- intentionally only on mount
+
+  const activeProjects = useMemo(
+    () => projects.filter((p) => p.status !== 'completed' && p.status !== 'archived'),
+    [projects],
+  );
+
+  const currentProject = useMemo(
+    () => projects.find((p) => p.id === task.project_id) ?? null,
+    [projects, task.project_id],
+  );
+
+  const inheritedContext = useMemo(
+    () => currentProject?.context_id ? contexts.find((c) => c.id === currentProject.context_id) ?? null : null,
+    [currentProject, contexts],
+  );
+
+  const handleProjectChange = (projectId: string | null) => {
+    updateTask(task.id, { project_id: projectId });
+    setProjectOpen(false);
+  };
+
   const handleRowClick = () => {
     if (!isExpanded) {
       onSelect?.(task.id);
@@ -297,7 +329,55 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, i
               tabIndex={isExpanded ? 0 : -1}
               className="w-full bg-transparent text-[13px] text-foreground/80 placeholder:text-muted-foreground/40 outline-none resize-none leading-snug overflow-hidden min-w-0"
             />
-            <div className="flex items-center justify-end pt-1 pb-2.5">
+            <div className="flex items-center justify-between pt-1 pb-2.5">
+              <Popover open={projectOpen} onOpenChange={setProjectOpen}>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label="Project"
+                    tabIndex={isExpanded ? 0 : -1}
+                    className="-ml-1.5 inline-flex items-center gap-1.5 px-1.5 py-1 text-xs text-muted-foreground hover:bg-accent/60 rounded-md transition-colors cursor-pointer"
+                  >
+                    <span>{currentProject ? currentProject.title : 'No project'}</span>
+                    {inheritedContext && (
+                      <span className="text-[10px] bg-accent px-1.5 py-0.5 rounded-full">
+                        {inheritedContext.name}
+                      </span>
+                    )}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-56 p-1" align="start">
+                  <button
+                    role="option"
+                    aria-label="None"
+                    type="button"
+                    onClick={() => handleProjectChange(null)}
+                    className="flex items-center w-full px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent rounded-md cursor-pointer"
+                  >
+                    None
+                  </button>
+                  {activeProjects.map((p) => {
+                    const ctx = p.context_id ? contexts.find((c) => c.id === p.context_id) : null;
+                    return (
+                      <button
+                        key={p.id}
+                        role="option"
+                        aria-label={p.title}
+                        type="button"
+                        onClick={() => handleProjectChange(p.id)}
+                        className="flex items-center gap-2 w-full px-2 py-1.5 text-sm text-foreground hover:bg-accent rounded-md cursor-pointer"
+                      >
+                        <span>{p.title}</span>
+                        {ctx && (
+                          <span className="text-[10px] bg-accent px-1.5 py-0.5 rounded-full">
+                            {ctx.name}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </PopoverContent>
+              </Popover>
               {confirmingDelete ? (
                 <div className="flex items-center gap-1.5 rounded-lg bg-accent px-2.5 py-1">
                   <span className="text-sm text-muted-foreground mr-1">Confirm?</span>
