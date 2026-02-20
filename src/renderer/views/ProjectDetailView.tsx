@@ -1,13 +1,15 @@
-import { useState, useEffect, useRef, useCallback, useMemo, type KeyboardEvent } from 'react';
-import { ArrowLeft, Clock } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { ArrowLeft, Clock, FolderKanban, Plus } from 'lucide-react';
 import type { ProjectStatus } from '@shared/types';
 import { useStore } from '../stores';
 import { useDebouncedCallback } from '../hooks/useDebouncedCallback';
 import { TaskList } from '../components/TaskList';
+import { InlineTaskCard } from '../components/InlineTaskCard';
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
 
 const DEBOUNCE_MS = 500;
 const STALENESS_DAYS = 14;
+const SORT_DELAY_MS = 400;
 
 const STATUS_OPTIONS: { value: ProjectStatus; label: string; className: string }[] = [
   { value: 'planned', label: 'Planned', className: 'bg-muted-foreground/20 text-muted-foreground' },
@@ -36,10 +38,11 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
   const contexts = useStore((s) => s.contexts);
   const updateProject = useStore((s) => s.updateProject);
   const deselectProject = useStore((s) => s.deselectProject);
-  const createTask = useStore((s) => s.createTask);
   const updateTask = useStore((s) => s.updateTask);
   const selectTask = useStore((s) => s.selectTask);
   const selectedTaskId = useStore((s) => s.selectedTaskId);
+  const isInlineCreating = useStore((s) => s.isInlineCreating);
+  const startInlineCreate = useStore((s) => s.startInlineCreate);
 
   const project = useMemo(
     () => projects.find((p) => p.id === projectId) ?? null,
@@ -50,7 +53,17 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
   const [description, setDescription] = useState(project?.description ?? '');
   const [statusOpen, setStatusOpen] = useState(false);
   const [completionWarning, setCompletionWarning] = useState(false);
-  const [newTaskTitle, setNewTaskTitle] = useState('');
+
+  // --- Completion animation state (same as InboxView / TodayView) ---
+  const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
+  const [settledIds, setSettledIds] = useState<string[]>([]);
+  const everCompletedIds = useRef(new Set<string>());
+  const sortTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+
+  useEffect(() => {
+    const timers = sortTimers.current;
+    return () => timers.forEach(clearTimeout);
+  }, []);
 
   const projectIdRef = useRef(projectId);
 
@@ -59,10 +72,22 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
     [project, contexts],
   );
 
-  const projectTasks = useMemo(
-    () => tasks.filter((t) => t.project_id === projectId && !t.deleted_at),
-    [tasks, projectId],
-  );
+  const projectTasks = useMemo(() => {
+    const visible = tasks.filter((t) =>
+      t.project_id === projectId &&
+      !t.deleted_at &&
+      (t.status !== 'logbook' || everCompletedIds.current.has(t.id) || true),
+    );
+    return visible.sort((a, b) => {
+      const aIdx = settledIds.indexOf(a.id);
+      const bIdx = settledIds.indexOf(b.id);
+      const aSettled = aIdx >= 0 ? 1 : 0;
+      const bSettled = bIdx >= 0 ? 1 : 0;
+      if (aSettled !== bSettled) return aSettled - bSettled;
+      if (aSettled && bSettled) return aIdx - bIdx;
+      return 0;
+    });
+  }, [tasks, projectId, settledIds]);
 
   const hasIncompleteTasks = useMemo(
     () => projectTasks.some((t) => t.status !== 'logbook' && t.status !== 'cancelled'),
@@ -145,27 +170,34 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
 
   const handleComplete = useCallback(
     (id: string) => {
-      const task = tasks.find((t) => t.id === id);
-      if (task?.status === 'logbook') {
+      if (completedIds.has(id)) {
+        // Uncomplete
         updateTask(id, { status: 'inbox' });
+        setCompletedIds((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+        const existing = sortTimers.current.get(id);
+        if (existing) {
+          clearTimeout(existing);
+          sortTimers.current.delete(id);
+        }
+        setSettledIds((prev) => prev.filter((x) => x !== id));
       } else {
+        // Complete
         updateTask(id, { status: 'logbook' });
+        setCompletedIds((prev) => new Set(prev).add(id));
+        everCompletedIds.current.add(id);
+        const timer = setTimeout(() => {
+          setSettledIds((prev) => [id, ...prev]);
+          sortTimers.current.delete(id);
+        }, SORT_DELAY_MS);
+        sortTimers.current.set(id, timer);
       }
     },
-    [tasks, updateTask],
+    [completedIds, updateTask],
   );
-
-  const handleNewTaskKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      const trimmed = newTaskTitle.trim();
-      if (!trimmed) return;
-      createTask({ title: trimmed, project_id: projectId });
-      setNewTaskTitle('');
-    }
-    if (e.key === 'Escape') {
-      e.currentTarget.blur();
-    }
-  };
 
   // --- Not found ---
 
@@ -273,32 +305,33 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
           </div>
         )}
 
-        {/* Task creation input */}
-        <div className="mb-4">
-          <input
-            type="text"
-            data-project-task-input
-            value={newTaskTitle}
-            onChange={(e) => setNewTaskTitle(e.target.value)}
-            onKeyDown={handleNewTaskKeyDown}
-            placeholder="Add a task..."
-            className="w-full px-3 py-2 text-[13px] bg-transparent border border-border/50 rounded-lg text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50 transition-colors"
-          />
-        </div>
+        {/* Inline task creation (same as other views) */}
+        {isInlineCreating && <InlineTaskCard projectId={projectId} />}
 
         {/* Task list */}
-        {projectTasks.length === 0 ? (
-          <p className="px-3 py-8 text-sm text-muted-foreground text-center">
-            No tasks in this project
-          </p>
-        ) : (
+        {!isInlineCreating && projectTasks.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+            <FolderKanban className="size-10 mb-3 opacity-30" strokeWidth={1.25} />
+            <p className="text-sm">No tasks in this project</p>
+            <button
+              type="button"
+              data-testid="empty-state-cta"
+              onClick={startInlineCreate}
+              className="mt-4 flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 transition-colors cursor-default"
+            >
+              <Plus className="size-4" />
+              <span>Add a task</span>
+            </button>
+          </div>
+        ) : projectTasks.length > 0 ? (
           <TaskList
             tasks={projectTasks}
             onCompleteTask={handleComplete}
             onSelectTask={selectTask}
             selectedTaskId={selectedTaskId}
+            completedIds={completedIds}
           />
-        )}
+        ) : null}
       </div>
     </div>
   );

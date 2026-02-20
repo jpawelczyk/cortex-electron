@@ -19,8 +19,7 @@ export function useGlobalShortcuts({
   useEffect(() => {
     const unsubscribe = window.cortex.onFocusTaskInput(() => {
       if (activeView === 'projects' && selectedProjectId) {
-        const input = document.querySelector<HTMLInputElement>('[data-project-task-input]');
-        input?.focus();
+        startInlineCreate();
       } else if (activeView === 'projects') {
         startInlineProjectCreate();
       } else {

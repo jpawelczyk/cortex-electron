@@ -98,10 +98,7 @@ export default function App() {
             onMouseDown={(e) => e.stopPropagation()}
             onClick={() => {
               if (activeView === 'projects' && selectedProjectId) {
-                // Inside a project detail — inline task create handled by the view
-                // Focus the task input inside ProjectDetailView
-                const input = document.querySelector<HTMLInputElement>('[data-project-task-input]');
-                input?.focus();
+                startInlineCreate();
               } else if (activeView === 'projects') {
                 startInlineProjectCreate();
               } else {

@@ -4,7 +4,11 @@ import type { TaskStatus } from '@shared/types';
 import { useStore } from '../stores';
 import { DatePickerButton, type DatePickerAction } from './DatePickerButton';
 
-export function InlineTaskCard() {
+interface InlineTaskCardProps {
+  projectId?: string;
+}
+
+export function InlineTaskCard({ projectId }: InlineTaskCardProps = {}) {
   const createTask = useStore((s) => s.createTask);
   const cancelInlineCreate = useStore((s) => s.cancelInlineCreate);
   const createChecklistItem = useStore((s) => s.createChecklistItem);
@@ -32,10 +36,13 @@ export function InlineTaskCard() {
   statusRef.current = status;
   checklistRef.current = checklistItems;
 
+  const projectIdRef = useRef(projectId);
+  projectIdRef.current = projectId;
+
   const saveAndClose = useCallback(async () => {
     const trimmed = titleRef.current.trim();
     if (trimmed) {
-      const input: { title: string; notes?: string; when_date?: string; deadline?: string; status?: TaskStatus } = { title: trimmed };
+      const input: { title: string; notes?: string; when_date?: string; deadline?: string; status?: TaskStatus; project_id?: string } = { title: trimmed };
       if (notesRef.current.trim()) {
         input.notes = notesRef.current.trim();
       }
@@ -47,6 +54,9 @@ export function InlineTaskCard() {
       }
       if (statusRef.current !== 'inbox') {
         input.status = statusRef.current;
+      }
+      if (projectIdRef.current) {
+        input.project_id = projectIdRef.current;
       }
       const task = await createTask(input);
       for (const item of checklistRef.current) {

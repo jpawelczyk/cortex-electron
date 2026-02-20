@@ -49,8 +49,7 @@ export function useKeyboardShortcuts({
         if (e.key === 'n') {
           e.preventDefault();
           if (activeView === 'projects' && selectedProjectId) {
-            const input = document.querySelector<HTMLInputElement>('[data-project-task-input]');
-            input?.focus();
+            startInlineCreate();
           } else if (activeView === 'projects') {
             startInlineProjectCreate();
           } else {

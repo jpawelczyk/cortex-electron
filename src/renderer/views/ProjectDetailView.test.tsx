@@ -11,11 +11,21 @@ const mockFetchProjects = vi.fn();
 const mockCreateTask = vi.fn().mockResolvedValue({ id: 'new-task' });
 const mockUpdateTask = vi.fn();
 const mockSelectTask = vi.fn();
+const mockCancelInlineCreate = vi.fn();
+const mockStartInlineCreate = vi.fn();
 
 let mockProjects: Project[] = [];
 let mockTasks: Task[] = [];
 let mockContexts: Context[] = [];
 let mockSelectedTaskId: string | null = null;
+let mockIsInlineCreating = false;
+
+// Mock DatePickerButton to avoid Calendar/Popover rendering issues in jsdom
+vi.mock('../components/DatePickerButton', () => ({
+  DatePickerButton: ({ label }: { label: string }) => (
+    <button type="button" aria-label={label}>{label}</button>
+  ),
+}));
 
 vi.mock('../stores', () => ({
   useStore: (selector: (state: Record<string, unknown>) => unknown) => {
@@ -30,10 +40,13 @@ vi.mock('../stores', () => ({
       updateTask: mockUpdateTask,
       selectTask: mockSelectTask,
       selectedTaskId: mockSelectedTaskId,
+      isInlineCreating: mockIsInlineCreating,
+      startInlineCreate: mockStartInlineCreate,
+      cancelInlineCreate: mockCancelInlineCreate,
+      createChecklistItem: vi.fn(),
       checklistItems: {},
       checklistsLoading: {},
       fetchChecklistItems: vi.fn(),
-      createChecklistItem: vi.fn(),
       deleteChecklistItem: vi.fn(),
       updateChecklistItem: vi.fn(),
     };
@@ -101,6 +114,7 @@ describe('ProjectDetailView', () => {
     mockTasks = [];
     mockContexts = [];
     mockSelectedTaskId = null;
+    mockIsInlineCreating = false;
   });
 
   afterEach(() => {
@@ -307,6 +321,14 @@ describe('ProjectDetailView', () => {
     expect(screen.getByText('No tasks in this project')).toBeInTheDocument();
   });
 
+  it('empty state CTA triggers inline task creation', () => {
+    mockTasks = [];
+    render(<ProjectDetailView projectId="proj-1" />);
+
+    fireEvent.click(screen.getByTestId('empty-state-cta'));
+    expect(mockStartInlineCreate).toHaveBeenCalled();
+  });
+
   it('includes logbook tasks in the project task list', () => {
     mockTasks = [
       makeTask({ id: 't1', title: 'Done task', project_id: 'proj-1', status: 'logbook' }),
@@ -320,41 +342,46 @@ describe('ProjectDetailView', () => {
 
   // --- Inline task creation ---
 
-  it('renders a task creation input', () => {
+  it('shows InlineTaskCard when isInlineCreating is true', () => {
+    mockIsInlineCreating = true;
     render(<ProjectDetailView projectId="proj-1" />);
 
-    expect(screen.getByPlaceholderText('Add a task...')).toBeInTheDocument();
+    expect(screen.getByTestId('inline-task-card')).toBeInTheDocument();
   });
 
-  it('creates a task with project_id when Enter is pressed', async () => {
+  it('does not show InlineTaskCard when isInlineCreating is false', () => {
+    mockIsInlineCreating = false;
     render(<ProjectDetailView projectId="proj-1" />);
 
-    const input = screen.getByPlaceholderText('Add a task...');
-    fireEvent.change(input, { target: { value: 'New task' } });
+    expect(screen.queryByTestId('inline-task-card')).not.toBeInTheDocument();
+  });
+
+  it('InlineTaskCard creates tasks with project_id', () => {
+    mockIsInlineCreating = true;
+    render(<ProjectDetailView projectId="proj-1" />);
+
+    const input = screen.getByPlaceholderText('New task');
+    fireEvent.change(input, { target: { value: 'Project task' } });
     fireEvent.keyDown(input, { key: 'Enter' });
 
     expect(mockCreateTask).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 'New task', project_id: 'proj-1' }),
+      expect.objectContaining({ title: 'Project task', project_id: 'proj-1' }),
     );
   });
 
-  it('does not create a task when input is empty', () => {
+  // --- Task completion UX ---
+
+  it('marks task as logbook on completion', () => {
+    mockTasks = [
+      makeTask({ id: 't1', title: 'My task', project_id: 'proj-1', status: 'inbox' }),
+    ];
     render(<ProjectDetailView projectId="proj-1" />);
 
-    const input = screen.getByPlaceholderText('Add a task...');
-    fireEvent.keyDown(input, { key: 'Enter' });
+    // TaskItem renders a checkbox — click it to complete
+    const checkbox = screen.getByRole('checkbox');
+    fireEvent.click(checkbox);
 
-    expect(mockCreateTask).not.toHaveBeenCalled();
-  });
-
-  it('clears input after creating a task', () => {
-    render(<ProjectDetailView projectId="proj-1" />);
-
-    const input = screen.getByPlaceholderText('Add a task...') as HTMLInputElement;
-    fireEvent.change(input, { target: { value: 'New task' } });
-    fireEvent.keyDown(input, { key: 'Enter' });
-
-    expect(input.value).toBe('');
+    expect(mockUpdateTask).toHaveBeenCalledWith('t1', { status: 'logbook' });
   });
 
   // --- Completion validation ---

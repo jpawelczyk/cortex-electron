@@ -327,6 +327,28 @@ describe('InlineTaskCard', () => {
     });
   });
 
+  it('includes project_id in createTask when projectId prop is provided', () => {
+    render(<InlineTaskCard projectId="proj-1" />);
+    const input = screen.getByPlaceholderText('New task');
+
+    fireEvent.change(input, { target: { value: 'Project task' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(mockCreateTask).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Project task', project_id: 'proj-1' }),
+    );
+  });
+
+  it('does not include project_id when projectId prop is absent', () => {
+    render(<InlineTaskCard />);
+    const input = screen.getByPlaceholderText('New task');
+
+    fireEvent.change(input, { target: { value: 'Regular task' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(mockCreateTask).toHaveBeenCalledWith({ title: 'Regular task' });
+  });
+
   it('does not create empty checklist items', async () => {
     render(<InlineTaskCard />);
 
