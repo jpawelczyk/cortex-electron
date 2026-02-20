@@ -5,6 +5,7 @@ import { initDatabase, closeDatabase, getDb } from './db/index.js';
 import { registerHandlers } from './ipc/handlers.js';
 import { registerGlobalShortcuts, unregisterGlobalShortcuts } from './shortcuts.js';
 import { createTaskService } from './services/task.service.js';
+import { seedDefaultContexts } from './services/context.service.js';
 import type { DbContext } from './db/types.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -81,8 +82,12 @@ app.whenReady().then(() => {
   const db = getDb();
   registerHandlers(db);
 
-  // Auto-purge trash items older than 30 days
   const ctx: DbContext = { db };
+
+  // Seed default contexts on first run
+  seedDefaultContexts(ctx).catch(() => {});
+
+  // Auto-purge trash items older than 30 days
   const taskService = createTaskService(ctx);
   taskService.purgeExpiredTrash(30).catch(() => {});
 

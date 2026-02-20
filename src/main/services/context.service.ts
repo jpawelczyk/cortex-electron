@@ -12,6 +12,32 @@ export interface ContextService {
   getTasksForContext(contextId: string): Promise<Task[]>;
 }
 
+const DEFAULT_CONTEXTS: { name: string; color: string; icon: string; sort_order: number }[] = [
+  { name: 'Work', color: '#f97316', icon: 'Briefcase', sort_order: 0 },
+  { name: 'Personal', color: '#22c55e', icon: 'Home', sort_order: 1 },
+  { name: 'Research', color: '#06b6d4', icon: 'FlaskConical', sort_order: 2 },
+];
+
+export async function seedDefaultContexts(ctx: DbContext): Promise<void> {
+  const { db } = ctx;
+
+  const count = db.prepare(
+    'SELECT COUNT(*) as count FROM contexts WHERE deleted_at IS NULL'
+  ).get() as { count: number };
+
+  if (count.count > 0) return;
+
+  const now = new Date().toISOString();
+  const insert = db.prepare(`
+    INSERT INTO contexts (id, name, color, icon, sort_order, created_at, updated_at, deleted_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  for (const def of DEFAULT_CONTEXTS) {
+    insert.run(uuid(), def.name, def.color, def.icon, def.sort_order, now, now, null);
+  }
+}
+
 export function createContextService(ctx: DbContext): ContextService {
   const { db } = ctx;
 
@@ -90,9 +116,20 @@ export function createContextService(ctx: DbContext): ContextService {
       }
 
       const now = new Date().toISOString();
-      db.prepare(
-        'UPDATE contexts SET deleted_at = ?, updated_at = ? WHERE id = ?'
-      ).run(now, now, id);
+
+      db.transaction(() => {
+        db.prepare(
+          'UPDATE contexts SET deleted_at = ?, updated_at = ? WHERE id = ?'
+        ).run(now, now, id);
+
+        // Orphan all items belonging to this context
+        db.prepare(
+          'UPDATE projects SET context_id = NULL, updated_at = ? WHERE context_id = ?'
+        ).run(now, id);
+        db.prepare(
+          'UPDATE tasks SET context_id = NULL, updated_at = ? WHERE context_id = ?'
+        ).run(now, id);
+      })();
     },
 
     async getProjectsForContext(contextId: string): Promise<Project[]> {

@@ -5,11 +5,11 @@ type SetFn = (partial: Partial<ContextSlice> | ((s: ContextSlice) => Partial<Con
 type GetFn = () => ContextSlice;
 
 function createStore(overrides?: Partial<ContextSlice>): ContextSlice {
-  let state: ContextSlice;
+  const state = {} as ContextSlice;
 
   const set: SetFn = (partial) => {
     const update = typeof partial === 'function' ? partial(state) : partial;
-    state = { ...state, ...update };
+    Object.assign(state, update);
   };
 
   const get: GetFn = () => state;
@@ -19,10 +19,7 @@ function createStore(overrides?: Partial<ContextSlice>): ContextSlice {
     get: GetFn,
     api: Record<string, never>,
   ) => ContextSlice;
-  state = {
-    ...creator(set, get, {}),
-    ...overrides,
-  };
+  Object.assign(state, creator(set, get, {}), overrides);
 
   return state;
 }
@@ -130,6 +127,82 @@ describe('ContextSlice', () => {
       await store.deleteContext('ctx-1');
 
       expect(mockCortex.contexts.delete).toHaveBeenCalledWith('ctx-1');
+    });
+  });
+
+  describe('activeContextIds', () => {
+    it('starts with empty array', () => {
+      const store = createStore();
+      expect(store.activeContextIds).toEqual([]);
+    });
+  });
+
+  describe('toggleContext', () => {
+    it('adds id when not present', () => {
+      const store = createStore();
+      store.toggleContext('ctx-1');
+      expect(store.activeContextIds).toContain('ctx-1');
+    });
+
+    it('removes id when already present', () => {
+      const store = createStore({ activeContextIds: ['ctx-1', 'ctx-2'] });
+      store.toggleContext('ctx-1');
+      expect(store.activeContextIds).toEqual(['ctx-2']);
+    });
+  });
+
+  describe('setActiveContexts', () => {
+    it('sets specific context ids', () => {
+      const store = createStore();
+      store.setActiveContexts(['ctx-1', 'ctx-2']);
+      expect(store.activeContextIds).toEqual(['ctx-1', 'ctx-2']);
+    });
+  });
+
+  describe('clearContextFilter', () => {
+    it('resets activeContextIds to empty array', () => {
+      const store = createStore({ activeContextIds: ['ctx-1', 'ctx-2'] });
+      store.clearContextFilter();
+      expect(store.activeContextIds).toEqual([]);
+    });
+  });
+
+  describe('getFilteredByContext', () => {
+    const items = [
+      { id: '1', context_id: 'ctx-1' },
+      { id: '2', context_id: 'ctx-2' },
+      { id: '3', context_id: null },
+      { id: '4', context_id: 'ctx-1' },
+    ];
+
+    it('returns all items when no filter active', () => {
+      const store = createStore({ activeContextIds: [] });
+      expect(store.getFilteredByContext(items)).toEqual(items);
+    });
+
+    it('returns only matching items when filter active', () => {
+      const store = createStore({ activeContextIds: ['ctx-1'] });
+      const result = store.getFilteredByContext(items);
+      expect(result).toEqual([
+        { id: '1', context_id: 'ctx-1' },
+        { id: '4', context_id: 'ctx-1' },
+      ]);
+    });
+
+    it('supports multiple active contexts', () => {
+      const store = createStore({ activeContextIds: ['ctx-1', 'ctx-2'] });
+      const result = store.getFilteredByContext(items);
+      expect(result).toEqual([
+        { id: '1', context_id: 'ctx-1' },
+        { id: '2', context_id: 'ctx-2' },
+        { id: '4', context_id: 'ctx-1' },
+      ]);
+    });
+
+    it('excludes null context_id items when filter is active', () => {
+      const store = createStore({ activeContextIds: ['ctx-1'] });
+      const result = store.getFilteredByContext(items);
+      expect(result.find(i => i.context_id === null)).toBeUndefined();
     });
   });
 });

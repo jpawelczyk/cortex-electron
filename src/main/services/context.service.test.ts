@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createContextService, ContextService } from './context.service';
+import { createContextService, ContextService, seedDefaultContexts } from './context.service';
 import { createProjectService, ProjectService } from './project.service';
 import { createTaskService, TaskService } from './task.service';
 import { createTestDb, TestDb } from '../../../tests/helpers/db';
@@ -188,6 +188,26 @@ describe('ContextService', () => {
         contextService.delete('non-existent')
       ).rejects.toThrow('Context not found');
     });
+
+    it('orphans projects by setting context_id to null', async () => {
+      const context = await contextService.create({ name: 'Work' });
+      const project = await projectService.create({ title: 'P1', context_id: context.id });
+
+      await contextService.delete(context.id);
+
+      const raw = db.getRawProject(project.id);
+      expect(raw?.context_id).toBeNull();
+    });
+
+    it('orphans tasks by setting context_id to null', async () => {
+      const context = await contextService.create({ name: 'Work' });
+      const task = await taskService.create({ title: 'T1', context_id: context.id });
+
+      await contextService.delete(context.id);
+
+      const raw = db.getRawTask(task.id);
+      expect(raw?.context_id).toBeNull();
+    });
   });
 
   describe('getProjectsForContext', () => {
@@ -223,6 +243,46 @@ describe('ContextService', () => {
       const projects = await contextService.getProjectsForContext(context.id);
 
       expect(projects).toEqual([]);
+    });
+  });
+
+  describe('seedDefaultContexts', () => {
+    it('creates 3 default contexts when table is empty', async () => {
+      await seedDefaultContexts({ db: db.db });
+
+      const contexts = await contextService.getAll();
+      expect(contexts).toHaveLength(3);
+
+      const names = contexts.map(c => c.name).sort();
+      expect(names).toEqual(['Personal', 'Research', 'Work']);
+    });
+
+    it('seeds correct colors and icons', async () => {
+      await seedDefaultContexts({ db: db.db });
+
+      const contexts = await contextService.getAll();
+      const work = contexts.find(c => c.name === 'Work')!;
+      const personal = contexts.find(c => c.name === 'Personal')!;
+      const research = contexts.find(c => c.name === 'Research')!;
+
+      expect(work.color).toBe('#f97316');
+      expect(work.icon).toBe('Briefcase');
+
+      expect(personal.color).toBe('#22c55e');
+      expect(personal.icon).toBe('Home');
+
+      expect(research.color).toBe('#06b6d4');
+      expect(research.icon).toBe('FlaskConical');
+    });
+
+    it('does nothing when contexts already exist', async () => {
+      await contextService.create({ name: 'Existing' });
+
+      await seedDefaultContexts({ db: db.db });
+
+      const contexts = await contextService.getAll();
+      expect(contexts).toHaveLength(1);
+      expect(contexts[0].name).toBe('Existing');
     });
   });
 

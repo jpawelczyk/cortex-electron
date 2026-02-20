@@ -23,7 +23,7 @@ export const useStore = create<StoreState>()(
       {
         name: 'cortex-store',
         partialize: (state) => ({
-          activeContextId: state.activeContextId,
+          activeContextIds: state.activeContextIds,
           sidebarCollapsed: state.sidebarCollapsed,
         }),
       }
