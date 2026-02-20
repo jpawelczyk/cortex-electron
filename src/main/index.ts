@@ -10,6 +10,9 @@ import type { DbContext } from './db/types.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+// Ensure consistent userData path across dev and packaged builds
+app.setName('cortex');
+
 // Set dock icon (macOS) - works in dev mode
 if (process.platform === 'darwin') {
   const iconPath = app.isPackaged
