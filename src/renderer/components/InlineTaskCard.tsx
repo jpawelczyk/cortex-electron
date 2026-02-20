@@ -192,7 +192,7 @@ export function InlineTaskCard({ projectId }: InlineTaskCardProps = {}) {
     const trigger = activeToken.type === 'context' ? '#' : '+';
     const before = title.slice(0, activeToken.start);
     const after = title.slice(activeToken.end);
-    const newTitle = `${before}${trigger}${item.name}${after.startsWith(' ') ? after : ' ' + after}`.trimEnd();
+    const newTitle = `${before}${trigger}${item.name} ${after.trimStart()}`;
     setTitle(newTitle);
     setActiveToken(null);
     // Move cursor to end
@@ -301,37 +301,39 @@ export function InlineTaskCard({ projectId }: InlineTaskCardProps = {}) {
       data-testid="inline-task-card"
       className="bg-card border border-border rounded-xl shadow-sm my-2 animate-card-enter"
     >
-      <div className="relative flex items-center gap-3 px-4 py-2.5">
-        <div className="shrink-0">
-          <Circle
-            className="size-[18px] text-muted-foreground/50"
-            strokeWidth={1.5}
+      <div className="relative">
+        <div className="flex items-center gap-3 px-4 py-2.5">
+          <div className="shrink-0">
+            <Circle
+              className="size-[18px] text-muted-foreground/50"
+              strokeWidth={1.5}
+            />
+          </div>
+          <input
+            ref={titleInputRef}
+            type="text"
+            value={title}
+            onChange={handleTitleChange}
+            onKeyDown={handleTitleKeyDown}
+            placeholder="New task"
+            className="flex-1 bg-transparent text-[13px] leading-snug text-foreground font-medium outline-none min-w-0"
+            autoFocus
           />
-        </div>
-        <input
-          ref={titleInputRef}
-          type="text"
-          value={title}
-          onChange={handleTitleChange}
-          onKeyDown={handleTitleKeyDown}
-          placeholder="New task"
-          className="flex-1 bg-transparent text-[13px] leading-snug text-foreground font-medium outline-none min-w-0"
-          autoFocus
-        />
-        <div className="flex items-center gap-0.5 shrink-0">
-          <DatePickerButton
-            value={whenDate}
-            onChange={setWhenDate}
-            icon={whenIcon}
-            label="When date"
-            actions={whenDateActions}
-          />
-          <DatePickerButton
-            value={deadline}
-            onChange={setDeadline}
-            icon={<Flag className="size-3.5" />}
-            label="Deadline"
-          />
+          <div className="flex items-center gap-0.5 shrink-0">
+            <DatePickerButton
+              value={whenDate}
+              onChange={setWhenDate}
+              icon={whenIcon}
+              label="When date"
+              actions={whenDateActions}
+            />
+            <DatePickerButton
+              value={deadline}
+              onChange={setDeadline}
+              icon={<Flag className="size-3.5" />}
+              label="Deadline"
+            />
+          </div>
         </div>
 
         {activeToken && (

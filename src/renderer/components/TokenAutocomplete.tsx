@@ -53,7 +53,7 @@ export function TokenAutocomplete({ items, query, onSelect, onDismiss, type }: T
   return (
     <div
       data-testid="token-autocomplete"
-      className="absolute z-50 left-0 mt-1 w-56 bg-card border border-border rounded-lg shadow-lg overflow-hidden"
+      className="absolute z-50 top-full left-[46px] mt-1 w-56 bg-popover border border-border rounded-lg shadow-lg overflow-hidden"
     >
       <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
         {label}
