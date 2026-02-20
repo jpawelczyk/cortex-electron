@@ -96,6 +96,7 @@ Things-inspired: `inbox` → `today` | `upcoming` | `anytime` | `someday` → `l
 | [TASK_SYSTEM](docs/TASK_SYSTEM.md) | Task statuses, dates, context |
 | [PROJECTS](docs/PROJECTS.md) | Project statuses, completion rules, staleness |
 | [CONTEXTS](docs/CONTEXTS.md) | Context system, filtering, selector UI |
+| [NOTES](docs/NOTES.md) | Notes system, markdown editing |
 | [STATE](docs/STATE.md) | Zustand stores |
 | [IPC](docs/IPC.md) | Main/renderer communication |
 | [SYNC](docs/SYNC.md) | Sync-ready patterns |
