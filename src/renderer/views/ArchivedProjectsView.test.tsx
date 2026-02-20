@@ -16,6 +16,7 @@ vi.mock('../stores', () => ({
       tasks: mockTasks,
       updateProject: mockUpdateProject,
       selectProject: mockSelectProject,
+      activeContextIds: [],
     };
     return selector(state);
   },

@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { RotateCcw } from 'lucide-react';
 import { useStore } from '../stores';
+import { filterProjectsByContext } from '../lib/contextFilter';
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', {
@@ -13,14 +14,15 @@ function formatDate(iso: string): string {
 export function ArchivedProjectsView() {
   const projects = useStore((s) => s.projects);
   const tasks = useStore((s) => s.tasks);
+  const activeContextIds = useStore((s) => s.activeContextIds);
   const updateProject = useStore((s) => s.updateProject);
   const selectProject = useStore((s) => s.selectProject);
 
   const archivedProjects = useMemo(() => {
-    return projects
-      .filter((p) => p.status === 'archived' && !p.deleted_at)
-      .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
-  }, [projects]);
+    const statusFiltered = projects.filter((p) => p.status === 'archived' && !p.deleted_at);
+    const contextFiltered = filterProjectsByContext(statusFiltered, activeContextIds);
+    return contextFiltered.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+  }, [projects, activeContextIds]);
 
   const taskCountsByProject = useMemo(() => {
     const counts: Record<string, number> = {};

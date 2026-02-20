@@ -14,6 +14,8 @@ const mockCancelInlineProjectCreate = vi.fn();
 const mockDeleteProject = vi.fn();
 const mockUpdateProject = vi.fn();
 
+let mockActiveContextIds: string[] = [];
+
 vi.mock('../stores', () => ({
   useStore: (selector: (state: Record<string, unknown>) => unknown) => {
     const state = {
@@ -28,6 +30,7 @@ vi.mock('../stores', () => ({
       selectProject: vi.fn(),
       deleteProject: mockDeleteProject,
       updateProject: mockUpdateProject,
+      activeContextIds: mockActiveContextIds,
     };
     return selector(state);
   },
@@ -72,6 +75,7 @@ describe('ProjectsOverviewView', () => {
     mockProjects = [];
     mockTasks = [];
     mockIsInlineProjectCreating = false;
+    mockActiveContextIds = [];
   });
 
   it('renders the Projects heading', () => {
@@ -362,6 +366,54 @@ describe('ProjectsOverviewView', () => {
 
       expect(screen.getByTestId('inline-project-card')).toBeInTheDocument();
       expect(screen.queryByTestId('new-project-trigger')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('context filtering', () => {
+    it('shows all projects when no context filter is active', () => {
+      mockActiveContextIds = [];
+      mockProjects = [
+        fakeProject({ id: 'p1', title: 'Work Project', status: 'active', context_id: 'ctx-work' }),
+        fakeProject({ id: 'p2', title: 'Personal Project', status: 'active', context_id: 'ctx-personal' }),
+        fakeProject({ id: 'p3', title: 'No Context Project', status: 'active', context_id: null }),
+      ];
+      render(<ProjectsOverviewView />);
+      expect(screen.getByText('Work Project')).toBeInTheDocument();
+      expect(screen.getByText('Personal Project')).toBeInTheDocument();
+      expect(screen.getByText('No Context Project')).toBeInTheDocument();
+    });
+
+    it('shows only projects matching active context', () => {
+      mockActiveContextIds = ['ctx-work'];
+      mockProjects = [
+        fakeProject({ id: 'p1', title: 'Work Project', status: 'active', context_id: 'ctx-work' }),
+        fakeProject({ id: 'p2', title: 'Personal Project', status: 'active', context_id: 'ctx-personal' }),
+      ];
+      render(<ProjectsOverviewView />);
+      expect(screen.getByText('Work Project')).toBeInTheDocument();
+      expect(screen.queryByText('Personal Project')).not.toBeInTheDocument();
+    });
+
+    it('hides projects with no context when filter is active', () => {
+      mockActiveContextIds = ['ctx-work'];
+      mockProjects = [
+        fakeProject({ id: 'p1', title: 'Orphan Project', status: 'active', context_id: null }),
+      ];
+      render(<ProjectsOverviewView />);
+      expect(screen.queryByText('Orphan Project')).not.toBeInTheDocument();
+    });
+
+    it('supports multiple active contexts', () => {
+      mockActiveContextIds = ['ctx-work', 'ctx-personal'];
+      mockProjects = [
+        fakeProject({ id: 'p1', title: 'Work Project', status: 'active', context_id: 'ctx-work' }),
+        fakeProject({ id: 'p2', title: 'Personal Project', status: 'active', context_id: 'ctx-personal' }),
+        fakeProject({ id: 'p3', title: 'Research Project', status: 'active', context_id: 'ctx-research' }),
+      ];
+      render(<ProjectsOverviewView />);
+      expect(screen.getByText('Work Project')).toBeInTheDocument();
+      expect(screen.getByText('Personal Project')).toBeInTheDocument();
+      expect(screen.queryByText('Research Project')).not.toBeInTheDocument();
     });
   });
 });

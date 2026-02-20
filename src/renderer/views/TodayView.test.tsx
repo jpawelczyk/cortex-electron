@@ -5,6 +5,8 @@ import '@testing-library/jest-dom/vitest';
 import { TodayView } from './TodayView';
 
 let mockTasks: Record<string, unknown>[] = [];
+let mockProjects: Record<string, unknown>[] = [];
+let mockActiveContextIds: string[] = [];
 const mockFetchTasks = vi.fn();
 const mockUpdateTask = vi.fn();
 const mockSelectTask = vi.fn();
@@ -24,7 +26,8 @@ vi.mock('../stores', () => ({
       createChecklistItem: vi.fn(),
       deleteChecklistItem: vi.fn(),
       updateChecklistItem: vi.fn(),
-      projects: [],
+      projects: mockProjects,
+      activeContextIds: mockActiveContextIds,
       contexts: [],
       fetchProjects: vi.fn(),
     };
@@ -54,10 +57,26 @@ const fakeTask = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
+const fakeProject = (overrides: Record<string, unknown> = {}) => ({
+  id: 'proj-1',
+  title: 'Test project',
+  description: null,
+  status: 'active',
+  context_id: null,
+  sort_order: 0,
+  created_at: '2026-02-17T00:00:00.000Z',
+  updated_at: '2026-02-17T00:00:00.000Z',
+  completed_at: null,
+  deleted_at: null,
+  ...overrides,
+});
+
 describe('TodayView', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockTasks = [];
+    mockProjects = [];
+    mockActiveContextIds = [];
   });
 
   it('renders the Today heading', () => {
@@ -262,6 +281,68 @@ describe('TodayView', () => {
 
       expect(screen.queryByText('Old completed')).not.toBeInTheDocument();
       expect(screen.getByText('Today task')).toBeInTheDocument();
+    });
+  });
+
+  describe('context filtering', () => {
+    it('shows all tasks when no context filter is active', () => {
+      mockActiveContextIds = [];
+      mockTasks = [
+        fakeTask({ id: '1', title: 'Work task', status: 'today', context_id: 'ctx-work' }),
+        fakeTask({ id: '2', title: 'Personal task', status: 'today', context_id: 'ctx-personal' }),
+        fakeTask({ id: '3', title: 'No context task', status: 'today', context_id: null }),
+      ];
+      render(<TodayView />);
+      expect(screen.getByText('Work task')).toBeInTheDocument();
+      expect(screen.getByText('Personal task')).toBeInTheDocument();
+      expect(screen.getByText('No context task')).toBeInTheDocument();
+    });
+
+    it('shows only tasks matching active context', () => {
+      mockActiveContextIds = ['ctx-work'];
+      mockTasks = [
+        fakeTask({ id: '1', title: 'Work task', status: 'today', context_id: 'ctx-work' }),
+        fakeTask({ id: '2', title: 'Personal task', status: 'today', context_id: 'ctx-personal' }),
+      ];
+      render(<TodayView />);
+      expect(screen.getByText('Work task')).toBeInTheDocument();
+      expect(screen.queryByText('Personal task')).not.toBeInTheDocument();
+    });
+
+    it('shows tasks inheriting context from project', () => {
+      mockActiveContextIds = ['ctx-work'];
+      mockProjects = [
+        fakeProject({ id: 'proj-1', context_id: 'ctx-work' }),
+      ];
+      mockTasks = [
+        fakeTask({ id: '1', title: 'Project task', status: 'today', project_id: 'proj-1', context_id: null }),
+      ];
+      render(<TodayView />);
+      expect(screen.getByText('Project task')).toBeInTheDocument();
+    });
+
+    it('hides tasks with non-matching context', () => {
+      mockActiveContextIds = ['ctx-work'];
+      mockTasks = [
+        fakeTask({ id: '1', title: 'Personal task', status: 'today', context_id: 'ctx-personal' }),
+        fakeTask({ id: '2', title: 'No context task', status: 'today', context_id: null }),
+      ];
+      render(<TodayView />);
+      expect(screen.queryByText('Personal task')).not.toBeInTheDocument();
+      expect(screen.queryByText('No context task')).not.toBeInTheDocument();
+    });
+
+    it('supports multiple active contexts', () => {
+      mockActiveContextIds = ['ctx-work', 'ctx-personal'];
+      mockTasks = [
+        fakeTask({ id: '1', title: 'Work task', status: 'today', context_id: 'ctx-work' }),
+        fakeTask({ id: '2', title: 'Personal task', status: 'today', context_id: 'ctx-personal' }),
+        fakeTask({ id: '3', title: 'Research task', status: 'today', context_id: 'ctx-research' }),
+      ];
+      render(<TodayView />);
+      expect(screen.getByText('Work task')).toBeInTheDocument();
+      expect(screen.getByText('Personal task')).toBeInTheDocument();
+      expect(screen.queryByText('Research task')).not.toBeInTheDocument();
     });
   });
 });

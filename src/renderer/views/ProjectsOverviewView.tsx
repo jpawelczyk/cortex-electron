@@ -3,6 +3,7 @@ import { Clock, Plus, Trash2, Check, X } from 'lucide-react';
 import type { Project, ProjectStatus } from '@shared/types';
 import { useStore } from '../stores';
 import { InlineProjectCard } from '../components/InlineProjectCard';
+import { filterProjectsByContext } from '../lib/contextFilter';
 import { CompletedProjectsView } from './CompletedProjectsView';
 import { ArchivedProjectsView } from './ArchivedProjectsView';
 
@@ -35,6 +36,7 @@ function isStale(project: Project): boolean {
 export function ProjectsOverviewView() {
   const projects = useStore((s) => s.projects);
   const tasks = useStore((s) => s.tasks);
+  const activeContextIds = useStore((s) => s.activeContextIds);
   const fetchProjects = useStore((s) => s.fetchProjects);
   const isInlineProjectCreating = useStore((s) => s.isInlineProjectCreating);
   const cancelInlineProjectCreate = useStore((s) => s.cancelInlineProjectCreate);
@@ -51,10 +53,12 @@ export function ProjectsOverviewView() {
   }, [fetchProjects]);
 
   const activeProjects = useMemo(() => {
-    return projects
-      .filter((p) => ACTIVE_STATUSES.includes(p.status) && !p.deleted_at)
+    const statusFiltered = projects
+      .filter((p) => ACTIVE_STATUSES.includes(p.status) && !p.deleted_at);
+    const contextFiltered = filterProjectsByContext(statusFiltered, activeContextIds);
+    return contextFiltered
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-  }, [projects]);
+  }, [projects, activeContextIds]);
 
   const taskCountsByProject = useMemo(() => {
     const counts: Record<string, number> = {};

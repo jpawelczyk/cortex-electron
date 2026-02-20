@@ -26,6 +26,7 @@ vi.mock('../stores', () => ({
       updateChecklistItem: vi.fn(),
       projects: [],
       contexts: [],
+      activeContextIds: [],
       fetchProjects: vi.fn(),
     };
     return selector(state);

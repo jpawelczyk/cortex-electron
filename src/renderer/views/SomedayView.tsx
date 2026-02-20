@@ -2,11 +2,14 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Cloud } from 'lucide-react';
 import { useStore } from '../stores';
 import { TaskList } from '../components/TaskList';
+import { filterTasksByContext } from '../lib/contextFilter';
 
 const SORT_DELAY_MS = 400;
 
 export function SomedayView() {
   const tasks = useStore((s) => s.tasks);
+  const projects = useStore((s) => s.projects);
+  const activeContextIds = useStore((s) => s.activeContextIds);
   const fetchTasks = useStore((s) => s.fetchTasks);
   const updateTask = useStore((s) => s.updateTask);
   const selectTask = useStore((s) => s.selectTask);
@@ -32,7 +35,8 @@ export function SomedayView() {
       if (t.status === 'someday') return true;
       return false;
     });
-    return visible.sort((a, b) => {
+    const filtered = filterTasksByContext(visible, activeContextIds, projects);
+    return filtered.sort((a, b) => {
       const aIdx = settledIds.indexOf(a.id);
       const bIdx = settledIds.indexOf(b.id);
       const aSettled = aIdx >= 0 ? 1 : 0;
@@ -41,7 +45,7 @@ export function SomedayView() {
       if (aSettled && bSettled) return aIdx - bIdx;
       return 0;
     });
-  }, [tasks, settledIds]);
+  }, [tasks, settledIds, activeContextIds, projects]);
 
   const handleComplete = useCallback(
     (id: string) => {

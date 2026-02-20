@@ -2,6 +2,7 @@ import { useEffect, useMemo, useCallback } from 'react';
 import { BookOpen } from 'lucide-react';
 import { useStore } from '../stores';
 import { TaskList } from '../components/TaskList';
+import { filterTasksByContext } from '../lib/contextFilter';
 import type { Task } from '@shared/types';
 
 function formatCompletionDate(iso: string): string {
@@ -35,6 +36,8 @@ interface DateGroup {
 
 export function LogbookView() {
   const tasks = useStore((s) => s.tasks);
+  const projects = useStore((s) => s.projects);
+  const activeContextIds = useStore((s) => s.activeContextIds);
   const fetchTasks = useStore((s) => s.fetchTasks);
   const updateTask = useStore((s) => s.updateTask);
   const selectTask = useStore((s) => s.selectTask);
@@ -44,17 +47,15 @@ export function LogbookView() {
     fetchTasks();
   }, [fetchTasks]);
 
-  const logbookTasks = useMemo(
-    () =>
-      tasks
-        .filter((t) => t.status === 'logbook' && t.completed_at)
-        .sort(
-          (a, b) =>
-            new Date(b.completed_at!).getTime() -
-            new Date(a.completed_at!).getTime(),
-        ),
-    [tasks],
-  );
+  const logbookTasks = useMemo(() => {
+    const visible = tasks.filter((t) => t.status === 'logbook' && t.completed_at);
+    const filtered = filterTasksByContext(visible, activeContextIds, projects);
+    return filtered.sort(
+      (a, b) =>
+        new Date(b.completed_at!).getTime() -
+        new Date(a.completed_at!).getTime(),
+    );
+  }, [tasks, activeContextIds, projects]);
 
   const groupedTasks = useMemo(() => {
     const groups: DateGroup[] = [];

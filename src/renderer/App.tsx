@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { Plus, Search } from 'lucide-react';
 import { ContextSelector } from './components/ContextSelector';
 import { useStore } from './stores';
+import { filterTasksByContext } from './lib/contextFilter';
 import { Sidebar, SidebarView } from './components/Sidebar';
 import { InboxView } from './views/InboxView';
 import { TodayView } from './views/TodayView';
@@ -19,6 +20,8 @@ import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
 export default function App() {
   const [activeView, setActiveView] = useState<SidebarView>('inbox');
   const tasks = useStore((s) => s.tasks);
+  const projects = useStore((s) => s.projects);
+  const activeContextIds = useStore((s) => s.activeContextIds);
   const trashedTasks = useStore((s) => s.trashedTasks);
   const fetchTasks = useStore((s) => s.fetchTasks);
   const fetchTrashedTasks = useStore((s) => s.fetchTrashedTasks);
@@ -53,7 +56,10 @@ export default function App() {
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
   const taskCounts = useMemo(() => {
-    const overdueCount = tasks.filter(
+    // Context-filtered tasks for counts that respect the active filter
+    const filtered = filterTasksByContext(tasks, activeContextIds, projects);
+
+    const overdueCount = filtered.filter(
       (t) =>
         t.deadline &&
         t.deadline < today &&
@@ -62,23 +68,26 @@ export default function App() {
         !t.completed_at,
     ).length;
 
-    const todayCount = tasks.filter((t) => {
+    const todayCount = filtered.filter((t) => {
       if (t.status === 'logbook' || t.status === 'cancelled') return false;
       if (t.deadline && t.deadline < today) return false;
       return t.status === 'today' || t.when_date === today;
     }).length;
 
+    // Inbox is always unfiltered (per CONTEXTS.md — inbox tasks need triage regardless of context)
+    const inboxCount = tasks.filter((t) => t.status === 'inbox' && !t.when_date).length;
+
     return {
-      inbox: tasks.filter((t) => t.status === 'inbox' && !t.when_date).length + overdueCount,
+      inbox: inboxCount + overdueCount,
       today: todayCount,
-      upcoming: tasks.filter((t) => t.status === 'upcoming').length,
-      anytime: tasks.filter((t) => t.status === 'anytime').length,
-      someday: tasks.filter((t) => t.status === 'someday').length,
-      stale: tasks.filter((t) => t.status === 'stale').length,
-      logbook: tasks.filter((t) => t.status === 'logbook').length,
+      upcoming: filtered.filter((t) => t.status === 'upcoming').length,
+      anytime: filtered.filter((t) => t.status === 'anytime').length,
+      someday: filtered.filter((t) => t.status === 'someday').length,
+      stale: filtered.filter((t) => t.status === 'stale').length,
+      logbook: filtered.filter((t) => t.status === 'logbook').length,
       trash: trashedTasks.length,
     };
-  }, [tasks, trashedTasks, today]);
+  }, [tasks, trashedTasks, today, activeContextIds, projects]);
 
   return (
     <div className="flex h-screen bg-background text-foreground overflow-hidden">

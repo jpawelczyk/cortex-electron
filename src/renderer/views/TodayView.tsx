@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Sun } from 'lucide-react';
 import { useStore } from '../stores';
 import { TaskList } from '../components/TaskList';
+import { filterTasksByContext } from '../lib/contextFilter';
 
 const SORT_DELAY_MS = 400;
 
@@ -11,6 +12,8 @@ function getToday(): string {
 
 export function TodayView() {
   const tasks = useStore((s) => s.tasks);
+  const projects = useStore((s) => s.projects);
+  const activeContextIds = useStore((s) => s.activeContextIds);
   const fetchTasks = useStore((s) => s.fetchTasks);
   const updateTask = useStore((s) => s.updateTask);
   const selectTask = useStore((s) => s.selectTask);
@@ -43,7 +46,8 @@ export function TodayView() {
       if (t.deadline && t.deadline < today) return false;
       return t.status === 'today' || t.when_date === today;
     });
-    return visible.sort((a, b) => {
+    const filtered = filterTasksByContext(visible, activeContextIds, projects);
+    return filtered.sort((a, b) => {
       const aIdx = settledIds.indexOf(a.id);
       const bIdx = settledIds.indexOf(b.id);
       const aSettled = aIdx >= 0 ? 1 : 0;
@@ -52,7 +56,7 @@ export function TodayView() {
       if (aSettled && bSettled) return aIdx - bIdx;
       return 0;
     });
-  }, [tasks, today, settledIds]);
+  }, [tasks, today, settledIds, activeContextIds, projects]);
 
   useEffect(() => {
     fetchTasks();

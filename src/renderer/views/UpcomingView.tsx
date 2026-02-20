@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Calendar } from 'lucide-react';
 import { useStore } from '../stores';
 import { TaskList } from '../components/TaskList';
+import { filterTasksByContext } from '../lib/contextFilter';
 import type { Task } from '@shared/types';
 
 const SORT_DELAY_MS = 400;
@@ -44,6 +45,8 @@ interface DateGroup {
 
 export function UpcomingView() {
   const tasks = useStore((s) => s.tasks);
+  const projects = useStore((s) => s.projects);
+  const activeContextIds = useStore((s) => s.activeContextIds);
   const fetchTasks = useStore((s) => s.fetchTasks);
   const updateTask = useStore((s) => s.updateTask);
   const selectTask = useStore((s) => s.selectTask);
@@ -64,12 +67,13 @@ export function UpcomingView() {
   }, [fetchTasks]);
 
   const upcomingTasks = useMemo(() => {
-    return tasks.filter((t) => {
+    const visible = tasks.filter((t) => {
       if (t.status === 'logbook' && everCompletedIds.current.has(t.id)) return true;
       if (t.status === 'upcoming') return true;
       return false;
     });
-  }, [tasks]);
+    return filterTasksByContext(visible, activeContextIds, projects);
+  }, [tasks, activeContextIds, projects]);
 
   const groupedTasks = useMemo(() => {
     const groups: DateGroup[] = [];

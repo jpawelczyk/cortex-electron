@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { RotateCcw } from 'lucide-react';
 import { useStore } from '../stores';
+import { filterProjectsByContext } from '../lib/contextFilter';
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', {
@@ -13,18 +14,19 @@ function formatDate(iso: string): string {
 export function CompletedProjectsView() {
   const projects = useStore((s) => s.projects);
   const tasks = useStore((s) => s.tasks);
+  const activeContextIds = useStore((s) => s.activeContextIds);
   const updateProject = useStore((s) => s.updateProject);
   const selectProject = useStore((s) => s.selectProject);
 
   const completedProjects = useMemo(() => {
-    return projects
-      .filter((p) => p.status === 'completed' && !p.deleted_at)
-      .sort((a, b) => {
-        const dateA = a.completed_at || a.updated_at;
-        const dateB = b.completed_at || b.updated_at;
-        return new Date(dateB).getTime() - new Date(dateA).getTime();
-      });
-  }, [projects]);
+    const statusFiltered = projects.filter((p) => p.status === 'completed' && !p.deleted_at);
+    const contextFiltered = filterProjectsByContext(statusFiltered, activeContextIds);
+    return contextFiltered.sort((a, b) => {
+      const dateA = a.completed_at || a.updated_at;
+      const dateB = b.completed_at || b.updated_at;
+      return new Date(dateB).getTime() - new Date(dateA).getTime();
+    });
+  }, [projects, activeContextIds]);
 
   const taskCountsByProject = useMemo(() => {
     const counts: Record<string, number> = {};
