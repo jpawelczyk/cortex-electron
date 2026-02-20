@@ -53,6 +53,7 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
   const [title, setTitle] = useState(project?.title ?? '');
   const [description, setDescription] = useState(project?.description ?? '');
   const [statusOpen, setStatusOpen] = useState(false);
+  const [contextOpen, setContextOpen] = useState(false);
   const [completionWarning, setCompletionWarning] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
@@ -317,12 +318,51 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
               </PopoverContent>
             </Popover>
 
-            {/* Context badge */}
-            {context && (
-              <span className="text-[10px] bg-accent px-1.5 py-0.5 rounded-full text-muted-foreground">
-                {context.name}
-              </span>
-            )}
+            {/* Context selector */}
+            <Popover open={contextOpen} onOpenChange={setContextOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  data-testid="context-selector"
+                  className="text-xs px-2.5 py-1 rounded-full font-medium cursor-default transition-colors bg-accent text-muted-foreground hover:bg-accent/80"
+                >
+                  {context ? context.name : 'No context'}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-48 p-1" align="start">
+                <button
+                  role="option"
+                  aria-label="None"
+                  type="button"
+                  onClick={() => {
+                    updateProject(projectId, { context_id: null });
+                    setContextOpen(false);
+                  }}
+                  className="flex items-center gap-2 w-full px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent rounded-md cursor-pointer"
+                >
+                  None
+                </button>
+                {contexts.map((ctx) => (
+                  <button
+                    key={ctx.id}
+                    role="option"
+                    aria-label={ctx.name}
+                    type="button"
+                    onClick={() => {
+                      updateProject(projectId, { context_id: ctx.id });
+                      setContextOpen(false);
+                    }}
+                    className="flex items-center gap-2 w-full px-2 py-1.5 text-sm text-foreground hover:bg-accent rounded-md cursor-pointer"
+                  >
+                    <span
+                      className="size-2 rounded-full shrink-0"
+                      style={{ backgroundColor: ctx.color ?? 'currentColor' }}
+                    />
+                    <span>{ctx.name}</span>
+                  </button>
+                ))}
+              </PopoverContent>
+            </Popover>
 
           </div>
         </div>

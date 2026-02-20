@@ -152,12 +152,59 @@ describe('ProjectDetailView', () => {
     expect(screen.getByText('Active')).toBeInTheDocument();
   });
 
-  it('renders context badge when project has context', () => {
+  // --- Context picker ---
+
+  it('renders "No context" when project has no context', () => {
+    mockProjects = [makeProject({ context_id: null })];
+    mockContexts = [makeContext({ id: 'ctx-1', name: 'Work' })];
+    render(<ProjectDetailView projectId="proj-1" />);
+
+    expect(screen.getByTestId('context-selector')).toHaveTextContent('No context');
+  });
+
+  it('renders context name when project has context_id', () => {
     mockProjects = [makeProject({ context_id: 'ctx-1' })];
     mockContexts = [makeContext({ id: 'ctx-1', name: 'Work' })];
     render(<ProjectDetailView projectId="proj-1" />);
 
-    expect(screen.getByText('Work')).toBeInTheDocument();
+    expect(screen.getByTestId('context-selector')).toHaveTextContent('Work');
+  });
+
+  it('opens context picker and shows all contexts plus None option', () => {
+    mockProjects = [makeProject({ context_id: 'ctx-1' })];
+    mockContexts = [
+      makeContext({ id: 'ctx-1', name: 'Work' }),
+      makeContext({ id: 'ctx-2', name: 'Personal', color: '#ff0000' }),
+    ];
+    render(<ProjectDetailView projectId="proj-1" />);
+
+    fireEvent.click(screen.getByTestId('context-selector'));
+
+    expect(screen.getByRole('option', { name: /none/i })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: /work/i })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: /personal/i })).toBeInTheDocument();
+  });
+
+  it('calls updateProject with new context_id on selection', () => {
+    mockProjects = [makeProject({ context_id: null })];
+    mockContexts = [makeContext({ id: 'ctx-1', name: 'Work' })];
+    render(<ProjectDetailView projectId="proj-1" />);
+
+    fireEvent.click(screen.getByTestId('context-selector'));
+    fireEvent.click(screen.getByRole('option', { name: /work/i }));
+
+    expect(mockUpdateProject).toHaveBeenCalledWith('proj-1', { context_id: 'ctx-1' });
+  });
+
+  it('calls updateProject with null when "None" is selected', () => {
+    mockProjects = [makeProject({ context_id: 'ctx-1' })];
+    mockContexts = [makeContext({ id: 'ctx-1', name: 'Work' })];
+    render(<ProjectDetailView projectId="proj-1" />);
+
+    fireEvent.click(screen.getByTestId('context-selector'));
+    fireEvent.click(screen.getByRole('option', { name: /none/i }));
+
+    expect(mockUpdateProject).toHaveBeenCalledWith('proj-1', { context_id: null });
   });
 
   it('renders staleness indicator for stale projects', () => {
