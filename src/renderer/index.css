@@ -97,35 +97,43 @@
 .milkdown-editor .editor {
   outline: none;
   min-height: 350px;
+  @apply text-sm;
 }
 
 .milkdown-editor .editor p {
-  @apply mb-2 text-foreground;
+  @apply mb-2 text-foreground leading-relaxed;
 }
 
 .milkdown-editor .editor h1 {
-  @apply text-2xl font-bold mb-3 text-foreground;
+  @apply text-xl font-bold mb-3 text-foreground;
 }
 
 .milkdown-editor .editor h2 {
-  @apply text-xl font-semibold mb-2 text-foreground;
-}
-
-.milkdown-editor .editor h3 {
   @apply text-lg font-semibold mb-2 text-foreground;
 }
 
+.milkdown-editor .editor h3 {
+  @apply text-base font-semibold mb-2 text-foreground;
+}
+
 .milkdown-editor .editor code {
-  @apply bg-accent px-1.5 py-0.5 rounded text-sm font-mono;
+  @apply bg-accent/50 px-1.5 py-0.5 rounded text-sm font-mono;
 }
 
 .milkdown-editor .editor pre {
-  @apply bg-accent p-4 rounded-lg overflow-x-auto mb-3;
+  @apply bg-accent/50 p-4 rounded-lg overflow-x-auto mb-3;
 }
 
-.milkdown-editor .editor ul,
+.milkdown-editor .editor pre code {
+  @apply bg-transparent p-0;
+}
+
+.milkdown-editor .editor ul {
+  @apply list-disc ml-6 mb-2;
+}
+
 .milkdown-editor .editor ol {
-  @apply ml-6 mb-2;
+  @apply list-decimal ml-6 mb-2;
 }
 
 .milkdown-editor .editor li {
@@ -133,7 +141,7 @@
 }
 
 .milkdown-editor .editor blockquote {
-  @apply border-l-2 border-primary pl-4 italic text-muted-foreground;
+  @apply border-l-2 border-primary/50 pl-4 italic text-muted-foreground mb-2;
 }
 
 .milkdown-editor .editor a {
@@ -155,4 +163,13 @@
 
 .milkdown-editor .editor th {
   @apply bg-accent/50 font-semibold;
+}
+
+/* Task list checkboxes */
+.milkdown-editor .editor li.task-list-item {
+  @apply list-none -ml-6;
+}
+
+.milkdown-editor .editor input[type="checkbox"] {
+  @apply mr-2 accent-primary;
 }
