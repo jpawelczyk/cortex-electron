@@ -25,12 +25,18 @@ const TABS: { key: ProjectsTab; label: string }[] = [
 const ACTIVE_STATUSES: ProjectStatus[] = ['planned', 'active', 'on_hold', 'blocked'];
 const STALENESS_DAYS = 14;
 
-const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
-  planned: { label: 'Planned', className: 'bg-muted-foreground/20 text-muted-foreground' },
-  active: { label: 'Active', className: 'bg-emerald-500/20 text-emerald-400' },
-  on_hold: { label: 'On Hold', className: 'bg-yellow-500/20 text-yellow-400' },
-  blocked: { label: 'Blocked', className: 'bg-red-500/20 text-red-400' },
-};
+const STATUS_OPTIONS: { value: ProjectStatus; label: string; className: string }[] = [
+  { value: 'planned', label: 'Planned', className: 'bg-muted-foreground/20 text-muted-foreground' },
+  { value: 'active', label: 'Active', className: 'bg-emerald-500/20 text-emerald-400' },
+  { value: 'on_hold', label: 'On Hold', className: 'bg-yellow-500/20 text-yellow-400' },
+  { value: 'blocked', label: 'Blocked', className: 'bg-red-500/20 text-red-400' },
+  { value: 'completed', label: 'Completed', className: 'bg-blue-500/20 text-blue-400' },
+  { value: 'archived', label: 'Archived', className: 'bg-muted-foreground/20 text-muted-foreground' },
+];
+
+const STATUS_CONFIG: Record<string, { label: string; className: string }> = Object.fromEntries(
+  STATUS_OPTIONS.map((opt) => [opt.value, { label: opt.label, className: opt.className }]),
+);
 
 function isStale(project: Project): boolean {
   const updatedAt = new Date(project.updated_at);
@@ -200,11 +206,33 @@ export function ProjectsOverviewView() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {config && (
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${config.className}`}>
-                      {config.label}
-                    </span>
-                  )}
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        data-testid={`status-picker-${project.id}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className={`text-xs px-2 py-0.5 rounded-full font-medium cursor-default transition-colors ${config?.className ?? ''}`}
+                      >
+                        {config?.label ?? project.status}
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-48 p-1" align="start" onClick={(e) => e.stopPropagation()}>
+                      {STATUS_OPTIONS.map((opt) => (
+                        <button
+                          key={opt.value}
+                          role="option"
+                          aria-label={opt.label}
+                          type="button"
+                          onClick={() => updateProject(project.id, { status: opt.value })}
+                          className="flex items-center gap-2 w-full px-2 py-1.5 text-sm text-foreground hover:bg-accent rounded-md cursor-pointer"
+                        >
+                          <span className={`size-2 rounded-full ${opt.className.split(' ')[0]}`} />
+                          <span>{opt.label}</span>
+                        </button>
+                      ))}
+                    </PopoverContent>
+                  </Popover>
                   {(() => {
                     const ctx = project.context_id
                       ? contexts.find((c) => c.id === project.context_id) ?? null

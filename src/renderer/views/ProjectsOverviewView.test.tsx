@@ -384,6 +384,42 @@ describe('ProjectsOverviewView', () => {
     });
   });
 
+  describe('status picker on project card', () => {
+    it('opens status picker showing all statuses', () => {
+      mockProjects = [fakeProject({ id: 'p1', status: 'active' })];
+      render(<ProjectsOverviewView />);
+
+      fireEvent.click(screen.getByTestId('status-picker-p1'));
+
+      expect(screen.getByRole('option', { name: /planned/i })).toBeInTheDocument();
+      expect(screen.getByRole('option', { name: /active/i })).toBeInTheDocument();
+      expect(screen.getByRole('option', { name: /on hold/i })).toBeInTheDocument();
+      expect(screen.getByRole('option', { name: /blocked/i })).toBeInTheDocument();
+      expect(screen.getByRole('option', { name: /completed/i })).toBeInTheDocument();
+      expect(screen.getByRole('option', { name: /archived/i })).toBeInTheDocument();
+    });
+
+    it('calls updateProject with new status on selection', () => {
+      mockProjects = [fakeProject({ id: 'p1', status: 'active' })];
+      render(<ProjectsOverviewView />);
+
+      fireEvent.click(screen.getByTestId('status-picker-p1'));
+      fireEvent.click(screen.getByRole('option', { name: /on hold/i }));
+
+      expect(mockUpdateProject).toHaveBeenCalledWith('p1', { status: 'on_hold' });
+    });
+
+    it('does not navigate to project detail when status picker is clicked', () => {
+      mockProjects = [fakeProject({ id: 'p1', status: 'active' })];
+      render(<ProjectsOverviewView />);
+
+      fireEvent.click(screen.getByTestId('status-picker-p1'));
+
+      // Should show popover, not navigate
+      expect(screen.getByRole('option', { name: /planned/i })).toBeInTheDocument();
+    });
+  });
+
   describe('context picker on project card', () => {
     it('shows context name on card when project has context_id', () => {
       mockContexts = [fakeContext({ id: 'ctx-1', name: 'Work' })];
