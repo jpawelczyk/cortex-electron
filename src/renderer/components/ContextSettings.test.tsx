@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { ContextSettings } from './ContextSettings';
 import type { Context, Task, Project } from '@shared/types';
@@ -126,7 +126,9 @@ describe('ContextSettings', () => {
       fireEvent.click(screen.getByRole('button', { name: /add context/i }));
       const nameInput = screen.getByPlaceholderText(/context name/i);
       fireEvent.change(nameInput, { target: { value: 'Side Projects' } });
-      fireEvent.click(screen.getByRole('button', { name: /^save$/i }));
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: /^save$/i }));
+      });
       expect(mockCreateContext).toHaveBeenCalledWith(
         expect.objectContaining({ name: 'Side Projects' }),
       );
@@ -140,7 +142,7 @@ describe('ContextSettings', () => {
       expect(mockCreateContext).not.toHaveBeenCalled();
     });
 
-    it('passes selected color to createContext', () => {
+    it('passes selected color to createContext', async () => {
       mockContexts = [];
       renderModal();
       fireEvent.click(screen.getByRole('button', { name: /add context/i }));
@@ -148,20 +150,24 @@ describe('ContextSettings', () => {
       fireEvent.change(nameInput, { target: { value: 'Test' } });
       // Click a color swatch
       fireEvent.click(screen.getByTestId('color-swatch-#22c55e'));
-      fireEvent.click(screen.getByRole('button', { name: /^save$/i }));
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: /^save$/i }));
+      });
       expect(mockCreateContext).toHaveBeenCalledWith(
         expect.objectContaining({ color: '#22c55e' }),
       );
     });
 
-    it('passes selected icon to createContext', () => {
+    it('passes selected icon to createContext', async () => {
       mockContexts = [];
       renderModal();
       fireEvent.click(screen.getByRole('button', { name: /add context/i }));
       const nameInput = screen.getByPlaceholderText(/context name/i);
       fireEvent.change(nameInput, { target: { value: 'Test' } });
       fireEvent.click(screen.getByTestId('icon-option-Home'));
-      fireEvent.click(screen.getByRole('button', { name: /^save$/i }));
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: /^save$/i }));
+      });
       expect(mockCreateContext).toHaveBeenCalledWith(
         expect.objectContaining({ icon: 'Home' }),
       );
@@ -173,10 +179,10 @@ describe('ContextSettings', () => {
       fireEvent.click(screen.getByRole('button', { name: /add context/i }));
       const nameInput = screen.getByPlaceholderText(/context name/i);
       fireEvent.change(nameInput, { target: { value: 'Test' } });
-      fireEvent.click(screen.getByRole('button', { name: /^save$/i }));
-      await vi.waitFor(() => {
-        expect(screen.queryByPlaceholderText(/context name/i)).not.toBeInTheDocument();
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: /^save$/i }));
       });
+      expect(screen.queryByPlaceholderText(/context name/i)).not.toBeInTheDocument();
     });
   });
 
