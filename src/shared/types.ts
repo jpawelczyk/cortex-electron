@@ -144,6 +144,34 @@ export interface UpdateStakeholderInput {
   avatar_url?: string | null;
 }
 
+export interface Note {
+  id: string;
+  title: string;
+  content: string | null;
+  context_id: string | null;
+  project_id: string | null;
+  is_pinned: boolean;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+export interface CreateNoteInput {
+  title: string;
+  content?: string;
+  context_id?: string;
+  project_id?: string;
+  is_pinned?: boolean;
+}
+
+export interface UpdateNoteInput {
+  title?: string;
+  content?: string;
+  context_id?: string | null;
+  project_id?: string | null;
+  is_pinned?: boolean;
+}
+
 export interface ChecklistItem {
   id: string;
   task_id: string;

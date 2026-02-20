@@ -11,12 +11,16 @@ export interface TestDb extends DbContext {
   createContext(data: { name: string; color?: string }): string;
   createProject(data: { title: string; context_id?: string }): string;
   
+  // Note helpers
+  createNote(data: { title: string; content?: string; context_id?: string; project_id?: string; is_pinned?: boolean }): string;
+
   // Raw access for assertions
   getRawTask(id: string): RawTask | undefined;
   getRawProject(id: string): RawProject | undefined;
   getRawContext(id: string): RawContext | undefined;
   getRawStakeholder(id: string): RawStakeholder | undefined;
   getRawChecklistItem(id: string): RawChecklistItem | undefined;
+  getRawNote(id: string): RawNote | undefined;
 
   // Cleanup
   close(): void;
@@ -46,6 +50,15 @@ interface RawContext {
 interface RawStakeholder {
   id: string;
   name: string;
+  deleted_at: string | null;
+  [key: string]: unknown;
+}
+
+interface RawNote {
+  id: string;
+  title: string;
+  content: string | null;
+  is_pinned: number;
   deleted_at: string | null;
   [key: string]: unknown;
 }
@@ -135,6 +148,20 @@ export function createTestDb(): TestDb {
     );
   `);
 
+  db.exec(`
+    CREATE TABLE notes (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      content TEXT,
+      context_id TEXT REFERENCES contexts(id),
+      project_id TEXT REFERENCES projects(id),
+      is_pinned INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      deleted_at TEXT
+    );
+  `);
+
   return {
     db,
 
@@ -145,6 +172,16 @@ export function createTestDb(): TestDb {
         INSERT INTO contexts (id, name, color, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?)
       `).run(id, name, color ?? null, now, now);
+      return id;
+    },
+
+    createNote({ title, content, context_id, project_id, is_pinned }) {
+      const id = uuid();
+      const now = new Date().toISOString();
+      db.prepare(`
+        INSERT INTO notes (id, title, content, context_id, project_id, is_pinned, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(id, title, content ?? null, context_id ?? null, project_id ?? null, is_pinned ? 1 : 0, now, now);
       return id;
     },
 
@@ -176,6 +213,10 @@ export function createTestDb(): TestDb {
 
     getRawChecklistItem(id: string) {
       return db.prepare('SELECT * FROM task_checklists WHERE id = ?').get(id) as RawChecklistItem | undefined;
+    },
+
+    getRawNote(id: string) {
+      return db.prepare('SELECT * FROM notes WHERE id = ?').get(id) as RawNote | undefined;
     },
 
     close() {

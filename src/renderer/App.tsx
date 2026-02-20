@@ -15,6 +15,8 @@ import { SomedayView } from './views/SomedayView';
 import { StaleView } from './views/StaleView';
 import { ProjectsOverviewView } from './views/ProjectsOverviewView';
 import { ProjectDetailView } from './views/ProjectDetailView';
+import { NotesOverviewView } from './views/NotesOverviewView';
+import { NoteDetailView } from './views/NoteDetailView';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
 
@@ -32,10 +34,15 @@ export default function App() {
   const startInlineProjectCreate = useStore((s) => s.startInlineProjectCreate);
   const selectedProjectId = useStore((s) => s.selectedProjectId);
   const deselectProject = useStore((s) => s.deselectProject);
+  const selectedNoteId = useStore((s) => s.selectedNoteId);
+  const deselectNote = useStore((s) => s.deselectNote);
 
   const handleViewChange = (view: SidebarView) => {
     if (selectedProjectId) {
       deselectProject();
+    }
+    if (selectedNoteId) {
+      deselectNote();
     }
     setActiveView(view);
   };
@@ -146,6 +153,11 @@ export default function App() {
         {activeView === 'trash' && <TrashView />}
         {activeView === 'projects' && !selectedProjectId && <ProjectsOverviewView />}
         {activeView === 'projects' && selectedProjectId && <ProjectDetailView projectId={selectedProjectId} />}
+        {activeView === 'notes' && (
+          selectedNoteId
+            ? <NoteDetailView noteId={selectedNoteId} />
+            : <NotesOverviewView />
+        )}
       </main>
     </div>
   );

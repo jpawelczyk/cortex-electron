@@ -18,6 +18,13 @@
     "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
+    "@milkdown/core": "^7.18.0",
+    "@milkdown/ctx": "^7.18.0",
+    "@milkdown/plugin-listener": "^7.18.0",
+    "@milkdown/preset-commonmark": "^7.18.0",
+    "@milkdown/preset-gfm": "^7.18.0",
+    "@milkdown/react": "^7.18.0",
+    "@milkdown/theme-nord": "^7.18.0",
     "@radix-ui/react-popover": "^1.1.15",
     "better-sqlite3": "^12.6.2",
     "class-variance-authority": "^0.7.1",

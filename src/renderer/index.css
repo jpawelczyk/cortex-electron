@@ -92,3 +92,67 @@
 ::-webkit-scrollbar-thumb:hover {
   background: oklch(1 0 0 / 18%);
 }
+
+/* Milkdown editor overrides */
+.milkdown-editor .editor {
+  outline: none;
+  min-height: 350px;
+}
+
+.milkdown-editor .editor p {
+  @apply mb-2 text-foreground;
+}
+
+.milkdown-editor .editor h1 {
+  @apply text-2xl font-bold mb-3 text-foreground;
+}
+
+.milkdown-editor .editor h2 {
+  @apply text-xl font-semibold mb-2 text-foreground;
+}
+
+.milkdown-editor .editor h3 {
+  @apply text-lg font-semibold mb-2 text-foreground;
+}
+
+.milkdown-editor .editor code {
+  @apply bg-accent px-1.5 py-0.5 rounded text-sm font-mono;
+}
+
+.milkdown-editor .editor pre {
+  @apply bg-accent p-4 rounded-lg overflow-x-auto mb-3;
+}
+
+.milkdown-editor .editor ul,
+.milkdown-editor .editor ol {
+  @apply ml-6 mb-2;
+}
+
+.milkdown-editor .editor li {
+  @apply mb-1;
+}
+
+.milkdown-editor .editor blockquote {
+  @apply border-l-2 border-primary pl-4 italic text-muted-foreground;
+}
+
+.milkdown-editor .editor a {
+  @apply text-primary underline;
+}
+
+.milkdown-editor .editor hr {
+  @apply border-border my-4;
+}
+
+.milkdown-editor .editor table {
+  @apply w-full border-collapse mb-3;
+}
+
+.milkdown-editor .editor th,
+.milkdown-editor .editor td {
+  @apply border border-border px-3 py-2 text-left;
+}
+
+.milkdown-editor .editor th {
+  @apply bg-accent/50 font-semibold;
+}

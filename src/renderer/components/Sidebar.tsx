@@ -1,6 +1,6 @@
-import { Inbox, Sun, Calendar, Layers, Cloud, Clock, BookOpen, Trash2, FolderKanban, Settings } from 'lucide-react';
+import { Inbox, Sun, Calendar, Layers, Cloud, Clock, BookOpen, Trash2, FolderKanban, FileText, Settings } from 'lucide-react';
 
-export type SidebarView = 'inbox' | 'today' | 'upcoming' | 'anytime' | 'someday' | 'stale' | 'logbook' | 'trash' | 'projects';
+export type SidebarView = 'inbox' | 'today' | 'upcoming' | 'anytime' | 'someday' | 'stale' | 'logbook' | 'trash' | 'projects' | 'notes';
 
 interface TaskCounts {
   inbox: number;
@@ -79,6 +79,19 @@ export function Sidebar({ activeView, onViewChange, taskCounts }: SidebarProps) 
         >
           <FolderKanban className="size-4 shrink-0" strokeWidth={1.75} />
           <span className="flex-1">Projects</span>
+        </button>
+
+        {/* Notes */}
+        <button
+          onClick={() => onViewChange('notes')}
+          className={`flex items-center gap-3 rounded-md px-3 py-1.5 text-[13px] font-medium transition-all duration-150 w-full text-left cursor-default ${
+            activeView === 'notes'
+              ? 'bg-primary/10 text-primary'
+              : 'text-muted-foreground hover:bg-accent/40 hover:text-foreground'
+          }`}
+        >
+          <FileText className="size-4 shrink-0" strokeWidth={1.75} />
+          <span className="flex-1">Notes</span>
         </button>
       </div>
 

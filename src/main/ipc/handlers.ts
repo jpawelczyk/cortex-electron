@@ -5,6 +5,7 @@ import { createProjectService } from '../services/project.service';
 import { createContextService } from '../services/context.service';
 import { createStakeholderService } from '../services/stakeholder.service';
 import { createChecklistService } from '../services/checklist.service';
+import { createNoteService } from '../services/note.service';
 import type { DbContext } from '../db/types';
 
 export function registerHandlers(db: Database.Database): void {
@@ -15,6 +16,7 @@ export function registerHandlers(db: Database.Database): void {
   const contextService = createContextService(ctx);
   const stakeholderService = createStakeholderService(ctx);
   const checklistService = createChecklistService(ctx);
+  const noteService = createNoteService(ctx);
 
   // Tasks
   ipcMain.handle('tasks:list', async () => taskService.list());
@@ -54,4 +56,11 @@ export function registerHandlers(db: Database.Database): void {
   ipcMain.handle('checklists:update', async (_, id: string, input) => checklistService.update(id, input));
   ipcMain.handle('checklists:delete', async (_, id: string) => checklistService.delete(id));
   ipcMain.handle('checklists:reorder', async (_, taskId: string, itemIds: string[]) => checklistService.reorder(taskId, itemIds));
+
+  // Notes
+  ipcMain.handle('notes:list', async () => noteService.list());
+  ipcMain.handle('notes:get', async (_, id: string) => noteService.get(id));
+  ipcMain.handle('notes:create', async (_, input) => noteService.create(input));
+  ipcMain.handle('notes:update', async (_, id: string, input) => noteService.update(id, input));
+  ipcMain.handle('notes:delete', async (_, id: string) => noteService.delete(id));
 }
