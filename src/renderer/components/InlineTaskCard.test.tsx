@@ -1,20 +1,39 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { InlineTaskCard } from './InlineTaskCard';
 
 const mockCreateTask = vi.fn();
 const mockCancelInlineCreate = vi.fn();
+const mockCreateChecklistItem = vi.fn();
 
 vi.mock('../stores', () => ({
   useStore: (selector: (state: Record<string, unknown>) => unknown) => {
     const state = {
       createTask: mockCreateTask,
       cancelInlineCreate: mockCancelInlineCreate,
+      createChecklistItem: mockCreateChecklistItem,
     };
     return selector(state);
   },
+}));
+
+// Mock DatePickerButton to avoid Calendar/Popover rendering issues in jsdom.
+// DatePickerButton is tested separately.
+vi.mock('./DatePickerButton', () => ({
+  DatePickerButton: ({ onChange, label, actions }: { onChange: (d: string) => void; label: string; actions?: { label: string; onClick: () => void }[] }) => (
+    <div>
+      <button type="button" aria-label={label} onClick={() => onChange('2026-03-15')}>
+        {label}
+      </button>
+      {actions?.map((action) => (
+        <button key={action.label} type="button" aria-label={action.label} onClick={action.onClick}>
+          {action.label}
+        </button>
+      ))}
+    </div>
+  ),
 }));
 
 describe('InlineTaskCard', () => {
@@ -24,6 +43,11 @@ describe('InlineTaskCard', () => {
       id: 'new-1',
       title: 'Test',
       status: 'inbox',
+    });
+    mockCreateChecklistItem.mockResolvedValue({
+      id: 'cl-1',
+      task_id: 'new-1',
+      title: 'Step',
     });
   });
 
@@ -42,7 +66,7 @@ describe('InlineTaskCard', () => {
     expect(screen.getByPlaceholderText('New task')).toHaveFocus();
   });
 
-  it('creates a task on Enter and closes', () => {
+  it('creates a task on Enter and closes', async () => {
     render(<InlineTaskCard />);
     const input = screen.getByPlaceholderText('New task');
 
@@ -50,7 +74,9 @@ describe('InlineTaskCard', () => {
     fireEvent.keyDown(input, { key: 'Enter' });
 
     expect(mockCreateTask).toHaveBeenCalledWith({ title: 'Buy groceries' });
-    expect(mockCancelInlineCreate).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(mockCancelInlineCreate).toHaveBeenCalled();
+    });
   });
 
   it('creates a task with notes when provided', () => {
@@ -115,7 +141,7 @@ describe('InlineTaskCard', () => {
     expect(mockCreateTask).not.toHaveBeenCalled();
   });
 
-  it('dismisses on click outside when title is empty', () => {
+  it('dismisses on click outside when title is empty', async () => {
     render(
       <div>
         <div data-testid="outside">Outside area</div>
@@ -125,10 +151,12 @@ describe('InlineTaskCard', () => {
     fireEvent.mouseDown(screen.getByTestId('outside'));
 
     expect(mockCreateTask).not.toHaveBeenCalled();
-    expect(mockCancelInlineCreate).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(mockCancelInlineCreate).toHaveBeenCalled();
+    });
   });
 
-  it('saves task on click outside when title has content', () => {
+  it('saves task on click outside when title has content', async () => {
     render(
       <div>
         <div data-testid="outside">Outside area</div>
@@ -140,7 +168,9 @@ describe('InlineTaskCard', () => {
     fireEvent.mouseDown(screen.getByTestId('outside'));
 
     expect(mockCreateTask).toHaveBeenCalledWith({ title: 'Buy groceries' });
-    expect(mockCancelInlineCreate).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(mockCancelInlineCreate).toHaveBeenCalled();
+    });
   });
 
   it('does not dismiss when clicking inside the card', () => {
@@ -148,5 +178,173 @@ describe('InlineTaskCard', () => {
     fireEvent.mouseDown(screen.getByTestId('inline-task-card'));
 
     expect(mockCancelInlineCreate).not.toHaveBeenCalled();
+  });
+
+  // --- Date picker tests ---
+
+  it('renders when date button', () => {
+    render(<InlineTaskCard />);
+    expect(screen.getByLabelText('When date')).toBeInTheDocument();
+  });
+
+  it('renders deadline button', () => {
+    render(<InlineTaskCard />);
+    expect(screen.getByLabelText('Deadline')).toBeInTheDocument();
+  });
+
+  it('includes when_date in createTask when set', () => {
+    render(<InlineTaskCard />);
+
+    fireEvent.click(screen.getByLabelText('When date'));
+
+    const input = screen.getByPlaceholderText('New task');
+    fireEvent.change(input, { target: { value: 'Dated task' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(mockCreateTask).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Dated task', when_date: '2026-03-15' })
+    );
+  });
+
+  it('includes deadline in createTask when set', () => {
+    render(<InlineTaskCard />);
+
+    fireEvent.click(screen.getByLabelText('Deadline'));
+
+    const input = screen.getByPlaceholderText('New task');
+    fireEvent.change(input, { target: { value: 'Urgent task' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(mockCreateTask).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Urgent task', deadline: '2026-03-15' })
+    );
+  });
+
+  it('includes status when Anytime action is used', () => {
+    render(<InlineTaskCard />);
+
+    fireEvent.click(screen.getByLabelText('Anytime'));
+
+    const input = screen.getByPlaceholderText('New task');
+    fireEvent.change(input, { target: { value: 'Flexible task' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(mockCreateTask).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Flexible task', status: 'anytime' })
+    );
+  });
+
+  it('includes status when Someday action is used', () => {
+    render(<InlineTaskCard />);
+
+    fireEvent.click(screen.getByLabelText('Someday'));
+
+    const input = screen.getByPlaceholderText('New task');
+    fireEvent.change(input, { target: { value: 'Maybe task' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(mockCreateTask).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Maybe task', status: 'someday' })
+    );
+  });
+
+  it('does not dismiss when clicking inside a popover portal', () => {
+    render(<InlineTaskCard />);
+
+    // Simulate a Radix popover portal element in the DOM
+    const portal = document.createElement('div');
+    portal.setAttribute('data-radix-popper-content-wrapper', '');
+    const button = document.createElement('button');
+    portal.appendChild(button);
+    document.body.appendChild(portal);
+
+    fireEvent.mouseDown(button);
+
+    expect(mockCancelInlineCreate).not.toHaveBeenCalled();
+
+    document.body.removeChild(portal);
+  });
+
+  // --- Checklist tests ---
+
+  it('renders Add checklist item button', () => {
+    render(<InlineTaskCard />);
+    expect(screen.getByText('Add checklist item')).toBeInTheDocument();
+  });
+
+  it('shows input when Add checklist item is clicked', () => {
+    render(<InlineTaskCard />);
+    fireEvent.click(screen.getByText('Add checklist item'));
+
+    expect(screen.getByPlaceholderText('Checklist item')).toBeInTheDocument();
+  });
+
+  it('creates a new checklist input on Enter', () => {
+    render(<InlineTaskCard />);
+    fireEvent.click(screen.getByText('Add checklist item'));
+
+    const input = screen.getByPlaceholderText('Checklist item');
+    fireEvent.change(input, { target: { value: 'Step 1' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    const inputs = screen.getAllByPlaceholderText('Checklist item');
+    expect(inputs).toHaveLength(2);
+    expect(inputs[0]).toHaveValue('Step 1');
+    expect(inputs[1]).toHaveValue('');
+  });
+
+  it('removes checklist item on Backspace when empty', () => {
+    render(<InlineTaskCard />);
+    fireEvent.click(screen.getByText('Add checklist item'));
+
+    const input = screen.getByPlaceholderText('Checklist item');
+    fireEvent.keyDown(input, { key: 'Backspace' });
+
+    expect(screen.queryByPlaceholderText('Checklist item')).not.toBeInTheDocument();
+  });
+
+  it('creates checklist items after task creation', async () => {
+    render(<InlineTaskCard />);
+
+    // Add two checklist items
+    fireEvent.click(screen.getByText('Add checklist item'));
+    const firstInput = screen.getByPlaceholderText('Checklist item');
+    fireEvent.change(firstInput, { target: { value: 'Step 1' } });
+    fireEvent.keyDown(firstInput, { key: 'Enter' });
+
+    const inputs = screen.getAllByPlaceholderText('Checklist item');
+    fireEvent.change(inputs[1], { target: { value: 'Step 2' } });
+
+    // Submit the task
+    const titleInput = screen.getByPlaceholderText('New task');
+    fireEvent.change(titleInput, { target: { value: 'Task with steps' } });
+    fireEvent.keyDown(titleInput, { key: 'Enter' });
+
+    await waitFor(() => {
+      expect(mockCreateChecklistItem).toHaveBeenCalledTimes(2);
+      expect(mockCreateChecklistItem).toHaveBeenCalledWith({ task_id: 'new-1', title: 'Step 1' });
+      expect(mockCreateChecklistItem).toHaveBeenCalledWith({ task_id: 'new-1', title: 'Step 2' });
+    });
+  });
+
+  it('does not create empty checklist items', async () => {
+    render(<InlineTaskCard />);
+
+    // Add a checklist item with content, then Enter creates an empty one
+    fireEvent.click(screen.getByText('Add checklist item'));
+    const input = screen.getByPlaceholderText('Checklist item');
+    fireEvent.change(input, { target: { value: 'Real step' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    // Second input is left empty
+
+    // Submit the task
+    const titleInput = screen.getByPlaceholderText('New task');
+    fireEvent.change(titleInput, { target: { value: 'My task' } });
+    fireEvent.keyDown(titleInput, { key: 'Enter' });
+
+    await waitFor(() => {
+      expect(mockCreateChecklistItem).toHaveBeenCalledTimes(1);
+      expect(mockCreateChecklistItem).toHaveBeenCalledWith({ task_id: 'new-1', title: 'Real step' });
+    });
   });
 });
