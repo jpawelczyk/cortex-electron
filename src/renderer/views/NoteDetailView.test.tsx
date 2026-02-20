@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import type { Note, Context, Project } from '@shared/types';
 
@@ -154,10 +154,12 @@ describe('NoteDetailView', () => {
     expect(screen.getByTestId('cancel-delete')).toBeInTheDocument();
   });
 
-  it('confirming delete calls deleteNote and deselectNote', () => {
+  it('confirming delete calls deleteNote and deselectNote', async () => {
     render(<NoteDetailView noteId="note-1" />);
     fireEvent.click(screen.getByTestId('delete-note'));
-    fireEvent.click(screen.getByTestId('confirm-delete'));
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('confirm-delete'));
+    });
     expect(mockDeleteNote).toHaveBeenCalledWith('note-1');
     expect(mockDeselectNote).toHaveBeenCalled();
   });

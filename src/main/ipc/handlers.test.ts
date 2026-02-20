@@ -215,4 +215,129 @@ describe('IPC handlers', () => {
       expect(raw!.deleted_at).not.toBeNull();
     });
   });
+
+  describe('notes', () => {
+    it('notes:list returns empty array initially', async () => {
+      const handler = getHandler('notes:list');
+      const result = await handler({} as Electron.IpcMainInvokeEvent);
+      expect(result).toEqual([]);
+    });
+
+    it('notes:create → notes:get round-trip', async () => {
+      registerHandlers(testDb.db);
+      const handlers = Object.fromEntries(
+        vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
+      );
+
+      const created = await handlers['notes:create']({} as Electron.IpcMainInvokeEvent, { title: 'My Note' });
+      expect(created).toMatchObject({ title: 'My Note', is_pinned: false });
+      expect(created.id).toBeDefined();
+
+      const fetched = await handlers['notes:get']({} as Electron.IpcMainInvokeEvent, created.id);
+      expect(fetched).toMatchObject({ title: 'My Note' });
+    });
+
+    it('notes:create with content and optional fields', async () => {
+      registerHandlers(testDb.db);
+      const handlers = Object.fromEntries(
+        vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
+      );
+
+      const created = await handlers['notes:create']({} as Electron.IpcMainInvokeEvent, {
+        title: 'Pinned Note',
+        content: '## Hello',
+        is_pinned: true,
+      });
+      expect(created).toMatchObject({ title: 'Pinned Note', content: '## Hello', is_pinned: true });
+    });
+
+    it('notes:update modifies a note', async () => {
+      registerHandlers(testDb.db);
+      const handlers = Object.fromEntries(
+        vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
+      );
+
+      const created = await handlers['notes:create']({} as Electron.IpcMainInvokeEvent, { title: 'Original' });
+      const updated = await handlers['notes:update']({} as Electron.IpcMainInvokeEvent, created.id, { title: 'Changed', content: 'New content' });
+      expect(updated.title).toBe('Changed');
+      expect(updated.content).toBe('New content');
+    });
+
+    it('notes:delete soft-deletes a note', async () => {
+      registerHandlers(testDb.db);
+      const handlers = Object.fromEntries(
+        vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
+      );
+
+      const created = await handlers['notes:create']({} as Electron.IpcMainInvokeEvent, { title: 'To delete' });
+      await handlers['notes:delete']({} as Electron.IpcMainInvokeEvent, created.id);
+
+      const result = await handlers['notes:get']({} as Electron.IpcMainInvokeEvent, created.id);
+      expect(result).toBeNull();
+
+      // Still in DB (soft delete)
+      const raw = testDb.getRawNote(created.id);
+      expect(raw).toBeDefined();
+      expect(raw!.deleted_at).not.toBeNull();
+    });
+
+    it('notes:list returns only non-deleted notes', async () => {
+      registerHandlers(testDb.db);
+      const handlers = Object.fromEntries(
+        vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
+      );
+
+      const kept = await handlers['notes:create']({} as Electron.IpcMainInvokeEvent, { title: 'Keep me' });
+      const deleted = await handlers['notes:create']({} as Electron.IpcMainInvokeEvent, { title: 'Delete me' });
+      await handlers['notes:delete']({} as Electron.IpcMainInvokeEvent, deleted.id);
+
+      const listed = await handlers['notes:list']({} as Electron.IpcMainInvokeEvent);
+      expect(listed).toHaveLength(1);
+      expect(listed[0].id).toBe(kept.id);
+    });
+
+    it('notes:create rejects missing title', async () => {
+      registerHandlers(testDb.db);
+      const handlers = Object.fromEntries(
+        vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
+      );
+
+      await expect(
+        handlers['notes:create']({} as Electron.IpcMainInvokeEvent, {})
+      ).rejects.toThrow();
+    });
+
+    it('notes:create rejects empty title', async () => {
+      registerHandlers(testDb.db);
+      const handlers = Object.fromEntries(
+        vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
+      );
+
+      await expect(
+        handlers['notes:create']({} as Electron.IpcMainInvokeEvent, { title: '' })
+      ).rejects.toThrow();
+    });
+
+    it('notes:create rejects wrong types', async () => {
+      registerHandlers(testDb.db);
+      const handlers = Object.fromEntries(
+        vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
+      );
+
+      await expect(
+        handlers['notes:create']({} as Electron.IpcMainInvokeEvent, { title: 42 })
+      ).rejects.toThrow();
+    });
+
+    it('notes:update rejects invalid id type', async () => {
+      registerHandlers(testDb.db);
+      const handlers = Object.fromEntries(
+        vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
+      );
+
+      await expect(
+        handlers['notes:update']({} as Electron.IpcMainInvokeEvent, 123 as unknown as string, { title: 'New' })
+      ).rejects.toThrow();
+    });
+  });
 });

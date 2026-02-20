@@ -12,6 +12,7 @@ describe('useKeyboardShortcuts', () => {
   let deselectTask: ReturnType<typeof vi.fn>;
   let startInlineCreate: ReturnType<typeof vi.fn>;
   let startInlineProjectCreate: ReturnType<typeof vi.fn>;
+  let startInlineNoteCreate: ReturnType<typeof vi.fn>;
   let activeView: string;
 
   beforeEach(() => {
@@ -19,6 +20,7 @@ describe('useKeyboardShortcuts', () => {
     deselectTask = vi.fn();
     startInlineCreate = vi.fn();
     startInlineProjectCreate = vi.fn();
+    startInlineNoteCreate = vi.fn();
     activeView = 'inbox';
   });
 
@@ -28,7 +30,7 @@ describe('useKeyboardShortcuts', () => {
 
   function renderShortcuts() {
     return renderHook(() =>
-      useKeyboardShortcuts({ setActiveView, deselectTask, startInlineCreate, startInlineProjectCreate, activeView })
+      useKeyboardShortcuts({ setActiveView, deselectTask, startInlineCreate, startInlineProjectCreate, startInlineNoteCreate, activeView })
     );
   }
 
@@ -107,6 +109,15 @@ describe('useKeyboardShortcuts', () => {
       renderShortcuts();
       fireKey('n', { metaKey: true });
       expect(startInlineProjectCreate).toHaveBeenCalled();
+      expect(startInlineCreate).not.toHaveBeenCalled();
+      expect(setActiveView).not.toHaveBeenCalled();
+    });
+
+    it('starts inline note create when on notes view', () => {
+      activeView = 'notes';
+      renderShortcuts();
+      fireKey('n', { metaKey: true });
+      expect(startInlineNoteCreate).toHaveBeenCalled();
       expect(startInlineCreate).not.toHaveBeenCalled();
       expect(setActiveView).not.toHaveBeenCalled();
     });

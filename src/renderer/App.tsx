@@ -32,6 +32,7 @@ export default function App() {
   const deselectTask = useStore((s) => s.deselectTask);
   const startInlineCreate = useStore((s) => s.startInlineCreate);
   const startInlineProjectCreate = useStore((s) => s.startInlineProjectCreate);
+  const startInlineNoteCreate = useStore((s) => s.startInlineNoteCreate);
   const selectedProjectId = useStore((s) => s.selectedProjectId);
   const deselectProject = useStore((s) => s.deselectProject);
   const selectedNoteId = useStore((s) => s.selectedNoteId);
@@ -47,7 +48,7 @@ export default function App() {
     setActiveView(view);
   };
 
-  useKeyboardShortcuts({ setActiveView: handleViewChange, deselectTask, startInlineCreate, startInlineProjectCreate, activeView, selectedProjectId });
+  useKeyboardShortcuts({ setActiveView: handleViewChange, deselectTask, startInlineCreate, startInlineProjectCreate, startInlineNoteCreate, activeView, selectedProjectId });
   useGlobalShortcuts({ setActiveView: handleViewChange, startInlineCreate, startInlineProjectCreate, activeView, selectedProjectId });
 
   useEffect(() => {
@@ -132,6 +133,8 @@ export default function App() {
                 startInlineCreate();
               } else if (activeView === 'projects') {
                 startInlineProjectCreate();
+              } else if (activeView === 'notes') {
+                startInlineNoteCreate();
               } else {
                 setActiveView('inbox');
                 startInlineCreate();

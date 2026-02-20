@@ -166,7 +166,7 @@ export interface CreateNoteInput {
 
 export interface UpdateNoteInput {
   title?: string;
-  content?: string;
+  content?: string | null;
   context_id?: string | null;
   project_id?: string | null;
   is_pinned?: boolean;

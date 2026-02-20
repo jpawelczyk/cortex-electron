@@ -87,13 +87,38 @@ describe('EditorToolbar', () => {
     expect(handlers.onTaskList).toHaveBeenCalledOnce();
   });
 
-  it('calls onLink when Link button is clicked', async () => {
+  it('opens link URL popover when Link button is clicked', async () => {
     const user = userEvent.setup();
     const handlers = createHandlers();
     render(<EditorToolbar {...handlers} />);
 
     await user.click(screen.getByTitle('Link'));
+    expect(screen.getByTestId('link-url-input')).toBeInTheDocument();
+    expect(handlers.onLink).not.toHaveBeenCalled();
+  });
+
+  it('calls onLink with URL when Enter is pressed in link popover', async () => {
+    const user = userEvent.setup();
+    const handlers = createHandlers();
+    render(<EditorToolbar {...handlers} />);
+
+    await user.click(screen.getByTitle('Link'));
+    const input = screen.getByTestId('link-url-input');
+    await user.type(input, 'https://example.com');
+    await user.keyboard('{Enter}');
     expect(handlers.onLink).toHaveBeenCalledOnce();
+    expect(handlers.onLink).toHaveBeenCalledWith('https://example.com');
+  });
+
+  it('closes link popover on Escape without calling onLink', async () => {
+    const user = userEvent.setup();
+    const handlers = createHandlers();
+    render(<EditorToolbar {...handlers} />);
+
+    await user.click(screen.getByTitle('Link'));
+    expect(screen.getByTestId('link-url-input')).toBeInTheDocument();
+    await user.keyboard('{Escape}');
+    expect(handlers.onLink).not.toHaveBeenCalled();
   });
 
   it('calls onCode when Code block button is clicked', async () => {

@@ -9,6 +9,7 @@ type NoteSort = 'updated' | 'created' | 'title';
 function getPreview(content: string | null, maxLength = 100): string {
   if (!content) return '';
   return content
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
     .replace(/[#*_`~[\]()>-]/g, '')
     .replace(/\s+/g, ' ')
     .trim()

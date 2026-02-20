@@ -6,6 +6,7 @@ interface KeyboardShortcutDeps {
   deselectTask: () => void;
   startInlineCreate: () => void;
   startInlineProjectCreate: () => void;
+  startInlineNoteCreate: () => void;
   activeView: string;
   selectedProjectId?: string | null;
 }
@@ -21,6 +22,7 @@ export function useKeyboardShortcuts({
   deselectTask,
   startInlineCreate,
   startInlineProjectCreate,
+  startInlineNoteCreate,
   activeView,
   selectedProjectId,
 }: KeyboardShortcutDeps) {
@@ -52,6 +54,8 @@ export function useKeyboardShortcuts({
             startInlineCreate();
           } else if (activeView === 'projects') {
             startInlineProjectCreate();
+          } else if (activeView === 'notes') {
+            startInlineNoteCreate();
           } else {
             setActiveView('inbox');
             startInlineCreate();
@@ -68,5 +72,5 @@ export function useKeyboardShortcuts({
 
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [setActiveView, deselectTask, startInlineCreate, startInlineProjectCreate, activeView, selectedProjectId]);
+  }, [setActiveView, deselectTask, startInlineCreate, startInlineProjectCreate, startInlineNoteCreate, activeView, selectedProjectId]);
 }

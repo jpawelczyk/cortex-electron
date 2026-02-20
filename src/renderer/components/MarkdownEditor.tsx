@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { Editor, rootCtx, defaultValueCtx, commandsCtx } from '@milkdown/core';
+import { Editor, rootCtx, defaultValueCtx, editorViewCtx } from '@milkdown/core';
 import {
   commonmark,
   toggleStrongCommand,
@@ -9,7 +9,10 @@ import {
   wrapInOrderedListCommand,
   toggleLinkCommand,
   createCodeBlockCommand,
+  bulletListSchema,
+  listItemSchema,
 } from '@milkdown/preset-commonmark';
+import { wrapIn } from '@milkdown/prose/commands';
 import { gfm } from '@milkdown/preset-gfm';
 import { nord } from '@milkdown/theme-nord';
 import { listener, listenerCtx } from '@milkdown/plugin-listener';
@@ -19,10 +22,9 @@ import { EditorToolbar } from './EditorToolbar';
 interface MarkdownEditorProps {
   value: string;
   onChange: (markdown: string) => void;
-  placeholder?: string;
 }
 
-export function MarkdownEditor({ value, onChange, placeholder: _placeholder }: MarkdownEditorProps) {
+export function MarkdownEditor({ value, onChange }: MarkdownEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const editorInstanceRef = useRef<Editor | null>(null);
   const valueRef = useRef(value);
@@ -83,8 +85,38 @@ export function MarkdownEditor({ value, onChange, placeholder: _placeholder }: M
   const handleH3 = useCallback(() => runCommand(wrapInHeadingCommand, 3), [runCommand]);
   const handleBulletList = useCallback(() => runCommand(wrapInBulletListCommand), [runCommand]);
   const handleOrderedList = useCallback(() => runCommand(wrapInOrderedListCommand), [runCommand]);
-  const handleTaskList = useCallback(() => runCommand(wrapInBulletListCommand), [runCommand]);
-  const handleLink = useCallback(() => runCommand(toggleLinkCommand), [runCommand]);
+  const handleTaskList = useCallback(() => {
+    const editor = editorInstanceRef.current;
+    if (!editor) return;
+    editor.action((ctx) => {
+      const view = ctx.get(editorViewCtx);
+      const bulletListType = bulletListSchema.type(ctx);
+      const listItemType = listItemSchema.type(ctx);
+      const { state, dispatch } = view;
+
+      // First wrap selection in a bullet list (no-op if already in one)
+      let tr = state.tr;
+      wrapIn(bulletListType)(state, (newTr) => { tr = newTr; });
+
+      // Apply the bullet list wrap first to get the updated state
+      const stateAfterWrap = state.apply(tr);
+
+      // Now set checked: false on all list_item nodes within the selection
+      const { from, to } = stateAfterWrap.selection;
+      let finalTr = stateAfterWrap.tr;
+      stateAfterWrap.doc.nodesBetween(from, to, (node, pos) => {
+        if (node.type === listItemType && node.attrs.checked == null) {
+          finalTr = finalTr.setNodeMarkup(pos, undefined, {
+            ...node.attrs,
+            checked: false,
+          });
+        }
+      });
+
+      dispatch(finalTr);
+    });
+  }, []);
+  const handleLink = useCallback((url: string) => runCommand(toggleLinkCommand, { href: url }), [runCommand]);
   const handleCode = useCallback(() => runCommand(createCodeBlockCommand), [runCommand]);
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(valueRef.current);

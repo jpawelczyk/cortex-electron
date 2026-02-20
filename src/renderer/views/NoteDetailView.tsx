@@ -80,7 +80,7 @@ export function NoteDetailView({ noteId }: NoteDetailViewProps) {
                 <span className="text-xs text-muted-foreground mr-1">Delete?</span>
                 <button
                   data-testid="confirm-delete"
-                  onClick={() => { deleteNote(noteId); deselectNote(); }}
+                  onClick={async () => { await deleteNote(noteId); deselectNote(); }}
                   className="p-0.5 rounded bg-destructive/15 text-destructive hover:bg-destructive/25 transition-colors"
                   aria-label="Confirm delete"
                 >

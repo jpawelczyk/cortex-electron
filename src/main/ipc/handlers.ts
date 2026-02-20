@@ -7,6 +7,7 @@ import { createStakeholderService } from '../services/stakeholder.service';
 import { createChecklistService } from '../services/checklist.service';
 import { createNoteService } from '../services/note.service';
 import type { DbContext } from '../db/types';
+import { CreateNoteSchema, UpdateNoteSchema, NoteIdSchema } from '@shared/validation';
 
 export function registerHandlers(db: Database.Database): void {
   const ctx: DbContext = { db };
@@ -59,8 +60,8 @@ export function registerHandlers(db: Database.Database): void {
 
   // Notes
   ipcMain.handle('notes:list', async () => noteService.list());
-  ipcMain.handle('notes:get', async (_, id: string) => noteService.get(id));
-  ipcMain.handle('notes:create', async (_, input) => noteService.create(input));
-  ipcMain.handle('notes:update', async (_, id: string, input) => noteService.update(id, input));
-  ipcMain.handle('notes:delete', async (_, id: string) => noteService.delete(id));
+  ipcMain.handle('notes:get', async (_, id: string) => noteService.get(NoteIdSchema.parse(id)));
+  ipcMain.handle('notes:create', async (_, input) => noteService.create(CreateNoteSchema.parse(input)));
+  ipcMain.handle('notes:update', async (_, id: string, input) => noteService.update(NoteIdSchema.parse(id), UpdateNoteSchema.parse(input)));
+  ipcMain.handle('notes:delete', async (_, id: string) => noteService.delete(NoteIdSchema.parse(id)));
 }

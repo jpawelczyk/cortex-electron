@@ -200,6 +200,27 @@ describe('NotesOverviewView', () => {
     expect(screen.getByText('Heading bold text')).toBeInTheDocument();
   });
 
+  it('shows only link text, not URL, in content preview', () => {
+    mockNotes = [fakeNote({ id: 'n1', content: '[Click here](https://example.com)' })];
+    render(<NotesOverviewView />);
+    expect(screen.getByText('Click here')).toBeInTheDocument();
+  });
+
+  it('does not show URL from markdown link in content preview', () => {
+    mockNotes = [fakeNote({ id: 'n1', content: '[Click here](https://example.com)' })];
+    render(<NotesOverviewView />);
+    expect(screen.queryByText(/example\.com/)).not.toBeInTheDocument();
+  });
+
+  it('returns empty string for null content in preview', () => {
+    mockNotes = [fakeNote({ id: 'n1', content: null })];
+    render(<NotesOverviewView />);
+    // The preview element should not exist (no preview text)
+    const rows = screen.getAllByTestId('note-row');
+    expect(rows[0]).not.toHaveTextContent('undefined');
+    expect(rows[0]).not.toHaveTextContent('null');
+  });
+
   it('does not show deleted notes', () => {
     mockNotes = [
       fakeNote({ id: 'n1', title: 'Active Note', deleted_at: null }),
