@@ -28,6 +28,7 @@ export function ProjectsOverviewView() {
   const fetchProjects = useStore((s) => s.fetchProjects);
   const isInlineProjectCreating = useStore((s) => s.isInlineProjectCreating);
   const cancelInlineProjectCreate = useStore((s) => s.cancelInlineProjectCreate);
+  const selectProject = useStore((s) => s.selectProject);
   const [isLocalCreating, setIsLocalCreating] = useState(false);
 
   const isCreating = isLocalCreating || isInlineProjectCreating;
@@ -85,10 +86,12 @@ export function ProjectsOverviewView() {
             const config = STATUS_CONFIG[project.status];
 
             return (
-              <div
+              <button
+                type="button"
                 key={project.id}
                 data-testid="project-card"
-                className="rounded-lg border border-border bg-card/40 backdrop-blur-xl p-4 transition-colors hover:bg-accent/40"
+                onClick={() => selectProject(project.id)}
+                className="rounded-lg border border-border bg-card/40 backdrop-blur-xl p-4 transition-colors hover:bg-accent/40 text-left cursor-default"
               >
                 <div className="flex items-start justify-between gap-2 mb-3">
                   <h3 className="text-sm font-medium text-foreground truncate">{project.title}</h3>
@@ -110,7 +113,7 @@ export function ProjectsOverviewView() {
                     {taskCount} {taskCount === 1 ? 'task' : 'tasks'}
                   </span>
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>

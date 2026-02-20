@@ -11,6 +11,7 @@ import { AnytimeView } from './views/AnytimeView';
 import { SomedayView } from './views/SomedayView';
 import { StaleView } from './views/StaleView';
 import { ProjectsOverviewView } from './views/ProjectsOverviewView';
+import { ProjectDetailView } from './views/ProjectDetailView';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
 
@@ -23,9 +24,18 @@ export default function App() {
   const deselectTask = useStore((s) => s.deselectTask);
   const startInlineCreate = useStore((s) => s.startInlineCreate);
   const startInlineProjectCreate = useStore((s) => s.startInlineProjectCreate);
+  const selectedProjectId = useStore((s) => s.selectedProjectId);
+  const deselectProject = useStore((s) => s.deselectProject);
 
-  useKeyboardShortcuts({ setActiveView, deselectTask, startInlineCreate, startInlineProjectCreate, activeView });
-  useGlobalShortcuts({ setActiveView, startInlineCreate, startInlineProjectCreate, activeView });
+  const handleViewChange = (view: SidebarView) => {
+    if (selectedProjectId) {
+      deselectProject();
+    }
+    setActiveView(view);
+  };
+
+  useKeyboardShortcuts({ setActiveView: handleViewChange, deselectTask, startInlineCreate, startInlineProjectCreate, activeView, selectedProjectId });
+  useGlobalShortcuts({ setActiveView: handleViewChange, startInlineCreate, startInlineProjectCreate, activeView, selectedProjectId });
 
   useEffect(() => {
     fetchTrashedTasks();
@@ -73,7 +83,7 @@ export default function App() {
     <div className="flex h-screen bg-background text-foreground overflow-hidden">
       <Sidebar
         activeView={activeView}
-        onViewChange={setActiveView}
+        onViewChange={handleViewChange}
         taskCounts={taskCounts}
       />
 
@@ -87,7 +97,12 @@ export default function App() {
           <button
             onMouseDown={(e) => e.stopPropagation()}
             onClick={() => {
-              if (activeView === 'projects') {
+              if (activeView === 'projects' && selectedProjectId) {
+                // Inside a project detail — inline task create handled by the view
+                // Focus the task input inside ProjectDetailView
+                const input = document.querySelector<HTMLInputElement>('[data-project-task-input]');
+                input?.focus();
+              } else if (activeView === 'projects') {
                 startInlineProjectCreate();
               } else {
                 setActiveView('inbox');
@@ -108,7 +123,8 @@ export default function App() {
         {activeView === 'stale' && <StaleView />}
         {activeView === 'logbook' && <LogbookView />}
         {activeView === 'trash' && <TrashView />}
-        {activeView === 'projects' && <ProjectsOverviewView />}
+        {activeView === 'projects' && !selectedProjectId && <ProjectsOverviewView />}
+        {activeView === 'projects' && selectedProjectId && <ProjectDetailView projectId={selectedProjectId} />}
       </main>
     </div>
   );

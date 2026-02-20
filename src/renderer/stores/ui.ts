@@ -20,6 +20,10 @@ export interface UISlice {
   selectTask: (id: string) => void;
   deselectTask: () => void;
 
+  selectedProjectId: string | null;
+  selectProject: (id: string) => void;
+  deselectProject: () => void;
+
   isInlineCreating: boolean;
   startInlineCreate: () => void;
   cancelInlineCreate: () => void;
@@ -48,6 +52,10 @@ export const createUISlice: StateCreator<UISlice> = (set, get) => ({
   selectedTaskId: null,
   selectTask: (id) => set({ selectedTaskId: id }),
   deselectTask: () => set({ selectedTaskId: null }),
+
+  selectedProjectId: null,
+  selectProject: (id) => set({ selectedProjectId: id }),
+  deselectProject: () => set({ selectedProjectId: null }),
 
   isInlineCreating: false,
   startInlineCreate: () => {

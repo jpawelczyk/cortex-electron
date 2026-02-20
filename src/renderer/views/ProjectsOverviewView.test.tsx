@@ -23,6 +23,7 @@ vi.mock('../stores', () => ({
       createProject: mockCreateProject,
       isInlineProjectCreating: mockIsInlineProjectCreating,
       cancelInlineProjectCreate: mockCancelInlineProjectCreate,
+      selectProject: vi.fn(),
     };
     return selector(state);
   },

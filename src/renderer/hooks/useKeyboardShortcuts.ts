@@ -7,6 +7,7 @@ interface KeyboardShortcutDeps {
   startInlineCreate: () => void;
   startInlineProjectCreate: () => void;
   activeView: string;
+  selectedProjectId?: string | null;
 }
 
 const VIEW_KEYS: Record<string, SidebarView> = {
@@ -21,6 +22,7 @@ export function useKeyboardShortcuts({
   startInlineCreate,
   startInlineProjectCreate,
   activeView,
+  selectedProjectId,
 }: KeyboardShortcutDeps) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -46,7 +48,10 @@ export function useKeyboardShortcuts({
 
         if (e.key === 'n') {
           e.preventDefault();
-          if (activeView === 'projects') {
+          if (activeView === 'projects' && selectedProjectId) {
+            const input = document.querySelector<HTMLInputElement>('[data-project-task-input]');
+            input?.focus();
+          } else if (activeView === 'projects') {
             startInlineProjectCreate();
           } else {
             setActiveView('inbox');
@@ -64,5 +69,5 @@ export function useKeyboardShortcuts({
 
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [setActiveView, deselectTask, startInlineCreate, startInlineProjectCreate, activeView]);
+  }, [setActiveView, deselectTask, startInlineCreate, startInlineProjectCreate, activeView, selectedProjectId]);
 }

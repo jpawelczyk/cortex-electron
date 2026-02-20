@@ -6,6 +6,7 @@ interface GlobalShortcutDeps {
   startInlineCreate: () => void;
   startInlineProjectCreate: () => void;
   activeView: string;
+  selectedProjectId?: string | null;
 }
 
 export function useGlobalShortcuts({
@@ -13,10 +14,14 @@ export function useGlobalShortcuts({
   startInlineCreate,
   startInlineProjectCreate,
   activeView,
+  selectedProjectId,
 }: GlobalShortcutDeps) {
   useEffect(() => {
     const unsubscribe = window.cortex.onFocusTaskInput(() => {
-      if (activeView === 'projects') {
+      if (activeView === 'projects' && selectedProjectId) {
+        const input = document.querySelector<HTMLInputElement>('[data-project-task-input]');
+        input?.focus();
+      } else if (activeView === 'projects') {
         startInlineProjectCreate();
       } else {
         setActiveView('inbox');
@@ -24,5 +29,5 @@ export function useGlobalShortcuts({
       }
     });
     return unsubscribe;
-  }, [setActiveView, startInlineCreate, startInlineProjectCreate, activeView]);
+  }, [setActiveView, startInlineCreate, startInlineProjectCreate, activeView, selectedProjectId]);
 }
