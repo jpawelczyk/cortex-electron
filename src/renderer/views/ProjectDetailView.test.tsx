@@ -13,6 +13,7 @@ const mockUpdateTask = vi.fn();
 const mockSelectTask = vi.fn();
 const mockCancelInlineCreate = vi.fn();
 const mockStartInlineCreate = vi.fn();
+const mockDeleteProject = vi.fn();
 
 let mockProjects: Project[] = [];
 let mockTasks: Task[] = [];
@@ -43,6 +44,7 @@ vi.mock('../stores', () => ({
       isInlineCreating: mockIsInlineCreating,
       startInlineCreate: mockStartInlineCreate,
       cancelInlineCreate: mockCancelInlineCreate,
+      deleteProject: mockDeleteProject,
       createChecklistItem: vi.fn(),
       checklistItems: {},
       checklistsLoading: {},
@@ -441,6 +443,44 @@ describe('ProjectDetailView', () => {
     // Click the back button to dismiss (any other interaction)
     fireEvent.click(screen.getByRole('button', { name: /dismiss/i }));
     expect(screen.queryByText(/complete or move all tasks/i)).not.toBeInTheDocument();
+  });
+
+  // --- Project deletion ---
+
+  it('renders a delete button', () => {
+    render(<ProjectDetailView projectId="proj-1" />);
+
+    expect(screen.getByLabelText('Delete project')).toBeInTheDocument();
+  });
+
+  it('shows confirmation when delete button is clicked', () => {
+    render(<ProjectDetailView projectId="proj-1" />);
+
+    fireEvent.click(screen.getByLabelText('Delete project'));
+
+    expect(screen.getByText('Confirm?')).toBeInTheDocument();
+    expect(screen.getByLabelText('Confirm delete project')).toBeInTheDocument();
+    expect(screen.getByLabelText('Cancel delete project')).toBeInTheDocument();
+  });
+
+  it('calls deleteProject and deselectProject when confirmed', () => {
+    render(<ProjectDetailView projectId="proj-1" />);
+
+    fireEvent.click(screen.getByLabelText('Delete project'));
+    fireEvent.click(screen.getByLabelText('Confirm delete project'));
+
+    expect(mockDeleteProject).toHaveBeenCalledWith('proj-1');
+    expect(mockDeselectProject).toHaveBeenCalled();
+  });
+
+  it('cancels deletion when cancel button is clicked', () => {
+    render(<ProjectDetailView projectId="proj-1" />);
+
+    fireEvent.click(screen.getByLabelText('Delete project'));
+    fireEvent.click(screen.getByLabelText('Cancel delete project'));
+
+    expect(mockDeleteProject).not.toHaveBeenCalled();
+    expect(screen.queryByText('Confirm?')).not.toBeInTheDocument();
   });
 
   // --- Not found ---

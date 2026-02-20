@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Clock, Plus } from 'lucide-react';
+import { Clock, Plus, Trash2, Check, X } from 'lucide-react';
 import type { Project, ProjectStatus } from '@shared/types';
 import { useStore } from '../stores';
 import { InlineProjectCard } from '../components/InlineProjectCard';
@@ -29,7 +29,9 @@ export function ProjectsOverviewView() {
   const isInlineProjectCreating = useStore((s) => s.isInlineProjectCreating);
   const cancelInlineProjectCreate = useStore((s) => s.cancelInlineProjectCreate);
   const selectProject = useStore((s) => s.selectProject);
+  const deleteProject = useStore((s) => s.deleteProject);
   const [isLocalCreating, setIsLocalCreating] = useState(false);
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
 
   const isCreating = isLocalCreating || isInlineProjectCreating;
 
@@ -85,22 +87,71 @@ export function ProjectsOverviewView() {
             const stale = isStale(project);
             const config = STATUS_CONFIG[project.status];
 
+            const isConfirmingDelete = confirmingDeleteId === project.id;
+
             return (
-              <button
-                type="button"
+              <div
                 key={project.id}
+                role="button"
+                tabIndex={0}
                 data-testid="project-card"
                 onClick={() => selectProject(project.id)}
-                className="rounded-lg border border-border bg-card/40 backdrop-blur-xl p-4 transition-colors hover:bg-accent/40 text-left cursor-default"
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') selectProject(project.id); }}
+                className="group/card rounded-lg border border-border bg-card/40 backdrop-blur-xl p-4 transition-colors hover:bg-accent/40 text-left cursor-default"
               >
                 <div className="flex items-start justify-between gap-2 mb-3">
                   <h3 className="text-sm font-medium text-foreground truncate">{project.title}</h3>
-                  {stale && (
-                    <span className="flex items-center gap-1 text-xs text-yellow-400 shrink-0">
-                      <Clock className="size-3" strokeWidth={2} />
-                      Stale
-                    </span>
-                  )}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {stale && (
+                      <span className="flex items-center gap-1 text-xs text-yellow-400">
+                        <Clock className="size-3" strokeWidth={2} />
+                        Stale
+                      </span>
+                    )}
+                    {isConfirmingDelete ? (
+                      <div
+                        className="flex items-center gap-1 rounded-lg bg-accent px-2 py-0.5"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <span className="text-xs text-muted-foreground mr-0.5">Confirm?</span>
+                        <button
+                          type="button"
+                          aria-label="Confirm delete project"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteProject(project.id);
+                            setConfirmingDeleteId(null);
+                          }}
+                          className="p-0.5 rounded bg-destructive/15 text-destructive hover:bg-destructive/25 transition-colors"
+                        >
+                          <Check className="size-3" />
+                        </button>
+                        <button
+                          type="button"
+                          aria-label="Cancel delete project"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setConfirmingDeleteId(null);
+                          }}
+                          className="p-0.5 rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                        >
+                          <X className="size-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        aria-label="Delete project"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setConfirmingDeleteId(project.id);
+                        }}
+                        className="p-0.5 rounded text-muted-foreground/0 group-hover/card:text-muted-foreground/40 hover:!text-destructive transition-colors"
+                      >
+                        <Trash2 className="size-3.5" />
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -113,7 +164,7 @@ export function ProjectsOverviewView() {
                     {taskCount} {taskCount === 1 ? 'task' : 'tasks'}
                   </span>
                 </div>
-              </button>
+              </div>
             );
           })}
         </div>

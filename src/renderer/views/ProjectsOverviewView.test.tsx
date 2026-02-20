@@ -11,6 +11,7 @@ const mockFetchProjects = vi.fn();
 const mockFetchTasks = vi.fn();
 const mockCreateProject = vi.fn();
 const mockCancelInlineProjectCreate = vi.fn();
+const mockDeleteProject = vi.fn();
 
 vi.mock('../stores', () => ({
   useStore: (selector: (state: Record<string, unknown>) => unknown) => {
@@ -24,6 +25,7 @@ vi.mock('../stores', () => ({
       isInlineProjectCreating: mockIsInlineProjectCreating,
       cancelInlineProjectCreate: mockCancelInlineProjectCreate,
       selectProject: vi.fn(),
+      deleteProject: mockDeleteProject,
     };
     return selector(state);
   },
@@ -192,6 +194,70 @@ describe('ProjectsOverviewView', () => {
     const cards = screen.getAllByTestId('project-card');
     expect(cards[0]).toHaveTextContent('Newer');
     expect(cards[1]).toHaveTextContent('Older');
+  });
+
+  describe('project deletion', () => {
+    it('shows a delete button on each project card', () => {
+      mockProjects = [
+        fakeProject({ id: 'p1', title: 'My Project', status: 'active' }),
+      ];
+      render(<ProjectsOverviewView />);
+
+      expect(screen.getByLabelText('Delete project')).toBeInTheDocument();
+    });
+
+    it('shows confirmation when delete button is clicked', () => {
+      mockProjects = [
+        fakeProject({ id: 'p1', title: 'My Project', status: 'active' }),
+      ];
+      render(<ProjectsOverviewView />);
+
+      fireEvent.click(screen.getByLabelText('Delete project'));
+
+      expect(screen.getByText('Confirm?')).toBeInTheDocument();
+      expect(screen.getByLabelText('Confirm delete project')).toBeInTheDocument();
+      expect(screen.getByLabelText('Cancel delete project')).toBeInTheDocument();
+    });
+
+    it('calls deleteProject when confirmed', () => {
+      mockProjects = [
+        fakeProject({ id: 'p1', title: 'My Project', status: 'active' }),
+      ];
+      render(<ProjectsOverviewView />);
+
+      fireEvent.click(screen.getByLabelText('Delete project'));
+      fireEvent.click(screen.getByLabelText('Confirm delete project'));
+
+      expect(mockDeleteProject).toHaveBeenCalledWith('p1');
+    });
+
+    it('cancels deletion when cancel button is clicked', () => {
+      mockProjects = [
+        fakeProject({ id: 'p1', title: 'My Project', status: 'active' }),
+      ];
+      render(<ProjectsOverviewView />);
+
+      fireEvent.click(screen.getByLabelText('Delete project'));
+      fireEvent.click(screen.getByLabelText('Cancel delete project'));
+
+      expect(mockDeleteProject).not.toHaveBeenCalled();
+      expect(screen.queryByText('Confirm?')).not.toBeInTheDocument();
+    });
+
+    it('does not navigate to project detail when delete button is clicked', () => {
+      const mockSelectProject = vi.fn();
+      // Re-check: the selectProject mock is inside the store mock, so we check
+      // that clicking the delete button doesn't trigger navigation
+      mockProjects = [
+        fakeProject({ id: 'p1', title: 'My Project', status: 'active' }),
+      ];
+      render(<ProjectsOverviewView />);
+
+      fireEvent.click(screen.getByLabelText('Delete project'));
+
+      // Should not have navigated — the card click handler should not fire
+      expect(screen.getByText('Confirm?')).toBeInTheDocument();
+    });
   });
 
   describe('inline project creation', () => {

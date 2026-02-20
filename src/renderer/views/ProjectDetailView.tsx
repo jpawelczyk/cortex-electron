@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { ArrowLeft, Clock, FolderKanban, Plus } from 'lucide-react';
+import { ArrowLeft, Clock, FolderKanban, Plus, Trash2, Check, X } from 'lucide-react';
 import type { ProjectStatus } from '@shared/types';
 import { useStore } from '../stores';
 import { useDebouncedCallback } from '../hooks/useDebouncedCallback';
@@ -37,6 +37,7 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
   const tasks = useStore((s) => s.tasks);
   const contexts = useStore((s) => s.contexts);
   const updateProject = useStore((s) => s.updateProject);
+  const deleteProject = useStore((s) => s.deleteProject);
   const deselectProject = useStore((s) => s.deselectProject);
   const updateTask = useStore((s) => s.updateTask);
   const selectTask = useStore((s) => s.selectTask);
@@ -53,6 +54,7 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
   const [description, setDescription] = useState(project?.description ?? '');
   const [statusOpen, setStatusOpen] = useState(false);
   const [completionWarning, setCompletionWarning] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   // --- Completion animation state (same as InboxView / TodayView) ---
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
@@ -215,15 +217,51 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-5xl mx-auto px-8 py-8">
-        {/* Back button */}
-        <button
-          onClick={deselectProject}
-          aria-label="Back"
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6 cursor-default"
-        >
-          <ArrowLeft className="size-4" />
-          <span>Projects</span>
-        </button>
+        {/* Top bar: back + delete */}
+        <div className="flex items-center justify-between mb-6">
+          <button
+            onClick={deselectProject}
+            aria-label="Back"
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-default"
+          >
+            <ArrowLeft className="size-4" />
+            <span>Projects</span>
+          </button>
+
+          {confirmingDelete ? (
+            <div className="flex items-center gap-1.5 rounded-lg bg-accent px-2.5 py-1">
+              <span className="text-sm text-muted-foreground mr-1">Confirm?</span>
+              <button
+                type="button"
+                aria-label="Confirm delete project"
+                onClick={() => {
+                  deleteProject(projectId);
+                  deselectProject();
+                }}
+                className="p-1 rounded bg-destructive/15 text-destructive hover:bg-destructive/25 transition-colors"
+              >
+                <Check className="size-3.5" />
+              </button>
+              <button
+                type="button"
+                aria-label="Cancel delete project"
+                onClick={() => setConfirmingDelete(false)}
+                className="p-1 rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+              >
+                <X className="size-3.5" />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              aria-label="Delete project"
+              onClick={() => setConfirmingDelete(true)}
+              className="p-1 rounded text-muted-foreground/40 hover:text-destructive transition-colors"
+            >
+              <Trash2 className="size-3.5" />
+            </button>
+          )}
+        </div>
 
         {/* Header */}
         <div className="mb-8">
@@ -285,6 +323,7 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
                 {context.name}
               </span>
             )}
+
           </div>
         </div>
 
