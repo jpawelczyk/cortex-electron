@@ -22,9 +22,10 @@ export default function App() {
   const fetchTrashedTasks = useStore((s) => s.fetchTrashedTasks);
   const deselectTask = useStore((s) => s.deselectTask);
   const startInlineCreate = useStore((s) => s.startInlineCreate);
+  const startInlineProjectCreate = useStore((s) => s.startInlineProjectCreate);
 
-  useKeyboardShortcuts({ setActiveView, deselectTask, startInlineCreate });
-  useGlobalShortcuts({ setActiveView, startInlineCreate });
+  useKeyboardShortcuts({ setActiveView, deselectTask, startInlineCreate, startInlineProjectCreate, activeView });
+  useGlobalShortcuts({ setActiveView, startInlineCreate, startInlineProjectCreate, activeView });
 
   useEffect(() => {
     fetchTrashedTasks();
@@ -85,7 +86,14 @@ export default function App() {
           </button>
           <button
             onMouseDown={(e) => e.stopPropagation()}
-            onClick={() => { setActiveView('inbox'); startInlineCreate(); }}
+            onClick={() => {
+              if (activeView === 'projects') {
+                startInlineProjectCreate();
+              } else {
+                setActiveView('inbox');
+                startInlineCreate();
+              }
+            }}
             className="no-drag p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
           >
             <Plus className="size-5" />

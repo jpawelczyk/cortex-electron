@@ -26,7 +26,11 @@ export function ProjectsOverviewView() {
   const projects = useStore((s) => s.projects);
   const tasks = useStore((s) => s.tasks);
   const fetchProjects = useStore((s) => s.fetchProjects);
-  const [isCreating, setIsCreating] = useState(false);
+  const isInlineProjectCreating = useStore((s) => s.isInlineProjectCreating);
+  const cancelInlineProjectCreate = useStore((s) => s.cancelInlineProjectCreate);
+  const [isLocalCreating, setIsLocalCreating] = useState(false);
+
+  const isCreating = isLocalCreating || isInlineProjectCreating;
 
   useEffect(() => {
     fetchProjects();
@@ -62,12 +66,12 @@ export function ProjectsOverviewView() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {isCreating ? (
-            <InlineProjectCard onClose={() => setIsCreating(false)} />
+            <InlineProjectCard onClose={() => { setIsLocalCreating(false); cancelInlineProjectCreate(); }} />
           ) : (
             <button
               type="button"
               data-testid="new-project-trigger"
-              onClick={() => setIsCreating(true)}
+              onClick={() => setIsLocalCreating(true)}
               className="rounded-lg border border-dashed border-border/60 bg-card/20 p-4 transition-colors hover:bg-accent/30 hover:border-border cursor-pointer flex items-center gap-3 text-muted-foreground/60 hover:text-muted-foreground"
             >
               <Plus className="size-4" strokeWidth={1.5} />

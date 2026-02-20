@@ -6,9 +6,11 @@ import { ProjectsOverviewView } from './ProjectsOverviewView';
 
 let mockProjects: Record<string, unknown>[] = [];
 let mockTasks: Record<string, unknown>[] = [];
+let mockIsInlineProjectCreating = false;
 const mockFetchProjects = vi.fn();
 const mockFetchTasks = vi.fn();
 const mockCreateProject = vi.fn();
+const mockCancelInlineProjectCreate = vi.fn();
 
 vi.mock('../stores', () => ({
   useStore: (selector: (state: Record<string, unknown>) => unknown) => {
@@ -19,6 +21,8 @@ vi.mock('../stores', () => ({
       fetchProjects: mockFetchProjects,
       fetchTasks: mockFetchTasks,
       createProject: mockCreateProject,
+      isInlineProjectCreating: mockIsInlineProjectCreating,
+      cancelInlineProjectCreate: mockCancelInlineProjectCreate,
     };
     return selector(state);
   },
@@ -62,6 +66,7 @@ describe('ProjectsOverviewView', () => {
     vi.clearAllMocks();
     mockProjects = [];
     mockTasks = [];
+    mockIsInlineProjectCreating = false;
   });
 
   it('renders the Projects heading', () => {
@@ -225,6 +230,14 @@ describe('ProjectsOverviewView', () => {
 
       expect(screen.getByTestId('new-project-trigger')).toBeInTheDocument();
       expect(screen.queryByTestId('inline-project-card')).not.toBeInTheDocument();
+    });
+
+    it('opens InlineProjectCard when isInlineProjectCreating store flag is true', () => {
+      mockIsInlineProjectCreating = true;
+      render(<ProjectsOverviewView />);
+
+      expect(screen.getByTestId('inline-project-card')).toBeInTheDocument();
+      expect(screen.queryByTestId('new-project-trigger')).not.toBeInTheDocument();
     });
   });
 });

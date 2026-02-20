@@ -31,31 +31,48 @@ describe('useGlobalShortcuts', () => {
   it('subscribes to onFocusTaskInput on mount', () => {
     const setActiveView = vi.fn();
     const startInlineCreate = vi.fn();
+    const startInlineProjectCreate = vi.fn();
 
-    renderHook(() => useGlobalShortcuts({ setActiveView, startInlineCreate }));
+    renderHook(() => useGlobalShortcuts({ setActiveView, startInlineCreate, startInlineProjectCreate, activeView: 'inbox' }));
 
     expect(window.cortex.onFocusTaskInput).toHaveBeenCalledWith(expect.any(Function));
   });
 
-  it('switches to inbox and opens inline create when triggered', () => {
+  it('switches to inbox and opens inline create when triggered from non-project view', () => {
     const setActiveView = vi.fn();
     const startInlineCreate = vi.fn();
+    const startInlineProjectCreate = vi.fn();
 
-    renderHook(() => useGlobalShortcuts({ setActiveView, startInlineCreate }));
+    renderHook(() => useGlobalShortcuts({ setActiveView, startInlineCreate, startInlineProjectCreate, activeView: 'inbox' }));
 
-    // Simulate the global shortcut firing
     capturedCallback!();
 
     expect(setActiveView).toHaveBeenCalledWith('inbox');
     expect(startInlineCreate).toHaveBeenCalled();
+    expect(startInlineProjectCreate).not.toHaveBeenCalled();
+  });
+
+  it('starts inline project create when triggered from projects view', () => {
+    const setActiveView = vi.fn();
+    const startInlineCreate = vi.fn();
+    const startInlineProjectCreate = vi.fn();
+
+    renderHook(() => useGlobalShortcuts({ setActiveView, startInlineCreate, startInlineProjectCreate, activeView: 'projects' }));
+
+    capturedCallback!();
+
+    expect(startInlineProjectCreate).toHaveBeenCalled();
+    expect(startInlineCreate).not.toHaveBeenCalled();
+    expect(setActiveView).not.toHaveBeenCalled();
   });
 
   it('calls setActiveView before startInlineCreate', () => {
     const callOrder: string[] = [];
     const setActiveView = vi.fn(() => callOrder.push('setActiveView'));
     const startInlineCreate = vi.fn(() => callOrder.push('startInlineCreate'));
+    const startInlineProjectCreate = vi.fn();
 
-    renderHook(() => useGlobalShortcuts({ setActiveView, startInlineCreate }));
+    renderHook(() => useGlobalShortcuts({ setActiveView, startInlineCreate, startInlineProjectCreate, activeView: 'inbox' }));
     capturedCallback!();
 
     expect(callOrder).toEqual(['setActiveView', 'startInlineCreate']);
@@ -64,9 +81,10 @@ describe('useGlobalShortcuts', () => {
   it('unsubscribes on unmount', () => {
     const setActiveView = vi.fn();
     const startInlineCreate = vi.fn();
+    const startInlineProjectCreate = vi.fn();
 
     const { unmount } = renderHook(() =>
-      useGlobalShortcuts({ setActiveView, startInlineCreate })
+      useGlobalShortcuts({ setActiveView, startInlineCreate, startInlineProjectCreate, activeView: 'inbox' })
     );
 
     unmount();

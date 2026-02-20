@@ -5,6 +5,8 @@ interface KeyboardShortcutDeps {
   setActiveView: (view: SidebarView) => void;
   deselectTask: () => void;
   startInlineCreate: () => void;
+  startInlineProjectCreate: () => void;
+  activeView: string;
 }
 
 const VIEW_KEYS: Record<string, SidebarView> = {
@@ -17,6 +19,8 @@ export function useKeyboardShortcuts({
   setActiveView,
   deselectTask,
   startInlineCreate,
+  startInlineProjectCreate,
+  activeView,
 }: KeyboardShortcutDeps) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -42,8 +46,12 @@ export function useKeyboardShortcuts({
 
         if (e.key === 'n') {
           e.preventDefault();
-          setActiveView('inbox');
-          startInlineCreate();
+          if (activeView === 'projects') {
+            startInlineProjectCreate();
+          } else {
+            setActiveView('inbox');
+            startInlineCreate();
+          }
           return;
         }
 
@@ -56,5 +64,5 @@ export function useKeyboardShortcuts({
 
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [setActiveView, deselectTask, startInlineCreate]);
+  }, [setActiveView, deselectTask, startInlineCreate, startInlineProjectCreate, activeView]);
 }

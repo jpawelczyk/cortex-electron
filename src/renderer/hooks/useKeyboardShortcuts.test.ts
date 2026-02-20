@@ -11,11 +11,15 @@ describe('useKeyboardShortcuts', () => {
   let setActiveView: ReturnType<typeof vi.fn>;
   let deselectTask: ReturnType<typeof vi.fn>;
   let startInlineCreate: ReturnType<typeof vi.fn>;
+  let startInlineProjectCreate: ReturnType<typeof vi.fn>;
+  let activeView: string;
 
   beforeEach(() => {
     setActiveView = vi.fn();
     deselectTask = vi.fn();
     startInlineCreate = vi.fn();
+    startInlineProjectCreate = vi.fn();
+    activeView = 'inbox';
   });
 
   afterEach(() => {
@@ -24,7 +28,7 @@ describe('useKeyboardShortcuts', () => {
 
   function renderShortcuts() {
     return renderHook(() =>
-      useKeyboardShortcuts({ setActiveView, deselectTask, startInlineCreate })
+      useKeyboardShortcuts({ setActiveView, deselectTask, startInlineCreate, startInlineProjectCreate, activeView })
     );
   }
 
@@ -88,12 +92,23 @@ describe('useKeyboardShortcuts', () => {
     });
   });
 
-  describe('Cmd+N → new task', () => {
-    it('navigates to inbox and starts inline create', () => {
+  describe('Cmd+N → context-sensitive new item', () => {
+    it('navigates to inbox and starts inline task create from non-project views', () => {
+      activeView = 'inbox';
       renderShortcuts();
       fireKey('n', { metaKey: true });
       expect(setActiveView).toHaveBeenCalledWith('inbox');
       expect(startInlineCreate).toHaveBeenCalled();
+      expect(startInlineProjectCreate).not.toHaveBeenCalled();
+    });
+
+    it('starts inline project create when on projects view', () => {
+      activeView = 'projects';
+      renderShortcuts();
+      fireKey('n', { metaKey: true });
+      expect(startInlineProjectCreate).toHaveBeenCalled();
+      expect(startInlineCreate).not.toHaveBeenCalled();
+      expect(setActiveView).not.toHaveBeenCalled();
     });
   });
 

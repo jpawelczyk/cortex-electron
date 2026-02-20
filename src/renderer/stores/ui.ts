@@ -23,6 +23,10 @@ export interface UISlice {
   isInlineCreating: boolean;
   startInlineCreate: () => void;
   cancelInlineCreate: () => void;
+
+  isInlineProjectCreating: boolean;
+  startInlineProjectCreate: () => void;
+  cancelInlineProjectCreate: () => void;
 }
 
 export const createUISlice: StateCreator<UISlice> = (set, get) => ({
@@ -51,4 +55,11 @@ export const createUISlice: StateCreator<UISlice> = (set, get) => ({
     set({ isInlineCreating: true, selectedTaskId: null });
   },
   cancelInlineCreate: () => set({ isInlineCreating: false }),
+
+  isInlineProjectCreating: false,
+  startInlineProjectCreate: () => {
+    if (get().isInlineProjectCreating) return;
+    set({ isInlineProjectCreating: true });
+  },
+  cancelInlineProjectCreate: () => set({ isInlineProjectCreating: false }),
 });

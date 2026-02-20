@@ -4,17 +4,25 @@ import type { SidebarView } from '../components/Sidebar';
 interface GlobalShortcutDeps {
   setActiveView: (view: SidebarView) => void;
   startInlineCreate: () => void;
+  startInlineProjectCreate: () => void;
+  activeView: string;
 }
 
 export function useGlobalShortcuts({
   setActiveView,
   startInlineCreate,
+  startInlineProjectCreate,
+  activeView,
 }: GlobalShortcutDeps) {
   useEffect(() => {
     const unsubscribe = window.cortex.onFocusTaskInput(() => {
-      setActiveView('inbox');
-      startInlineCreate();
+      if (activeView === 'projects') {
+        startInlineProjectCreate();
+      } else {
+        setActiveView('inbox');
+        startInlineCreate();
+      }
     });
     return unsubscribe;
-  }, [setActiveView, startInlineCreate]);
+  }, [setActiveView, startInlineCreate, startInlineProjectCreate, activeView]);
 }

@@ -134,6 +134,32 @@ describe('UISlice', () => {
     });
   });
 
+  describe('inline project creating', () => {
+    it('starts with inline project creating off', () => {
+      const store = createStore();
+      expect(store.isInlineProjectCreating).toBe(false);
+    });
+
+    it('startInlineProjectCreate sets isInlineProjectCreating to true', () => {
+      const store = createStore();
+      store.startInlineProjectCreate();
+      expect(store.isInlineProjectCreating).toBe(true);
+    });
+
+    it('cancelInlineProjectCreate sets isInlineProjectCreating to false', () => {
+      const store = createStore({ isInlineProjectCreating: true });
+      store.cancelInlineProjectCreate();
+      expect(store.isInlineProjectCreating).toBe(false);
+    });
+
+    it('startInlineProjectCreate is a no-op when already creating', () => {
+      const store = createStore({ isInlineProjectCreating: true });
+      store._set.mockClear();
+      store.startInlineProjectCreate();
+      expect(store._set).not.toHaveBeenCalled();
+    });
+  });
+
   describe('selectedTaskId', () => {
     it('starts with no task selected', () => {
       const store = createStore();
