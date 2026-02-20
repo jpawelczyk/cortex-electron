@@ -12,6 +12,7 @@ const mockFetchTasks = vi.fn();
 const mockCreateProject = vi.fn();
 const mockCancelInlineProjectCreate = vi.fn();
 const mockDeleteProject = vi.fn();
+const mockUpdateProject = vi.fn();
 
 vi.mock('../stores', () => ({
   useStore: (selector: (state: Record<string, unknown>) => unknown) => {
@@ -26,6 +27,7 @@ vi.mock('../stores', () => ({
       cancelInlineProjectCreate: mockCancelInlineProjectCreate,
       selectProject: vi.fn(),
       deleteProject: mockDeleteProject,
+      updateProject: mockUpdateProject,
     };
     return selector(state);
   },
@@ -119,7 +121,9 @@ describe('ProjectsOverviewView', () => {
     ];
     render(<ProjectsOverviewView />);
     expect(screen.getByText('My Project')).toBeInTheDocument();
-    expect(screen.getByText('Active')).toBeInTheDocument();
+    // "Active" appears in both the tab and the status badge
+    const card = screen.getByTestId('project-card');
+    expect(card).toHaveTextContent('Active');
   });
 
   it('shows task count for each project', () => {
@@ -175,7 +179,10 @@ describe('ProjectsOverviewView', () => {
     ];
     render(<ProjectsOverviewView />);
     expect(screen.getByText('Planned')).toBeInTheDocument();
-    expect(screen.getByText('Active')).toBeInTheDocument();
+    // "Active" appears in both the tab and the badge — check within card
+    const cards = screen.getAllByTestId('project-card');
+    const activeCard = cards.find((c) => c.textContent?.includes('P2'));
+    expect(activeCard).toHaveTextContent('Active');
     expect(screen.getByText('On Hold')).toBeInTheDocument();
     expect(screen.getByText('Blocked')).toBeInTheDocument();
   });
@@ -257,6 +264,56 @@ describe('ProjectsOverviewView', () => {
 
       // Should not have navigated — the card click handler should not fire
       expect(screen.getByText('Confirm?')).toBeInTheDocument();
+    });
+  });
+
+  describe('tab navigation', () => {
+    it('renders Active, Completed, and Archived tabs', () => {
+      render(<ProjectsOverviewView />);
+      expect(screen.getByTestId('projects-tab-active')).toBeInTheDocument();
+      expect(screen.getByTestId('projects-tab-completed')).toBeInTheDocument();
+      expect(screen.getByTestId('projects-tab-archived')).toBeInTheDocument();
+    });
+
+    it('shows Active tab as selected by default', () => {
+      render(<ProjectsOverviewView />);
+      expect(screen.getByTestId('projects-tab-active')).toHaveAttribute('aria-selected', 'true');
+    });
+
+    it('switches to completed view when Completed tab is clicked', () => {
+      mockProjects = [
+        fakeProject({ id: 'p1', title: 'Done Project', status: 'completed', completed_at: '2026-02-10T00:00:00.000Z' }),
+      ];
+      render(<ProjectsOverviewView />);
+
+      fireEvent.click(screen.getByTestId('projects-tab-completed'));
+
+      expect(screen.getByTestId('projects-tab-completed')).toHaveAttribute('aria-selected', 'true');
+      expect(screen.getByText('Done Project')).toBeInTheDocument();
+    });
+
+    it('switches to archived view when Archived tab is clicked', () => {
+      mockProjects = [
+        fakeProject({ id: 'p1', title: 'Old Project', status: 'archived' }),
+      ];
+      render(<ProjectsOverviewView />);
+
+      fireEvent.click(screen.getByTestId('projects-tab-archived'));
+
+      expect(screen.getByTestId('projects-tab-archived')).toHaveAttribute('aria-selected', 'true');
+      expect(screen.getByText('Old Project')).toBeInTheDocument();
+    });
+
+    it('hides active content when non-active tab is selected', () => {
+      mockProjects = [
+        fakeProject({ id: 'p1', title: 'Active One', status: 'active' }),
+      ];
+      render(<ProjectsOverviewView />);
+
+      fireEvent.click(screen.getByTestId('projects-tab-completed'));
+
+      expect(screen.queryByText('Active One')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('new-project-trigger')).not.toBeInTheDocument();
     });
   });
 

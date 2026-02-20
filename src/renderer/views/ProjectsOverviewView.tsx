@@ -3,6 +3,16 @@ import { Clock, Plus, Trash2, Check, X } from 'lucide-react';
 import type { Project, ProjectStatus } from '@shared/types';
 import { useStore } from '../stores';
 import { InlineProjectCard } from '../components/InlineProjectCard';
+import { CompletedProjectsView } from './CompletedProjectsView';
+import { ArchivedProjectsView } from './ArchivedProjectsView';
+
+type ProjectsTab = 'active' | 'completed' | 'archived';
+
+const TABS: { key: ProjectsTab; label: string }[] = [
+  { key: 'active', label: 'Active' },
+  { key: 'completed', label: 'Completed' },
+  { key: 'archived', label: 'Archived' },
+];
 
 const ACTIVE_STATUSES: ProjectStatus[] = ['planned', 'active', 'on_hold', 'blocked'];
 const STALENESS_DAYS = 14;
@@ -30,6 +40,7 @@ export function ProjectsOverviewView() {
   const cancelInlineProjectCreate = useStore((s) => s.cancelInlineProjectCreate);
   const selectProject = useStore((s) => s.selectProject);
   const deleteProject = useStore((s) => s.deleteProject);
+  const [activeTab, setActiveTab] = useState<ProjectsTab>('active');
   const [isLocalCreating, setIsLocalCreating] = useState(false);
   const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
 
@@ -65,9 +76,30 @@ export function ProjectsOverviewView() {
       <div className="max-w-5xl mx-auto px-8 py-8">
         <div className="flex items-center gap-3 mb-6">
           <h2 className="text-xl font-semibold text-foreground">Projects</h2>
+          <div className="flex gap-1 ml-auto">
+            {TABS.map(({ key, label }) => (
+              <button
+                key={key}
+                type="button"
+                data-testid={`projects-tab-${key}`}
+                aria-selected={activeTab === key}
+                onClick={() => setActiveTab(key)}
+                className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                  activeTab === key
+                    ? 'bg-accent text-foreground'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent/40'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {activeTab === 'completed' && <CompletedProjectsView />}
+        {activeTab === 'archived' && <ArchivedProjectsView />}
+
+        {activeTab === 'active' && <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {isCreating ? (
             <InlineProjectCard onClose={() => { setIsLocalCreating(false); cancelInlineProjectCreate(); }} />
           ) : (
@@ -167,7 +199,7 @@ export function ProjectsOverviewView() {
               </div>
             );
           })}
-        </div>
+        </div>}
       </div>
     </div>
   );
