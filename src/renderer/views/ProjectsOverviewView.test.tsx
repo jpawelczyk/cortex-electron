@@ -15,6 +15,7 @@ const mockDeleteProject = vi.fn();
 const mockUpdateProject = vi.fn();
 
 let mockActiveContextIds: string[] = [];
+let mockContexts: Record<string, unknown>[] = [];
 
 vi.mock('../stores', () => ({
   useStore: (selector: (state: Record<string, unknown>) => unknown) => {
@@ -22,6 +23,7 @@ vi.mock('../stores', () => ({
       projects: mockProjects,
       projectsLoading: false,
       tasks: mockTasks,
+      contexts: mockContexts,
       fetchProjects: mockFetchProjects,
       fetchTasks: mockFetchTasks,
       createProject: mockCreateProject,
@@ -69,6 +71,18 @@ const fakeTask = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
+const fakeContext = (overrides: Record<string, unknown> = {}) => ({
+  id: 'ctx-1',
+  name: 'Work',
+  color: '#3b82f6',
+  icon: null,
+  sort_order: 0,
+  created_at: '2026-01-01T00:00:00.000Z',
+  updated_at: '2026-01-01T00:00:00.000Z',
+  deleted_at: null,
+  ...overrides,
+});
+
 describe('ProjectsOverviewView', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -76,6 +90,7 @@ describe('ProjectsOverviewView', () => {
     mockTasks = [];
     mockIsInlineProjectCreating = false;
     mockActiveContextIds = [];
+    mockContexts = [];
   });
 
   it('renders the Projects heading', () => {
@@ -366,6 +381,63 @@ describe('ProjectsOverviewView', () => {
 
       expect(screen.getByTestId('inline-project-card')).toBeInTheDocument();
       expect(screen.queryByTestId('new-project-trigger')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('context picker on project card', () => {
+    it('shows context name on card when project has context_id', () => {
+      mockContexts = [fakeContext({ id: 'ctx-1', name: 'Work' })];
+      mockProjects = [fakeProject({ id: 'p1', context_id: 'ctx-1' })];
+      render(<ProjectsOverviewView />);
+
+      const card = screen.getByTestId('project-card');
+      expect(card).toHaveTextContent('Work');
+    });
+
+    it('shows "No context" on card when project has no context', () => {
+      mockContexts = [fakeContext({ id: 'ctx-1', name: 'Work' })];
+      mockProjects = [fakeProject({ id: 'p1', context_id: null })];
+      render(<ProjectsOverviewView />);
+
+      const card = screen.getByTestId('project-card');
+      expect(card).toHaveTextContent('No context');
+    });
+
+    it('opens context picker and shows all contexts plus None', () => {
+      mockContexts = [
+        fakeContext({ id: 'ctx-1', name: 'Work' }),
+        fakeContext({ id: 'ctx-2', name: 'Personal', color: '#ff0000' }),
+      ];
+      mockProjects = [fakeProject({ id: 'p1', context_id: 'ctx-1' })];
+      render(<ProjectsOverviewView />);
+
+      fireEvent.click(screen.getByTestId('context-picker-p1'));
+
+      expect(screen.getByRole('option', { name: /none/i })).toBeInTheDocument();
+      expect(screen.getByRole('option', { name: /work/i })).toBeInTheDocument();
+      expect(screen.getByRole('option', { name: /personal/i })).toBeInTheDocument();
+    });
+
+    it('calls updateProject with new context_id on selection', () => {
+      mockContexts = [fakeContext({ id: 'ctx-1', name: 'Work' })];
+      mockProjects = [fakeProject({ id: 'p1', context_id: null })];
+      render(<ProjectsOverviewView />);
+
+      fireEvent.click(screen.getByTestId('context-picker-p1'));
+      fireEvent.click(screen.getByRole('option', { name: /work/i }));
+
+      expect(mockUpdateProject).toHaveBeenCalledWith('p1', { context_id: 'ctx-1' });
+    });
+
+    it('calls updateProject with null when "None" is selected', () => {
+      mockContexts = [fakeContext({ id: 'ctx-1', name: 'Work' })];
+      mockProjects = [fakeProject({ id: 'p1', context_id: 'ctx-1' })];
+      render(<ProjectsOverviewView />);
+
+      fireEvent.click(screen.getByTestId('context-picker-p1'));
+      fireEvent.click(screen.getByRole('option', { name: /none/i }));
+
+      expect(mockUpdateProject).toHaveBeenCalledWith('p1', { context_id: null });
     });
   });
 

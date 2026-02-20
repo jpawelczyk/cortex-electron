@@ -1,11 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Clock, Plus, Trash2, Check, X } from 'lucide-react';
+import { Clock, Plus, Trash2, Check, X, Briefcase, Home, FlaskConical, type LucideIcon } from 'lucide-react';
 import type { Project, ProjectStatus } from '@shared/types';
 import { useStore } from '../stores';
 import { InlineProjectCard } from '../components/InlineProjectCard';
+import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
 import { filterProjectsByContext } from '../lib/contextFilter';
 import { CompletedProjectsView } from './CompletedProjectsView';
 import { ArchivedProjectsView } from './ArchivedProjectsView';
+
+const ICON_MAP: Record<string, LucideIcon> = {
+  Briefcase,
+  Home,
+  FlaskConical,
+};
 
 type ProjectsTab = 'active' | 'completed' | 'archived';
 
@@ -36,8 +43,10 @@ function isStale(project: Project): boolean {
 export function ProjectsOverviewView() {
   const projects = useStore((s) => s.projects);
   const tasks = useStore((s) => s.tasks);
+  const contexts = useStore((s) => s.contexts);
   const activeContextIds = useStore((s) => s.activeContextIds);
   const fetchProjects = useStore((s) => s.fetchProjects);
+  const updateProject = useStore((s) => s.updateProject);
   const isInlineProjectCreating = useStore((s) => s.isInlineProjectCreating);
   const cancelInlineProjectCreate = useStore((s) => s.cancelInlineProjectCreate);
   const selectProject = useStore((s) => s.selectProject);
@@ -196,6 +205,76 @@ export function ProjectsOverviewView() {
                       {config.label}
                     </span>
                   )}
+                  {(() => {
+                    const ctx = project.context_id
+                      ? contexts.find((c) => c.id === project.context_id) ?? null
+                      : null;
+                    const Icon = ctx?.icon ? ICON_MAP[ctx.icon] : null;
+                    const isEmoji = ctx?.icon && !Icon;
+                    return (
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button
+                            type="button"
+                            data-testid={`context-picker-${project.id}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className={`flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full font-medium transition-all ${
+                              ctx
+                                ? 'bg-accent/50 text-foreground hover:bg-accent'
+                                : 'bg-transparent text-muted-foreground/50 hover:text-muted-foreground hover:bg-accent/50'
+                            }`}
+                          >
+                            {ctx ? (
+                              <>
+                                <span
+                                  className="size-2 rounded-full shrink-0"
+                                  style={{ backgroundColor: ctx.color ?? undefined }}
+                                />
+                                {Icon && <Icon className="size-3.5" />}
+                                {isEmoji && <span>{ctx.icon}</span>}
+                                {ctx.name}
+                              </>
+                            ) : (
+                              'No context'
+                            )}
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-48 p-1" align="start" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            role="option"
+                            aria-label="None"
+                            type="button"
+                            onClick={() => updateProject(project.id, { context_id: null })}
+                            className="flex items-center gap-2 w-full px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent rounded-md cursor-pointer"
+                          >
+                            None
+                          </button>
+                          {contexts.map((c) => {
+                            const CIcon = c.icon ? ICON_MAP[c.icon] : null;
+                            const cIsEmoji = c.icon && !CIcon;
+                            return (
+                              <button
+                                key={c.id}
+                                role="option"
+                                aria-label={c.name}
+                                type="button"
+                                onClick={() => updateProject(project.id, { context_id: c.id })}
+                                className="flex items-center gap-2 w-full px-2 py-1.5 text-sm text-foreground hover:bg-accent rounded-md cursor-pointer"
+                              >
+                                <span
+                                  className="size-2 rounded-full shrink-0"
+                                  style={{ backgroundColor: c.color ?? 'currentColor' }}
+                                />
+                                {CIcon && <CIcon className="size-3.5" />}
+                                {cIsEmoji && <span>{c.icon}</span>}
+                                <span>{c.name}</span>
+                              </button>
+                            );
+                          })}
+                        </PopoverContent>
+                      </Popover>
+                    );
+                  })()}
                   <span className="text-xs text-muted-foreground">
                     {taskCount} {taskCount === 1 ? 'task' : 'tasks'}
                   </span>
