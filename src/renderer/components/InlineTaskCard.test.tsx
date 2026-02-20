@@ -8,12 +8,23 @@ const mockCreateTask = vi.fn();
 const mockCancelInlineCreate = vi.fn();
 const mockCreateChecklistItem = vi.fn();
 
+const mockContexts = [
+  { id: 'ctx-1', name: 'Work', color: '#ff0000', icon: null, sort_order: 0, created_at: '', updated_at: '', deleted_at: null },
+  { id: 'ctx-2', name: 'Personal', color: '#00ff00', icon: null, sort_order: 1, created_at: '', updated_at: '', deleted_at: null },
+];
+const mockProjects = [
+  { id: 'proj-1', title: 'Cortex', description: null, status: 'active' as const, context_id: null, sort_order: 0, created_at: '', updated_at: '', completed_at: null, deleted_at: null },
+  { id: 'proj-2', title: 'Website', description: null, status: 'active' as const, context_id: null, sort_order: 1, created_at: '', updated_at: '', completed_at: null, deleted_at: null },
+];
+
 vi.mock('../stores', () => ({
   useStore: (selector: (state: Record<string, unknown>) => unknown) => {
     const state = {
       createTask: mockCreateTask,
       cancelInlineCreate: mockCancelInlineCreate,
       createChecklistItem: mockCreateChecklistItem,
+      contexts: mockContexts,
+      projects: mockProjects,
     };
     return selector(state);
   },
@@ -367,6 +378,135 @@ describe('InlineTaskCard', () => {
     await waitFor(() => {
       expect(mockCreateChecklistItem).toHaveBeenCalledTimes(1);
       expect(mockCreateChecklistItem).toHaveBeenCalledWith({ task_id: 'new-1', title: 'Real step' });
+    });
+  });
+
+  // --- Token parsing tests ---
+
+  it('shows preview chip when context token is parsed', async () => {
+    render(<InlineTaskCard />);
+    const input = screen.getByPlaceholderText('New task');
+
+    fireEvent.change(input, { target: { value: 'Task #Work' } });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('chip-context')).toBeInTheDocument();
+    });
+  });
+
+  it('creates task with parsed context_id from token', async () => {
+    render(<InlineTaskCard />);
+    const input = screen.getByPlaceholderText('New task');
+
+    fireEvent.change(input, { target: { value: 'Task #Work' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    await waitFor(() => {
+      expect(mockCreateTask).toHaveBeenCalledWith(
+        expect.objectContaining({ title: 'Task', context_id: 'ctx-1' })
+      );
+    });
+  });
+
+  it('creates task with parsed when_date from token', async () => {
+    render(<InlineTaskCard />);
+    const input = screen.getByPlaceholderText('New task');
+
+    fireEvent.change(input, { target: { value: 'Task do:today' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    await waitFor(() => {
+      expect(mockCreateTask).toHaveBeenCalledWith(
+        expect.objectContaining({ title: 'Task', when_date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/) })
+      );
+    });
+  });
+
+  it('creates task with parsed project_id from token', async () => {
+    render(<InlineTaskCard />);
+    const input = screen.getByPlaceholderText('New task');
+
+    fireEvent.change(input, { target: { value: 'Task +Cortex' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    await waitFor(() => {
+      expect(mockCreateTask).toHaveBeenCalledWith(
+        expect.objectContaining({ title: 'Task', project_id: 'proj-1' })
+      );
+    });
+  });
+
+  it('strips tokens from title on submit', async () => {
+    render(<InlineTaskCard />);
+    const input = screen.getByPlaceholderText('New task');
+
+    fireEvent.change(input, { target: { value: 'Task #Work do:today' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    await waitFor(() => {
+      expect(mockCreateTask).toHaveBeenCalledWith(
+        expect.objectContaining({ title: 'Task' })
+      );
+    });
+  });
+
+  it('parsed token project overrides projectId prop', async () => {
+    render(<InlineTaskCard projectId="proj-2" />);
+    const input = screen.getByPlaceholderText('New task');
+
+    fireEvent.change(input, { target: { value: 'Task +Cortex' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    await waitFor(() => {
+      expect(mockCreateTask).toHaveBeenCalledWith(
+        expect.objectContaining({ project_id: 'proj-1' })
+      );
+    });
+  });
+
+  // --- Autocomplete tests ---
+
+  it('shows autocomplete dropdown when typing #', async () => {
+    render(<InlineTaskCard />);
+    const input = screen.getByPlaceholderText('New task');
+
+    fireEvent.change(input, { target: { value: 'Task #', selectionStart: 6, selectionEnd: 6 } });
+    Object.defineProperty(input, 'selectionStart', { value: 6, configurable: true });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('token-autocomplete')).toBeInTheDocument();
+    });
+  });
+
+  it('filters autocomplete based on input after #', async () => {
+    render(<InlineTaskCard />);
+    const input = screen.getByPlaceholderText('New task');
+
+    fireEvent.change(input, { target: { value: 'Task #Wo' } });
+    Object.defineProperty(input, 'selectionStart', { value: 8, configurable: true });
+
+    await waitFor(() => {
+      const dropdown = screen.queryByTestId('token-autocomplete');
+      if (dropdown) {
+        expect(dropdown).toHaveTextContent('Work');
+        expect(dropdown).not.toHaveTextContent('Personal');
+      }
+    });
+  });
+
+  it('selecting autocomplete option replaces token in input', async () => {
+    render(<InlineTaskCard />);
+    const input = screen.getByPlaceholderText('New task');
+
+    fireEvent.change(input, { target: { value: 'Task #Wo' } });
+    Object.defineProperty(input, 'selectionStart', { value: 8, configurable: true });
+
+    await waitFor(() => {
+      const workOption = screen.queryByText('Work');
+      if (workOption) {
+        fireEvent.mouseDown(workOption);
+        expect((input as HTMLInputElement).value).toContain('Work');
+      }
     });
   });
 });

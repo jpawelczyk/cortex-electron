@@ -1,17 +1,49 @@
-import { useState, useRef, useEffect, useCallback, type KeyboardEvent } from 'react';
-import { Circle, Calendar, Flag, Layers, Cloud, Plus } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback, useMemo, type KeyboardEvent } from 'react';
+import { Circle, Calendar, Flag, Layers, Cloud, Plus, Hash, FolderOpen } from 'lucide-react';
 import type { TaskStatus } from '@shared/types';
 import { useStore } from '../stores';
 import { DatePickerButton, type DatePickerAction } from './DatePickerButton';
+import { parseTaskInput } from '../lib/parseTaskInput';
+import { TokenAutocomplete } from './TokenAutocomplete';
+import { cn } from '../lib/utils';
 
 interface InlineTaskCardProps {
   projectId?: string;
+}
+
+interface ActiveToken {
+  type: 'context' | 'project';
+  query: string;
+  start: number;
+  end: number;
+}
+
+/** Look backwards from cursorPos to find an active # or + token */
+function getActiveToken(input: string, cursorPos: number): ActiveToken | null {
+  const before = input.slice(0, cursorPos);
+
+  // Find the last # or + that is at start or preceded by whitespace
+  const match = before.match(/(?:^|\s)([#+])(\S*)$/);
+  if (!match) return null;
+
+  const trigger = match[1];
+  const query = match[2];
+  const tokenStart = before.lastIndexOf(trigger);
+
+  return {
+    type: trigger === '#' ? 'context' : 'project',
+    query,
+    start: tokenStart,
+    end: cursorPos,
+  };
 }
 
 export function InlineTaskCard({ projectId }: InlineTaskCardProps = {}) {
   const createTask = useStore((s) => s.createTask);
   const cancelInlineCreate = useStore((s) => s.cancelInlineCreate);
   const createChecklistItem = useStore((s) => s.createChecklistItem);
+  const contexts = useStore((s) => s.contexts);
+  const projects = useStore((s) => s.projects);
 
   const [title, setTitle] = useState('');
   const [notes, setNotes] = useState('');
@@ -20,14 +52,17 @@ export function InlineTaskCard({ projectId }: InlineTaskCardProps = {}) {
   const [status, setStatus] = useState<TaskStatus>('inbox');
   const [checklistItems, setChecklistItems] = useState<{ key: number; title: string }[]>([]);
   const [nextKey, setNextKey] = useState(0);
+  const [activeToken, setActiveToken] = useState<ActiveToken | null>(null);
 
   const cardRef = useRef<HTMLDivElement>(null);
+  const titleInputRef = useRef<HTMLInputElement>(null);
   const titleRef = useRef(title);
   const notesRef = useRef(notes);
   const whenDateRef = useRef(whenDate);
   const deadlineRef = useRef(deadline);
   const statusRef = useRef(status);
   const checklistRef = useRef(checklistItems);
+  const activeTokenRef = useRef(activeToken);
 
   titleRef.current = title;
   notesRef.current = notes;
@@ -35,51 +70,159 @@ export function InlineTaskCard({ projectId }: InlineTaskCardProps = {}) {
   deadlineRef.current = deadline;
   statusRef.current = status;
   checklistRef.current = checklistItems;
+  activeTokenRef.current = activeToken;
 
   const projectIdRef = useRef(projectId);
   projectIdRef.current = projectId;
 
+  const parsed = useMemo(
+    () => parseTaskInput(title, contexts ?? [], projects ?? []),
+    [title, contexts, projects]
+  );
+
+  const hasAnyParsedToken =
+    parsed.raw.context !== undefined ||
+    parsed.raw.project !== undefined ||
+    parsed.raw.whenDate !== undefined ||
+    parsed.raw.deadline !== undefined;
+
   const saveAndClose = useCallback(async () => {
-    const trimmed = titleRef.current.trim();
-    if (trimmed) {
-      const input: { title: string; notes?: string; when_date?: string; deadline?: string; status?: TaskStatus; project_id?: string } = { title: trimmed };
-      if (notesRef.current.trim()) {
-        input.notes = notesRef.current.trim();
-      }
-      if (whenDateRef.current) {
-        input.when_date = whenDateRef.current;
-      }
-      if (deadlineRef.current) {
-        input.deadline = deadlineRef.current;
-      }
-      if (statusRef.current !== 'inbox') {
-        input.status = statusRef.current;
-      }
-      if (projectIdRef.current) {
-        input.project_id = projectIdRef.current;
-      }
-      const task = await createTask(input);
-      for (const item of checklistRef.current) {
-        if (item.title.trim()) {
-          await createChecklistItem({ task_id: task.id, title: item.title.trim() });
-        }
+    const trimmedRaw = titleRef.current.trim();
+    if (!trimmedRaw) {
+      cancelInlineCreate();
+      return;
+    }
+
+    // Re-parse at save time using current state
+    const parsedAtSave = parseTaskInput(trimmedRaw, contexts ?? [], projects ?? []);
+    const trimmed = parsedAtSave.title.trim();
+
+    if (!trimmed) {
+      cancelInlineCreate();
+      return;
+    }
+
+    const input: {
+      title: string;
+      notes?: string;
+      when_date?: string;
+      deadline?: string;
+      status?: TaskStatus;
+      project_id?: string;
+      context_id?: string;
+    } = { title: trimmed };
+
+    if (notesRef.current.trim()) {
+      input.notes = notesRef.current.trim();
+    }
+
+    // Token dates take priority; fall back to DatePickerButton values
+    if (parsedAtSave.whenDate) {
+      input.when_date = parsedAtSave.whenDate;
+    } else if (whenDateRef.current) {
+      input.when_date = whenDateRef.current;
+    }
+
+    if (parsedAtSave.deadline) {
+      input.deadline = parsedAtSave.deadline;
+    } else if (deadlineRef.current) {
+      input.deadline = deadlineRef.current;
+    }
+
+    if (statusRef.current !== 'inbox') {
+      input.status = statusRef.current;
+    }
+
+    // Token project overrides prop
+    if (parsedAtSave.projectId) {
+      input.project_id = parsedAtSave.projectId;
+    } else if (projectIdRef.current) {
+      input.project_id = projectIdRef.current;
+    }
+
+    if (parsedAtSave.contextId) {
+      input.context_id = parsedAtSave.contextId;
+    }
+
+    const task = await createTask(input);
+    for (const item of checklistRef.current) {
+      if (item.title.trim()) {
+        await createChecklistItem({ task_id: task.id, title: item.title.trim() });
       }
     }
+
     cancelInlineCreate();
-  }, [createTask, cancelInlineCreate, createChecklistItem]);
+  }, [createTask, cancelInlineCreate, createChecklistItem, contexts, projects]);
+
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setTitle(newValue);
+
+    // Detect active token at cursor position
+    const cursor = e.target.selectionStart ?? newValue.length;
+    const token = getActiveToken(newValue, cursor);
+
+    // If the query is an exact match to a known item, dismiss the autocomplete —
+    // the token is already resolved and the user can press Enter to submit.
+    if (token) {
+      const pool =
+        token.type === 'context'
+          ? (contexts ?? []).map((c) => c.name)
+          : (projects ?? []).map((p) => p.title);
+      const exactMatch = pool.some((name) => name.toLowerCase() === token.query.toLowerCase());
+      setActiveToken(exactMatch ? null : token);
+    } else {
+      setActiveToken(null);
+    }
+  };
 
   const handleTitleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    // When autocomplete is open, Enter/Tab are handled by TokenAutocomplete's keydown listener
+    if (activeTokenRef.current && (e.key === 'Enter' || e.key === 'Tab' || e.key === 'Escape')) {
+      return;
+    }
     if (e.key === 'Enter') {
       e.preventDefault();
       saveAndClose();
     }
   };
 
+  const handleAutocompleteSelect = (item: { id: string; name: string }) => {
+    if (!activeToken) return;
+    const trigger = activeToken.type === 'context' ? '#' : '+';
+    const before = title.slice(0, activeToken.start);
+    const after = title.slice(activeToken.end);
+    const newTitle = `${before}${trigger}${item.name}${after.startsWith(' ') ? after : ' ' + after}`.trimEnd();
+    setTitle(newTitle);
+    setActiveToken(null);
+    // Move cursor to end
+    requestAnimationFrame(() => {
+      const el = titleInputRef.current;
+      if (el) {
+        el.focus();
+        el.setSelectionRange(newTitle.length, newTitle.length);
+      }
+    });
+  };
+
+  const handleAutocompleteItemsForToken = () => {
+    if (!activeToken) return [];
+    if (activeToken.type === 'context') {
+      return (contexts ?? []).map((c) => ({ id: c.id, name: c.name, color: c.color }));
+    }
+    return (projects ?? []).map((p) => ({ id: p.id, name: p.title, color: null }));
+  };
+
   // Escape key handler
   useEffect(() => {
     const handleKeyDown = (e: globalThis.KeyboardEvent) => {
       if (e.key === 'Escape') {
-        cancelInlineCreate();
+        if (activeTokenRef.current) {
+          // Dismiss autocomplete but don't cancel the card
+          setActiveToken(null);
+        } else {
+          cancelInlineCreate();
+        }
       }
     };
     document.addEventListener('keydown', handleKeyDown);
@@ -150,13 +293,15 @@ export function InlineTaskCard({ projectId }: InlineTaskCardProps = {}) {
     status === 'someday' ? <Cloud className="size-3.5" /> :
     <Calendar className="size-3.5" />;
 
+  const autocompleteItems = handleAutocompleteItemsForToken();
+
   return (
     <div
       ref={cardRef}
       data-testid="inline-task-card"
       className="bg-card border border-border rounded-xl shadow-sm my-2 animate-card-enter"
     >
-      <div className="flex items-center gap-3 px-4 py-2.5">
+      <div className="relative flex items-center gap-3 px-4 py-2.5">
         <div className="shrink-0">
           <Circle
             className="size-[18px] text-muted-foreground/50"
@@ -164,9 +309,10 @@ export function InlineTaskCard({ projectId }: InlineTaskCardProps = {}) {
           />
         </div>
         <input
+          ref={titleInputRef}
           type="text"
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={handleTitleChange}
           onKeyDown={handleTitleKeyDown}
           placeholder="New task"
           className="flex-1 bg-transparent text-[13px] leading-snug text-foreground font-medium outline-none min-w-0"
@@ -187,7 +333,89 @@ export function InlineTaskCard({ projectId }: InlineTaskCardProps = {}) {
             label="Deadline"
           />
         </div>
+
+        {activeToken && (
+          <TokenAutocomplete
+            items={autocompleteItems}
+            query={activeToken.query}
+            type={activeToken.type}
+            onSelect={handleAutocompleteSelect}
+            onDismiss={() => setActiveToken(null)}
+          />
+        )}
       </div>
+
+      {/* Preview chips for parsed tokens */}
+      {hasAnyParsedToken && (
+        <div className="flex flex-wrap gap-1.5 pb-1" style={{ paddingLeft: 46 }}>
+          {parsed.raw.context !== undefined && (
+            parsed.contextId ? (
+              <span
+                data-testid="chip-context"
+                className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs bg-accent/50 text-foreground"
+              >
+                <Hash className="size-3" />
+                {parsed.raw.context}
+              </span>
+            ) : (
+              <span
+                data-testid="chip-context-unmatched"
+                className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs bg-destructive/10 text-destructive"
+              >
+                <Hash className="size-3" />
+                {parsed.raw.context}?
+              </span>
+            )
+          )}
+          {parsed.raw.project !== undefined && (
+            parsed.projectId ? (
+              <span
+                data-testid="chip-project"
+                className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs bg-accent/50 text-foreground"
+              >
+                <FolderOpen className="size-3" />
+                {parsed.raw.project}
+              </span>
+            ) : (
+              <span
+                data-testid="chip-project-unmatched"
+                className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs bg-destructive/10 text-destructive"
+              >
+                <FolderOpen className="size-3" />
+                {parsed.raw.project}?
+              </span>
+            )
+          )}
+          {parsed.raw.whenDate !== undefined && (
+            <span
+              data-testid="chip-when"
+              className={cn(
+                'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs',
+                parsed.whenDate
+                  ? 'bg-accent/50 text-foreground'
+                  : 'bg-destructive/10 text-destructive'
+              )}
+            >
+              <Calendar className="size-3" />
+              {parsed.whenDate ?? `${parsed.raw.whenDate}?`}
+            </span>
+          )}
+          {parsed.raw.deadline !== undefined && (
+            <span
+              data-testid="chip-deadline"
+              className={cn(
+                'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs',
+                parsed.deadline
+                  ? 'bg-accent/50 text-foreground'
+                  : 'bg-destructive/10 text-destructive'
+              )}
+            >
+              <Flag className="size-3" />
+              {parsed.deadline ?? `${parsed.raw.deadline}?`}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Local checklist */}
       <div style={{ paddingLeft: 46 }} className="pr-4">
