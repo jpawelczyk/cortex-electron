@@ -19,6 +19,11 @@ export default defineConfig({
               external: ['better-sqlite3'],
             },
           },
+          resolve: {
+            alias: {
+              '@shared': path.resolve(__dirname, 'src/shared'),
+            },
+          },
         },
       },
       preload: {
