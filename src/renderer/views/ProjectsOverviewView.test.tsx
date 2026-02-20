@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { ProjectsOverviewView } from './ProjectsOverviewView';
 
@@ -8,6 +8,7 @@ let mockProjects: Record<string, unknown>[] = [];
 let mockTasks: Record<string, unknown>[] = [];
 const mockFetchProjects = vi.fn();
 const mockFetchTasks = vi.fn();
+const mockCreateProject = vi.fn();
 
 vi.mock('../stores', () => ({
   useStore: (selector: (state: Record<string, unknown>) => unknown) => {
@@ -17,6 +18,7 @@ vi.mock('../stores', () => ({
       tasks: mockTasks,
       fetchProjects: mockFetchProjects,
       fetchTasks: mockFetchTasks,
+      createProject: mockCreateProject,
     };
     return selector(state);
   },
@@ -67,9 +69,10 @@ describe('ProjectsOverviewView', () => {
     expect(screen.getByText('Projects')).toBeInTheDocument();
   });
 
-  it('shows empty state when no projects', () => {
+  it('shows only the trigger card when no projects exist', () => {
     render(<ProjectsOverviewView />);
-    expect(screen.getByText(/no projects yet/i)).toBeInTheDocument();
+    expect(screen.getByTestId('new-project-trigger')).toBeInTheDocument();
+    expect(screen.queryAllByTestId('project-card')).toHaveLength(0);
   });
 
   it('renders project cards for active-status projects', () => {
@@ -183,5 +186,45 @@ describe('ProjectsOverviewView', () => {
     const cards = screen.getAllByTestId('project-card');
     expect(cards[0]).toHaveTextContent('Newer');
     expect(cards[1]).toHaveTextContent('Older');
+  });
+
+  describe('inline project creation', () => {
+    it('shows a "New Project" trigger card in the grid', () => {
+      mockProjects = [
+        fakeProject({ id: 'p1', title: 'Existing', status: 'active' }),
+      ];
+      render(<ProjectsOverviewView />);
+      expect(screen.getByTestId('new-project-trigger')).toBeInTheDocument();
+    });
+
+    it('shows trigger card even when no projects exist (empty state replaced by grid)', () => {
+      render(<ProjectsOverviewView />);
+      expect(screen.getByTestId('new-project-trigger')).toBeInTheDocument();
+    });
+
+    it('opens InlineProjectCard when trigger is clicked', () => {
+      render(<ProjectsOverviewView />);
+      fireEvent.click(screen.getByTestId('new-project-trigger'));
+
+      expect(screen.getByTestId('inline-project-card')).toBeInTheDocument();
+    });
+
+    it('hides trigger card while InlineProjectCard is open', () => {
+      render(<ProjectsOverviewView />);
+      fireEvent.click(screen.getByTestId('new-project-trigger'));
+
+      expect(screen.queryByTestId('new-project-trigger')).not.toBeInTheDocument();
+    });
+
+    it('restores trigger card after InlineProjectCard is dismissed', () => {
+      render(<ProjectsOverviewView />);
+      fireEvent.click(screen.getByTestId('new-project-trigger'));
+
+      // Dismiss via Escape
+      fireEvent.keyDown(document, { key: 'Escape' });
+
+      expect(screen.getByTestId('new-project-trigger')).toBeInTheDocument();
+      expect(screen.queryByTestId('inline-project-card')).not.toBeInTheDocument();
+    });
   });
 });
