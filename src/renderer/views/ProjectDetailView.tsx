@@ -1,11 +1,17 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { ArrowLeft, Clock, FolderKanban, Plus, Trash2, Check, X } from 'lucide-react';
+import { ArrowLeft, Clock, FolderKanban, Plus, Trash2, Check, X, Briefcase, Home, FlaskConical, type LucideIcon } from 'lucide-react';
 import type { ProjectStatus } from '@shared/types';
 import { useStore } from '../stores';
 import { useDebouncedCallback } from '../hooks/useDebouncedCallback';
 import { TaskList } from '../components/TaskList';
 import { InlineTaskCard } from '../components/InlineTaskCard';
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
+
+const ICON_MAP: Record<string, LucideIcon> = {
+  Briefcase,
+  Home,
+  FlaskConical,
+};
 
 const DEBOUNCE_MS = 500;
 const STALENESS_DAYS = 14;
@@ -324,9 +330,28 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
                 <button
                   type="button"
                   data-testid="context-selector"
-                  className="text-xs px-2.5 py-1 rounded-full font-medium cursor-default transition-colors bg-accent text-muted-foreground hover:bg-accent/80"
+                  className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium cursor-default transition-all ${
+                    context
+                      ? 'bg-accent/50 text-foreground hover:bg-accent'
+                      : 'bg-transparent text-muted-foreground hover:bg-accent/50'
+                  }`}
                 >
-                  {context ? context.name : 'No context'}
+                  {context ? (
+                    <>
+                      <span
+                        className="size-2 rounded-full shrink-0"
+                        style={{ backgroundColor: context.color ?? undefined }}
+                      />
+                      {context.icon && ICON_MAP[context.icon] ? (
+                        (() => { const Icon = ICON_MAP[context.icon!]; return <Icon className="size-3.5" />; })()
+                      ) : context.icon ? (
+                        <span>{context.icon}</span>
+                      ) : null}
+                      {context.name}
+                    </>
+                  ) : (
+                    'No context'
+                  )}
                 </button>
               </PopoverTrigger>
               <PopoverContent className="w-48 p-1" align="start">
