@@ -78,12 +78,15 @@ Full markdown editor for a single note.
 │ Note Title (editable)                               │
 │ [Context: ● Work ▼]  [Project: Cortex ▼]           │
 ├─────────────────────────────────────────────────────┤
-│ ┌─────────────────┬─────────────────────────────┐  │
-│ │ # Markdown      │ Rendered                     │  │
-│ │                 │ Heading                       │  │
-│ │ Some **bold**   │                              │  │
-│ │ text here       │ Some bold text here          │  │
-│ └─────────────────┴─────────────────────────────┘  │
+│                                                     │
+│   # Heading                                         │
+│                                                     │
+│   Some **bold** text here with inline rendering.   │
+│   - List item one                                   │
+│   - List item two                                   │
+│                                                     │
+│   ```code block```                                  │
+│                                                     │
 └─────────────────────────────────────────────────────┘
 ```
 
@@ -94,21 +97,29 @@ Full markdown editor for a single note.
 - Project picker (optional)
 - Pin toggle button
 - Delete button (two-step confirmation)
-- Split-pane markdown editor:
-  - Left: raw markdown textarea
-  - Right: live rendered preview
+- Milkdown WYSIWYG editor (markdown rendered inline)
 - Auto-save on content change (debounced 500ms)
 
-## Editor Modes
+## Editor
 
-**MVP: Split view**
-- Simple textarea + rendered preview side by side
-- Low complexity, predictable behavior
+**Milkdown WYSIWYG**
 
-**Future: WYSIWYG (optional enhancement)**
+Use Milkdown for inline markdown editing (like Notion/Obsidian):
 - Single editor surface with inline formatting
-- Toolbar for common actions
-- Consider Milkdown or TipTap
+- Markdown rendered as you type
+- No split view needed — what you see is what you get
+- Supports all GFM features
+
+**Packages:**
+- `@milkdown/core`
+- `@milkdown/ctx`
+- `@milkdown/preset-commonmark`
+- `@milkdown/preset-gfm`
+- `@milkdown/theme-nord` (base theme, customize to match app)
+- `@milkdown/react`
+- `@milkdown/plugin-listener` (for onChange events)
+
+**Styling:** Customize nord theme to match Cortex dark theme (colors, fonts, spacing).
 
 ## Sidebar
 
