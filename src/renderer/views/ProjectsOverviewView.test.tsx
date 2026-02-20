@@ -271,8 +271,7 @@ describe('ProjectsOverviewView', () => {
     });
 
     it('does not navigate to project detail when delete button is clicked', () => {
-      const mockSelectProject = vi.fn();
-      // Re-check: the selectProject mock is inside the store mock, so we check
+      // The selectProject mock is inside the store mock, so we check
       // that clicking the delete button doesn't trigger navigation
       mockProjects = [
         fakeProject({ id: 'p1', title: 'My Project', status: 'active' }),
