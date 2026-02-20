@@ -60,7 +60,7 @@ export interface Project {
   id: string;
   title: string;
   description: string | null;
-  status: 'active' | 'completed' | 'archived';
+  status: ProjectStatus;
   context_id: string | null;
   sort_order: number;
   created_at: string;
@@ -69,7 +69,7 @@ export interface Project {
   deleted_at: string | null;
 }
 
-export type ProjectStatus = 'active' | 'completed' | 'archived';
+export type ProjectStatus = 'planned' | 'active' | 'on_hold' | 'blocked' | 'completed' | 'archived';
 
 export interface CreateProjectInput {
   title: string;

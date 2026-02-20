@@ -1,6 +1,6 @@
-import { Inbox, Sun, Calendar, Layers, Cloud, Clock, BookOpen, Trash2, Settings } from 'lucide-react';
+import { Inbox, Sun, Calendar, Layers, Cloud, Clock, BookOpen, Trash2, FolderKanban, Settings } from 'lucide-react';
 
-export type SidebarView = 'inbox' | 'today' | 'upcoming' | 'anytime' | 'someday' | 'stale' | 'logbook' | 'trash';
+export type SidebarView = 'inbox' | 'today' | 'upcoming' | 'anytime' | 'someday' | 'stale' | 'logbook' | 'trash' | 'projects';
 
 interface TaskCounts {
   inbox: number;
@@ -19,7 +19,9 @@ interface SidebarProps {
   taskCounts: TaskCounts;
 }
 
-const NAV_ITEMS: { view: SidebarView; label: string; icon: typeof Inbox }[] = [
+type TaskView = keyof TaskCounts;
+
+const NAV_ITEMS: { view: TaskView; label: string; icon: typeof Inbox }[] = [
   { view: 'inbox', label: 'Inbox', icon: Inbox },
   { view: 'today', label: 'Today', icon: Sun },
   { view: 'upcoming', label: 'Upcoming', icon: Calendar },
@@ -62,6 +64,22 @@ export function Sidebar({ activeView, onViewChange, taskCounts }: SidebarProps) 
             </button>
           );
         })}
+
+        {/* Separator */}
+        <div className="my-2 border-t border-border" />
+
+        {/* Projects */}
+        <button
+          onClick={() => onViewChange('projects')}
+          className={`flex items-center gap-3 rounded-md px-3 py-1.5 text-[13px] font-medium transition-all duration-150 w-full text-left cursor-default ${
+            activeView === 'projects'
+              ? 'bg-primary/10 text-primary'
+              : 'text-muted-foreground hover:bg-accent/40 hover:text-foreground'
+          }`}
+        >
+          <FolderKanban className="size-4 shrink-0" strokeWidth={1.75} />
+          <span className="flex-1">Projects</span>
+        </button>
       </div>
 
       {/* Bottom section */}

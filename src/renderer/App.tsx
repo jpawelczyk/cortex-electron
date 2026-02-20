@@ -10,6 +10,7 @@ import { UpcomingView } from './views/UpcomingView';
 import { AnytimeView } from './views/AnytimeView';
 import { SomedayView } from './views/SomedayView';
 import { StaleView } from './views/StaleView';
+import { ProjectsOverviewView } from './views/ProjectsOverviewView';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
 
@@ -99,6 +100,7 @@ export default function App() {
         {activeView === 'stale' && <StaleView />}
         {activeView === 'logbook' && <LogbookView />}
         {activeView === 'trash' && <TrashView />}
+        {activeView === 'projects' && <ProjectsOverviewView />}
       </main>
     </div>
   );

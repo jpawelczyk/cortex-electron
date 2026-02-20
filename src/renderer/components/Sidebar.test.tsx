@@ -87,4 +87,24 @@ describe('Sidebar', () => {
     const trashItem = screen.getByText('Trash').closest('button');
     expect(trashItem).not.toHaveTextContent('4');
   });
+
+  it('renders Projects nav item', () => {
+    render(<Sidebar {...defaultProps} />);
+    expect(screen.getByText('Projects')).toBeInTheDocument();
+  });
+
+  it('calls onViewChange with projects when Projects clicked', () => {
+    const onViewChange = vi.fn();
+    render(<Sidebar {...defaultProps} onViewChange={onViewChange} />);
+    fireEvent.click(screen.getByText('Projects'));
+    expect(onViewChange).toHaveBeenCalledWith('projects');
+  });
+
+  it('renders Projects after task views and before settings', () => {
+    render(<Sidebar {...defaultProps} />);
+    const trash = screen.getByText('Trash');
+    const projects = screen.getByText('Projects');
+    // Projects appears after Trash in DOM
+    expect(trash.compareDocumentPosition(projects)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
 });
