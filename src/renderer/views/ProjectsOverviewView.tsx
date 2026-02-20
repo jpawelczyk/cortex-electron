@@ -60,6 +60,8 @@ export function ProjectsOverviewView() {
   const [activeTab, setActiveTab] = useState<ProjectsTab>('active');
   const [isLocalCreating, setIsLocalCreating] = useState(false);
   const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
+  const [statusOpenId, setStatusOpenId] = useState<string | null>(null);
+  const [contextOpenId, setContextOpenId] = useState<string | null>(null);
 
   const isCreating = isLocalCreating || isInlineProjectCreating;
 
@@ -206,7 +208,7 @@ export function ProjectsOverviewView() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <Popover>
+                  <Popover open={statusOpenId === project.id} onOpenChange={(open) => setStatusOpenId(open ? project.id : null)}>
                     <PopoverTrigger asChild>
                       <button
                         type="button"
@@ -224,7 +226,10 @@ export function ProjectsOverviewView() {
                           role="option"
                           aria-label={opt.label}
                           type="button"
-                          onClick={() => updateProject(project.id, { status: opt.value })}
+                          onClick={() => {
+                            updateProject(project.id, { status: opt.value });
+                            setStatusOpenId(null);
+                          }}
                           className="flex items-center gap-2 w-full px-2 py-1.5 text-sm text-foreground hover:bg-accent rounded-md cursor-pointer"
                         >
                           <span className={`size-2 rounded-full ${opt.className.split(' ')[0]}`} />
@@ -240,7 +245,7 @@ export function ProjectsOverviewView() {
                     const Icon = ctx?.icon ? ICON_MAP[ctx.icon] : null;
                     const isEmoji = ctx?.icon && !Icon;
                     return (
-                      <Popover>
+                      <Popover open={contextOpenId === project.id} onOpenChange={(open) => setContextOpenId(open ? project.id : null)}>
                         <PopoverTrigger asChild>
                           <button
                             type="button"
@@ -272,7 +277,10 @@ export function ProjectsOverviewView() {
                             role="option"
                             aria-label="None"
                             type="button"
-                            onClick={() => updateProject(project.id, { context_id: null })}
+                            onClick={() => {
+                              updateProject(project.id, { context_id: null });
+                              setContextOpenId(null);
+                            }}
                             className="flex items-center gap-2 w-full px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent rounded-md cursor-pointer"
                           >
                             None
@@ -286,7 +294,10 @@ export function ProjectsOverviewView() {
                                 role="option"
                                 aria-label={c.name}
                                 type="button"
-                                onClick={() => updateProject(project.id, { context_id: c.id })}
+                                onClick={() => {
+                                  updateProject(project.id, { context_id: c.id });
+                                  setContextOpenId(null);
+                                }}
                                 className="flex items-center gap-2 w-full px-2 py-1.5 text-sm text-foreground hover:bg-accent rounded-md cursor-pointer"
                               >
                                 <span
