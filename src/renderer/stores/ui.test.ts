@@ -160,6 +160,32 @@ describe('UISlice', () => {
     });
   });
 
+  describe('inline note creating', () => {
+    it('starts with inline note creating off', () => {
+      const store = createStore();
+      expect(store.isInlineNoteCreating).toBe(false);
+    });
+
+    it('startInlineNoteCreate sets isInlineNoteCreating to true', () => {
+      const store = createStore();
+      store.startInlineNoteCreate();
+      expect(store.isInlineNoteCreating).toBe(true);
+    });
+
+    it('cancelInlineNoteCreate sets isInlineNoteCreating to false', () => {
+      const store = createStore({ isInlineNoteCreating: true });
+      store.cancelInlineNoteCreate();
+      expect(store.isInlineNoteCreating).toBe(false);
+    });
+
+    it('startInlineNoteCreate is a no-op when already creating', () => {
+      const store = createStore({ isInlineNoteCreating: true });
+      store._set.mockClear();
+      store.startInlineNoteCreate();
+      expect(store._set).not.toHaveBeenCalled();
+    });
+  });
+
   describe('selectedTaskId', () => {
     it('starts with no task selected', () => {
       const store = createStore();

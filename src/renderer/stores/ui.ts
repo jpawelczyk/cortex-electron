@@ -31,6 +31,10 @@ export interface UISlice {
   isInlineProjectCreating: boolean;
   startInlineProjectCreate: () => void;
   cancelInlineProjectCreate: () => void;
+
+  isInlineNoteCreating: boolean;
+  startInlineNoteCreate: () => void;
+  cancelInlineNoteCreate: () => void;
 }
 
 export const createUISlice: StateCreator<UISlice> = (set, get) => ({
@@ -70,4 +74,11 @@ export const createUISlice: StateCreator<UISlice> = (set, get) => ({
     set({ isInlineProjectCreating: true });
   },
   cancelInlineProjectCreate: () => set({ isInlineProjectCreating: false }),
+
+  isInlineNoteCreating: false,
+  startInlineNoteCreate: () => {
+    if (get().isInlineNoteCreating) return;
+    set({ isInlineNoteCreating: true });
+  },
+  cancelInlineNoteCreate: () => set({ isInlineNoteCreating: false }),
 });
