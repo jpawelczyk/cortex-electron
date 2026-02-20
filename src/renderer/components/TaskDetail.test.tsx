@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { TaskDetail } from './TaskDetail';
-import type { Task } from '@shared/types';
+import type { Task, Project, Context } from '@shared/types';
 
 const mockUpdateTask = vi.fn();
 const mockDeselectTask = vi.fn();
@@ -10,6 +10,11 @@ const mockDeselectTask = vi.fn();
 const mockFetchChecklistItems = vi.fn();
 const mockCreateChecklistItem = vi.fn();
 const mockDeleteChecklistItem = vi.fn();
+
+const mockFetchProjects = vi.fn();
+
+let mockProjects: Project[] = [];
+let mockContexts: Context[] = [];
 
 vi.mock('../stores', () => ({
   useStore: (selector: (state: Record<string, unknown>) => unknown) => {
@@ -21,6 +26,9 @@ vi.mock('../stores', () => ({
       fetchChecklistItems: mockFetchChecklistItems,
       createChecklistItem: mockCreateChecklistItem,
       deleteChecklistItem: mockDeleteChecklistItem,
+      projects: mockProjects,
+      contexts: mockContexts,
+      fetchProjects: mockFetchProjects,
     };
     return selector(state);
   },
@@ -292,5 +300,137 @@ describe('TaskDetail', () => {
     );
 
     expect(screen.getByDisplayValue('Second')).toBeDefined();
+  });
+
+  // --- Project picker tests ---
+
+  describe('project picker', () => {
+    function makeProject(overrides?: Partial<Project>): Project {
+      return {
+        id: 'proj-1',
+        title: 'My Project',
+        description: null,
+        status: 'active',
+        context_id: null,
+        sort_order: 0,
+        created_at: '2026-01-01T00:00:00.000Z',
+        updated_at: '2026-01-01T00:00:00.000Z',
+        completed_at: null,
+        deleted_at: null,
+        ...overrides,
+      };
+    }
+
+    function makeContext(overrides?: Partial<Context>): Context {
+      return {
+        id: 'ctx-1',
+        name: 'Work',
+        color: null,
+        icon: null,
+        sort_order: 0,
+        created_at: '2026-01-01T00:00:00.000Z',
+        updated_at: '2026-01-01T00:00:00.000Z',
+        deleted_at: null,
+        ...overrides,
+      };
+    }
+
+    beforeEach(() => {
+      mockProjects = [];
+      mockContexts = [];
+    });
+
+    afterEach(() => {
+      mockProjects = [];
+      mockContexts = [];
+    });
+
+    it('renders "No project" when task.project_id is null', () => {
+      render(<TaskDetail task={makeTask({ project_id: null })} />);
+
+      const btn = screen.getByRole('button', { name: /project/i });
+      expect(btn.textContent).toContain('No project');
+    });
+
+    it('renders project name when task has project_id', () => {
+      mockProjects = [makeProject({ id: 'proj-1', title: 'Launch Campaign' })];
+
+      render(<TaskDetail task={makeTask({ project_id: 'proj-1' })} />);
+
+      expect(screen.getByText('Launch Campaign')).toBeDefined();
+    });
+
+    it('only shows active projects in picker (not completed/archived)', () => {
+      mockProjects = [
+        makeProject({ id: 'proj-active', title: 'Active Project', status: 'active' }),
+        makeProject({ id: 'proj-done', title: 'Done Project', status: 'completed' }),
+        makeProject({ id: 'proj-arch', title: 'Archived Project', status: 'archived' }),
+      ];
+
+      render(<TaskDetail task={makeTask()} />);
+
+      const btn = screen.getByRole('button', { name: /project/i });
+      fireEvent.click(btn);
+
+      expect(screen.getByText('Active Project')).toBeDefined();
+      expect(screen.queryByText('Done Project')).toBeNull();
+      expect(screen.queryByText('Archived Project')).toBeNull();
+    });
+
+    it('opens popover on click', () => {
+      mockProjects = [makeProject({ id: 'proj-1', title: 'My Project' })];
+
+      render(<TaskDetail task={makeTask()} />);
+
+      const btn = screen.getByRole('button', { name: /project/i });
+      fireEvent.click(btn);
+
+      expect(screen.getByRole('option', { name: /my project/i })).toBeDefined();
+    });
+
+    it('calls updateTask with new project_id on selection', () => {
+      mockProjects = [makeProject({ id: 'proj-1', title: 'My Project' })];
+
+      render(<TaskDetail task={makeTask({ project_id: null })} />);
+
+      const btn = screen.getByRole('button', { name: /project/i });
+      fireEvent.click(btn);
+
+      const option = screen.getByRole('option', { name: /my project/i });
+      fireEvent.click(option);
+
+      expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { project_id: 'proj-1' });
+    });
+
+    it('calls updateTask with null when "None" selected', () => {
+      mockProjects = [makeProject({ id: 'proj-1', title: 'My Project' })];
+
+      render(<TaskDetail task={makeTask({ project_id: 'proj-1' })} />);
+
+      const btn = screen.getByRole('button', { name: /project/i });
+      fireEvent.click(btn);
+
+      const noneOption = screen.getByRole('option', { name: /none/i });
+      fireEvent.click(noneOption);
+
+      expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { project_id: null });
+    });
+
+    it('shows inherited context badge when project has context_id', () => {
+      mockProjects = [makeProject({ id: 'proj-1', title: 'My Project', context_id: 'ctx-1' })];
+      mockContexts = [makeContext({ id: 'ctx-1', name: 'Work' })];
+
+      render(<TaskDetail task={makeTask({ project_id: 'proj-1' })} />);
+
+      expect(screen.getByText('Work')).toBeDefined();
+    });
+
+    it('calls fetchProjects on mount when projects empty', () => {
+      mockProjects = [];
+
+      render(<TaskDetail task={makeTask()} />);
+
+      expect(mockFetchProjects).toHaveBeenCalled();
+    });
   });
 });

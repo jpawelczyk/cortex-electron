@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { X } from 'lucide-react';
 import type { Task, TaskStatus } from '@shared/types';
 import { useStore } from '../stores';
 import { useDebouncedCallback } from '../hooks/useDebouncedCallback';
 import { ChecklistList } from './ChecklistList';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 
 const DEBOUNCE_MS = 500;
 
@@ -22,9 +23,13 @@ interface TaskDetailProps {
 export function TaskDetail({ task }: TaskDetailProps) {
   const updateTask = useStore((s) => s.updateTask);
   const deselectTask = useStore((s) => s.deselectTask);
+  const projects = useStore((s) => s.projects);
+  const contexts = useStore((s) => s.contexts);
+  const fetchProjects = useStore((s) => s.fetchProjects);
 
   const [title, setTitle] = useState(task.title);
   const [notes, setNotes] = useState(task.notes ?? '');
+  const [projectOpen, setProjectOpen] = useState(false);
 
   const taskIdRef = useRef(task.id);
 
@@ -75,6 +80,33 @@ export function TaskDetail({ task }: TaskDetailProps) {
       flushNotes();
     };
   }, [flushTitle, flushNotes]);
+
+  // Fetch projects on mount if not already loaded
+  useEffect(() => {
+    if (projects.length === 0) {
+      fetchProjects();
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- intentionally only on mount
+
+  const activeProjects = useMemo(
+    () => projects.filter((p) => p.status !== 'completed' && p.status !== 'archived'),
+    [projects],
+  );
+
+  const currentProject = useMemo(
+    () => projects.find((p) => p.id === task.project_id) ?? null,
+    [projects, task.project_id],
+  );
+
+  const inheritedContext = useMemo(
+    () => currentProject?.context_id ? contexts.find((c) => c.id === currentProject.context_id) ?? null : null,
+    [currentProject, contexts],
+  );
+
+  const handleProjectChange = (projectId: string | null) => {
+    updateTask(task.id, { project_id: projectId });
+    setProjectOpen(false);
+  };
 
   const handleTitleChange = (value: string) => {
     setTitle(value);
@@ -160,6 +192,59 @@ export function TaskDetail({ task }: TaskDetailProps) {
               </option>
             ))}
           </select>
+        </div>
+
+        <div>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">
+            Project
+          </label>
+          <Popover open={projectOpen} onOpenChange={setProjectOpen}>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                aria-label="Project"
+                className="w-full bg-secondary text-foreground text-sm px-2 py-1.5 rounded-md border border-border focus:outline-none focus:ring-1 focus:ring-ring text-left flex items-center gap-2"
+              >
+                <span>{currentProject ? currentProject.title : 'No project'}</span>
+                {inheritedContext && (
+                  <span className="text-[10px] bg-accent px-1.5 py-0.5 rounded-full">
+                    {inheritedContext.name}
+                  </span>
+                )}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-1" align="start">
+              <button
+                role="option"
+                aria-label="None"
+                type="button"
+                onClick={() => handleProjectChange(null)}
+                className="flex items-center w-full px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent rounded-md cursor-pointer"
+              >
+                None
+              </button>
+              {activeProjects.map((p) => {
+                const ctx = p.context_id ? contexts.find((c) => c.id === p.context_id) : null;
+                return (
+                  <button
+                    key={p.id}
+                    role="option"
+                    aria-label={p.title}
+                    type="button"
+                    onClick={() => handleProjectChange(p.id)}
+                    className="flex items-center gap-2 w-full px-2 py-1.5 text-sm text-foreground hover:bg-accent rounded-md cursor-pointer"
+                  >
+                    <span>{p.title}</span>
+                    {ctx && (
+                      <span className="text-[10px] bg-accent px-1.5 py-0.5 rounded-full">
+                        {ctx.name}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </PopoverContent>
+          </Popover>
         </div>
 
         <div>
