@@ -1,12 +1,6 @@
 import { useEffect } from 'react';
-import { Briefcase, Home, FlaskConical, type LucideIcon } from 'lucide-react';
 import { useStore } from '../stores';
-
-const ICON_MAP: Record<string, LucideIcon> = {
-  Briefcase,
-  Home,
-  FlaskConical,
-};
+import { ICON_MAP } from '../lib/icons';
 
 export function ContextSelector() {
   const contexts = useStore((s) => s.contexts);

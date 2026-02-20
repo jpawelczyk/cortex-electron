@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Settings } from 'lucide-react';
 import { ContextSelector } from './components/ContextSelector';
+import { ContextSettings } from './components/ContextSettings';
 import { useStore } from './stores';
 import { filterTasksByContext } from './lib/contextFilter';
 import { Sidebar, SidebarView } from './components/Sidebar';
@@ -19,6 +20,7 @@ import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
 
 export default function App() {
   const [activeView, setActiveView] = useState<SidebarView>('inbox');
+  const [contextSettingsOpen, setContextSettingsOpen] = useState(false);
   const tasks = useStore((s) => s.tasks);
   const projects = useStore((s) => s.projects);
   const activeContextIds = useStore((s) => s.activeContextIds);
@@ -99,9 +101,17 @@ export default function App() {
 
       <main className="flex-1 flex flex-col min-w-0">
         <header className="drag-region flex items-center justify-end gap-1 px-4 py-2 border-b border-border">
-          <div className="no-drag">
+          <div className="no-drag flex items-center gap-1">
             <ContextSelector />
+            <button
+              onClick={() => setContextSettingsOpen(true)}
+              className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              aria-label="Manage contexts"
+            >
+              <Settings className="size-3.5" />
+            </button>
           </div>
+          <ContextSettings open={contextSettingsOpen} onOpenChange={setContextSettingsOpen} />
           <div className="w-2" />
           <button
             className="no-drag p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
