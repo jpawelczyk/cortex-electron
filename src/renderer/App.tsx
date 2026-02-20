@@ -90,9 +90,10 @@ export default function App() {
 
       <main className="flex-1 flex flex-col min-w-0">
         <header className="drag-region flex items-center justify-end gap-1 px-4 py-2 border-b border-border">
-          <div className="no-drag mr-auto">
+          <div className="no-drag">
             <ContextSelector />
           </div>
+          <div className="w-2" />
           <button
             className="no-drag p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
           >
