@@ -13,6 +13,7 @@ describe('useKeyboardShortcuts', () => {
   let startInlineCreate: ReturnType<typeof vi.fn>;
   let startInlineProjectCreate: ReturnType<typeof vi.fn>;
   let startInlineNoteCreate: ReturnType<typeof vi.fn>;
+  let toggleCommandPalette: ReturnType<typeof vi.fn>;
   let activeView: string;
 
   beforeEach(() => {
@@ -21,6 +22,7 @@ describe('useKeyboardShortcuts', () => {
     startInlineCreate = vi.fn();
     startInlineProjectCreate = vi.fn();
     startInlineNoteCreate = vi.fn();
+    toggleCommandPalette = vi.fn();
     activeView = 'inbox';
   });
 
@@ -30,7 +32,7 @@ describe('useKeyboardShortcuts', () => {
 
   function renderShortcuts() {
     return renderHook(() =>
-      useKeyboardShortcuts({ setActiveView, deselectTask, startInlineCreate, startInlineProjectCreate, startInlineNoteCreate, activeView })
+      useKeyboardShortcuts({ setActiveView, deselectTask, startInlineCreate, startInlineProjectCreate, startInlineNoteCreate, toggleCommandPalette, activeView })
     );
   }
 
@@ -120,6 +122,26 @@ describe('useKeyboardShortcuts', () => {
       expect(startInlineNoteCreate).toHaveBeenCalled();
       expect(startInlineCreate).not.toHaveBeenCalled();
       expect(setActiveView).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Cmd+K → command palette', () => {
+    it('Cmd+K calls toggleCommandPalette', () => {
+      renderShortcuts();
+      fireKey('k', { metaKey: true });
+      expect(toggleCommandPalette).toHaveBeenCalled();
+    });
+
+    it('Cmd+K works even when input is focused', () => {
+      renderShortcuts();
+      const input = document.createElement('input');
+      document.body.appendChild(input);
+      input.focus();
+
+      fireKey('k', { metaKey: true });
+      expect(toggleCommandPalette).toHaveBeenCalled();
+
+      document.body.removeChild(input);
     });
   });
 

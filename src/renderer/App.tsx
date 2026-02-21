@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { Plus, Search, Settings } from 'lucide-react';
 import { ContextSelector } from './components/ContextSelector';
 import { ContextSettings } from './components/ContextSettings';
+import { CommandPalette } from './components/CommandPalette';
 import { useStore } from './stores';
 import { filterTasksByContext } from './lib/contextFilter';
 import { Sidebar, SidebarView } from './components/Sidebar';
@@ -19,6 +20,7 @@ import { NotesOverviewView } from './views/NotesOverviewView';
 import { NoteDetailView } from './views/NoteDetailView';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
+import type { Task } from '@shared/types';
 
 export default function App() {
   const [activeView, setActiveView] = useState<SidebarView>('inbox');
@@ -37,6 +39,11 @@ export default function App() {
   const deselectProject = useStore((s) => s.deselectProject);
   const selectedNoteId = useStore((s) => s.selectedNoteId);
   const deselectNote = useStore((s) => s.deselectNote);
+  const selectTask = useStore((s) => s.selectTask);
+  const selectProject = useStore((s) => s.selectProject);
+  const selectNote = useStore((s) => s.selectNote);
+  const toggleCommandPalette = useStore((s) => s.toggleCommandPalette);
+  const openCommandPalette = useStore((s) => s.openCommandPalette);
 
   const handleViewChange = (view: SidebarView) => {
     if (selectedProjectId) {
@@ -48,7 +55,7 @@ export default function App() {
     setActiveView(view);
   };
 
-  useKeyboardShortcuts({ setActiveView: handleViewChange, deselectTask, startInlineCreate, startInlineProjectCreate, startInlineNoteCreate, activeView, selectedProjectId });
+  useKeyboardShortcuts({ setActiveView: handleViewChange, deselectTask, startInlineCreate, startInlineProjectCreate, startInlineNoteCreate, toggleCommandPalette, activeView, selectedProjectId });
   useGlobalShortcuts({ setActiveView: handleViewChange, startInlineCreate, startInlineProjectCreate, activeView, selectedProjectId });
 
   useEffect(() => {
@@ -122,6 +129,7 @@ export default function App() {
           <ContextSettings open={contextSettingsOpen} onOpenChange={setContextSettingsOpen} />
           <div className="w-2" />
           <button
+            onClick={openCommandPalette}
             className="no-drag p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
           >
             <Search className="size-5" />
@@ -162,6 +170,45 @@ export default function App() {
             : <NotesOverviewView />
         )}
       </main>
+
+      <CommandPalette
+        onNavigateToTask={(task: Task) => {
+          const viewMap: Record<string, SidebarView> = {
+            inbox: 'inbox',
+            today: 'today',
+            upcoming: 'upcoming',
+            anytime: 'anytime',
+            someday: 'someday',
+            stale: 'stale',
+            logbook: 'logbook',
+            cancelled: 'logbook',
+          };
+          const view = viewMap[task.status] || 'inbox';
+          handleViewChange(view);
+          selectTask(task.id);
+        }}
+        onNavigateToProject={(projectId: string) => {
+          handleViewChange('projects');
+          selectProject(projectId);
+        }}
+        onNavigateToNote={(noteId: string) => {
+          handleViewChange('notes');
+          selectNote(noteId);
+        }}
+        onNavigateToView={handleViewChange}
+        onCreateTask={() => {
+          handleViewChange('inbox');
+          startInlineCreate();
+        }}
+        onCreateProject={() => {
+          handleViewChange('projects');
+          startInlineProjectCreate();
+        }}
+        onCreateNote={() => {
+          handleViewChange('notes');
+          startInlineNoteCreate();
+        }}
+      />
     </div>
   );
 }

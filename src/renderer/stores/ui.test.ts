@@ -186,6 +186,34 @@ describe('UISlice', () => {
     });
   });
 
+  describe('command palette', () => {
+    it('starts with commandPaletteOpen false', () => {
+      const store = createStore();
+      expect(store.commandPaletteOpen).toBe(false);
+    });
+
+    it('openCommandPalette sets commandPaletteOpen to true', () => {
+      const store = createStore();
+      store.openCommandPalette();
+      expect(store.commandPaletteOpen).toBe(true);
+    });
+
+    it('closeCommandPalette sets commandPaletteOpen to false', () => {
+      const store = createStore({ commandPaletteOpen: true });
+      store.closeCommandPalette();
+      expect(store.commandPaletteOpen).toBe(false);
+    });
+
+    it('toggleCommandPalette toggles the value', () => {
+      const store = createStore();
+      expect(store.commandPaletteOpen).toBe(false);
+      store.toggleCommandPalette();
+      expect(store.commandPaletteOpen).toBe(true);
+      store.toggleCommandPalette();
+      expect(store.commandPaletteOpen).toBe(false);
+    });
+  });
+
   describe('selectedTaskId', () => {
     it('starts with no task selected', () => {
       const store = createStore();

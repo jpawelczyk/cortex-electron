@@ -7,6 +7,7 @@ interface KeyboardShortcutDeps {
   startInlineCreate: () => void;
   startInlineProjectCreate: () => void;
   startInlineNoteCreate: () => void;
+  toggleCommandPalette: () => void;
   activeView: string;
   selectedProjectId?: string | null;
 }
@@ -23,6 +24,7 @@ export function useKeyboardShortcuts({
   startInlineCreate,
   startInlineProjectCreate,
   startInlineNoteCreate,
+  toggleCommandPalette,
   activeView,
   selectedProjectId,
 }: KeyboardShortcutDeps) {
@@ -35,6 +37,12 @@ export function useKeyboardShortcuts({
         (active instanceof HTMLElement && active.isContentEditable);
 
       if (e.metaKey) {
+        if (e.key === 'k') {
+          e.preventDefault();
+          toggleCommandPalette();
+          return;
+        }
+
         const view = VIEW_KEYS[e.key];
         if (view) {
           e.preventDefault();
@@ -72,5 +80,5 @@ export function useKeyboardShortcuts({
 
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [setActiveView, deselectTask, startInlineCreate, startInlineProjectCreate, startInlineNoteCreate, activeView, selectedProjectId]);
+  }, [setActiveView, deselectTask, startInlineCreate, startInlineProjectCreate, startInlineNoteCreate, toggleCommandPalette, activeView, selectedProjectId]);
 }

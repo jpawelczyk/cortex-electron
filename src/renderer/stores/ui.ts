@@ -35,6 +35,11 @@ export interface UISlice {
   isInlineNoteCreating: boolean;
   startInlineNoteCreate: () => void;
   cancelInlineNoteCreate: () => void;
+
+  commandPaletteOpen: boolean;
+  openCommandPalette: () => void;
+  closeCommandPalette: () => void;
+  toggleCommandPalette: () => void;
 }
 
 export const createUISlice: StateCreator<UISlice> = (set, get) => ({
@@ -81,4 +86,9 @@ export const createUISlice: StateCreator<UISlice> = (set, get) => ({
     set({ isInlineNoteCreating: true });
   },
   cancelInlineNoteCreate: () => set({ isInlineNoteCreating: false }),
+
+  commandPaletteOpen: false,
+  openCommandPalette: () => set({ commandPaletteOpen: true }),
+  closeCommandPalette: () => set({ commandPaletteOpen: false }),
+  toggleCommandPalette: () => set((s) => ({ commandPaletteOpen: !s.commandPaletteOpen })),
 });
