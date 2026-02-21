@@ -56,9 +56,10 @@ describe('MarkdownEditor', () => {
     expect(screen.getByTitle('Copy markdown')).toBeInTheDocument();
   });
 
-  it('renders toolbar and editor inside bordered wrapper', () => {
+  it('renders toolbar and editor inside wrapper', () => {
     const { container } = render(<MarkdownEditor value="" onChange={vi.fn()} />);
     const wrapper = container.firstElementChild;
-    expect(wrapper).toHaveClass('rounded-lg', 'border', 'border-border');
+    expect(wrapper).toBeInTheDocument();
+    expect(wrapper?.querySelector('[data-testid="tiptap-editor"]')).toBeInTheDocument();
   });
 });

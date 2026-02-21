@@ -53,7 +53,7 @@ export function NoteDetailView({ noteId }: NoteDetailViewProps) {
 
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="max-w-3xl mx-auto px-8 py-8">
+      <div className="px-12 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <button
@@ -210,7 +210,7 @@ export function NoteDetailView({ noteId }: NoteDetailViewProps) {
           </Popover>
         </div>
 
-        {/* Milkdown Editor */}
+        {/* Editor */}
         <MarkdownEditor
           key={noteId}
           value={content}

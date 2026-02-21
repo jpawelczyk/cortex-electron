@@ -46,7 +46,7 @@ export function MarkdownEditor({ value, onChange, placeholder }: MarkdownEditorP
     },
     editorProps: {
       attributes: {
-        class: 'outline-none min-h-[350px] px-4 py-3',
+        class: 'outline-none min-h-[350px] pt-4',
       },
     },
   });
@@ -62,7 +62,7 @@ export function MarkdownEditor({ value, onChange, placeholder }: MarkdownEditorP
   if (!editor) return null;
 
   return (
-    <div className="rounded-lg border border-border overflow-hidden bg-card/20 focus-within:border-primary/50 transition-colors">
+    <div>
       <EditorToolbar editor={editor} />
       <EditorContent editor={editor} />
     </div>
