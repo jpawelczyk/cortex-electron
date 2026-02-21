@@ -1,150 +1,70 @@
-import { useCallback, useEffect, useRef } from 'react';
-import { Editor, rootCtx, defaultValueCtx, editorViewCtx } from '@milkdown/core';
-import {
-  commonmark,
-  toggleStrongCommand,
-  toggleEmphasisCommand,
-  wrapInHeadingCommand,
-  wrapInBulletListCommand,
-  wrapInOrderedListCommand,
-  toggleLinkCommand,
-  createCodeBlockCommand,
-  bulletListSchema,
-  listItemSchema,
-} from '@milkdown/preset-commonmark';
-import { wrapIn } from '@milkdown/prose/commands';
-import { gfm } from '@milkdown/preset-gfm';
-import { nord } from '@milkdown/theme-nord';
-import { listener, listenerCtx } from '@milkdown/plugin-listener';
-import { replaceAll, callCommand } from '@milkdown/utils';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Link from '@tiptap/extension-link';
+import Placeholder from '@tiptap/extension-placeholder';
+import TaskList from '@tiptap/extension-task-list';
+import TaskItem from '@tiptap/extension-task-item';
+import { Markdown } from 'tiptap-markdown';
+import { useEffect, useRef } from 'react';
 import { EditorToolbar } from './EditorToolbar';
 
 interface MarkdownEditorProps {
   value: string;
   onChange: (markdown: string) => void;
+  placeholder?: string;
 }
 
-export function MarkdownEditor({ value, onChange }: MarkdownEditorProps) {
-  const editorRef = useRef<HTMLDivElement>(null);
-  const editorInstanceRef = useRef<Editor | null>(null);
+export function MarkdownEditor({ value, onChange, placeholder }: MarkdownEditorProps) {
   const valueRef = useRef(value);
 
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        heading: { levels: [1, 2, 3] },
+      }),
+      Link.configure({
+        openOnClick: false,
+        HTMLAttributes: { class: 'text-primary underline' },
+      }),
+      TaskList,
+      TaskItem.configure({ nested: true }),
+      Placeholder.configure({
+        placeholder: placeholder ?? 'Start writing...',
+      }),
+      Markdown.configure({
+        html: false,
+        transformPastedText: true,
+        transformCopiedText: true,
+      }),
+    ],
+    content: value,
+    onUpdate: ({ editor }) => {
+      const md = // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (editor.storage as any).markdown.getMarkdown();
+      valueRef.current = md;
+      onChange(md);
+    },
+    editorProps: {
+      attributes: {
+        class: 'outline-none min-h-[350px] px-4 py-3',
+      },
+    },
+  });
+
+  // Sync external value changes
   useEffect(() => {
-    if (!editorRef.current) return;
-
-    let cancelled = false;
-
-    const editor = Editor.make()
-      .config((ctx) => {
-        ctx.set(rootCtx, editorRef.current!);
-        ctx.set(defaultValueCtx, value);
-        ctx.get(listenerCtx).markdownUpdated((_, markdown) => {
-          valueRef.current = markdown;
-          onChange(markdown);
-        });
-      })
-      .config(nord)
-      .use(commonmark)
-      .use(gfm)
-      .use(listener);
-
-    editor.create().then((instance) => {
-      if (cancelled) {
-        instance.destroy();
-        return;
-      }
-      editorInstanceRef.current = instance;
-    });
-
-    return () => {
-      cancelled = true;
-      editorInstanceRef.current?.destroy();
-      editorInstanceRef.current = null;
-    };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Update editor content when value prop changes externally
-  useEffect(() => {
-    if (editorInstanceRef.current && value !== valueRef.current) {
-      editorInstanceRef.current.action(replaceAll(value));
+    if (editor && value !== valueRef.current) {
+      editor.commands.setContent(value);
       valueRef.current = value;
     }
-  }, [value]);
+  }, [value, editor]);
 
-  const runCommand = useCallback((command: { key: unknown }, payload?: unknown) => {
-    if (!editorInstanceRef.current) return;
-    editorInstanceRef.current.action(
-      callCommand(command.key as never, payload as never),
-    );
-  }, []);
-
-  const handleBold = useCallback(() => runCommand(toggleStrongCommand), [runCommand]);
-  const handleItalic = useCallback(() => runCommand(toggleEmphasisCommand), [runCommand]);
-  const handleH1 = useCallback(() => runCommand(wrapInHeadingCommand, 1), [runCommand]);
-  const handleH2 = useCallback(() => runCommand(wrapInHeadingCommand, 2), [runCommand]);
-  const handleH3 = useCallback(() => runCommand(wrapInHeadingCommand, 3), [runCommand]);
-  const handleBulletList = useCallback(() => runCommand(wrapInBulletListCommand), [runCommand]);
-  const handleOrderedList = useCallback(() => runCommand(wrapInOrderedListCommand), [runCommand]);
-  const handleTaskList = useCallback(() => {
-    const editor = editorInstanceRef.current;
-    if (!editor) return;
-    editor.action((ctx) => {
-      const view = ctx.get(editorViewCtx);
-      const bulletListType = bulletListSchema.type(ctx);
-      const listItemType = listItemSchema.type(ctx);
-      const { state, dispatch } = view;
-
-      // First wrap selection in a bullet list (no-op if already in one)
-      let tr = state.tr;
-      wrapIn(bulletListType)(state, (newTr) => { tr = newTr; });
-
-      // Apply the bullet list wrap first to get the updated state
-      const stateAfterWrap = state.apply(tr);
-
-      // Now set checked: false on all list_item nodes within the selection
-      const { from, to } = stateAfterWrap.selection;
-      let finalTr = stateAfterWrap.tr;
-      stateAfterWrap.doc.nodesBetween(from, to, (node, pos) => {
-        if (node.type === listItemType && node.attrs.checked == null) {
-          finalTr = finalTr.setNodeMarkup(pos, undefined, {
-            ...node.attrs,
-            checked: false,
-          });
-        }
-      });
-
-      dispatch(finalTr);
-    });
-  }, []);
-  const handleLink = useCallback((url: string) => runCommand(toggleLinkCommand, { href: url }), [runCommand]);
-  const handleCode = useCallback(() => runCommand(createCodeBlockCommand), [runCommand]);
-  const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(valueRef.current);
-  }, []);
+  if (!editor) return null;
 
   return (
-    <div
-      data-testid="editor-wrapper"
-      className="rounded-lg border border-border overflow-hidden"
-    >
-      <EditorToolbar
-        onBold={handleBold}
-        onItalic={handleItalic}
-        onH1={handleH1}
-        onH2={handleH2}
-        onH3={handleH3}
-        onBulletList={handleBulletList}
-        onOrderedList={handleOrderedList}
-        onTaskList={handleTaskList}
-        onLink={handleLink}
-        onCode={handleCode}
-        onCopy={handleCopy}
-      />
-      <div
-        ref={editorRef}
-        data-testid="milkdown-editor"
-        className="milkdown-editor min-h-[400px] p-4 bg-card/20"
-      />
+    <div className="rounded-lg border border-border overflow-hidden bg-card/20 focus-within:border-primary/50 transition-colors">
+      <EditorToolbar editor={editor} />
+      <EditorContent editor={editor} />
     </div>
   );
 }

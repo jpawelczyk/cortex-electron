@@ -93,83 +93,82 @@
   background: oklch(1 0 0 / 18%);
 }
 
-/* Milkdown editor overrides */
-.milkdown-editor .editor {
-  outline: none;
-  min-height: 350px;
-  @apply text-sm;
+/* TipTap editor styles */
+.tiptap {
+  @apply text-foreground leading-relaxed;
 }
 
-.milkdown-editor .editor p {
-  @apply mb-2 text-foreground leading-relaxed;
+.tiptap p {
+  @apply mb-3;
 }
 
-.milkdown-editor .editor h1 {
-  @apply text-xl font-bold mb-3 text-foreground;
+.tiptap h1 {
+  @apply text-2xl font-bold mb-4 mt-6 first:mt-0;
 }
 
-.milkdown-editor .editor h2 {
-  @apply text-lg font-semibold mb-2 text-foreground;
+.tiptap h2 {
+  @apply text-xl font-semibold mb-3 mt-5 first:mt-0;
 }
 
-.milkdown-editor .editor h3 {
-  @apply text-base font-semibold mb-2 text-foreground;
+.tiptap h3 {
+  @apply text-lg font-semibold mb-2 mt-4 first:mt-0;
 }
 
-.milkdown-editor .editor code {
-  @apply bg-accent/50 px-1.5 py-0.5 rounded text-sm font-mono;
+.tiptap ul {
+  @apply list-disc ml-6 mb-3;
 }
 
-.milkdown-editor .editor pre {
-  @apply bg-accent/50 p-4 rounded-lg overflow-x-auto mb-3;
+.tiptap ol {
+  @apply list-decimal ml-6 mb-3;
 }
 
-.milkdown-editor .editor pre code {
-  @apply bg-transparent p-0;
-}
-
-.milkdown-editor .editor ul {
-  @apply list-disc ml-6 mb-2;
-}
-
-.milkdown-editor .editor ol {
-  @apply list-decimal ml-6 mb-2;
-}
-
-.milkdown-editor .editor li {
+.tiptap li {
   @apply mb-1;
 }
 
-.milkdown-editor .editor blockquote {
-  @apply border-l-2 border-primary/50 pl-4 italic text-muted-foreground mb-2;
+.tiptap li p {
+  @apply mb-1;
 }
 
-.milkdown-editor .editor a {
+.tiptap code {
+  @apply bg-accent/60 px-1.5 py-0.5 rounded text-sm font-mono;
+}
+
+.tiptap pre {
+  @apply bg-accent/60 p-4 rounded-lg overflow-x-auto mb-3 font-mono text-sm;
+}
+
+.tiptap pre code {
+  @apply bg-transparent p-0;
+}
+
+.tiptap blockquote {
+  @apply border-l-2 border-primary/50 pl-4 italic text-muted-foreground mb-3;
+}
+
+.tiptap hr {
+  @apply border-border my-6;
+}
+
+.tiptap a {
   @apply text-primary underline;
 }
 
-.milkdown-editor .editor hr {
-  @apply border-border my-4;
+/* Task list */
+.tiptap ul[data-type="taskList"] {
+  @apply list-none ml-0;
 }
 
-.milkdown-editor .editor table {
-  @apply w-full border-collapse mb-3;
+.tiptap ul[data-type="taskList"] li {
+  @apply flex items-start gap-2;
 }
 
-.milkdown-editor .editor th,
-.milkdown-editor .editor td {
-  @apply border border-border px-3 py-2 text-left;
+.tiptap ul[data-type="taskList"] li input {
+  @apply mt-1 accent-primary;
 }
 
-.milkdown-editor .editor th {
-  @apply bg-accent/50 font-semibold;
-}
-
-/* Task list checkboxes */
-.milkdown-editor .editor li.task-list-item {
-  @apply list-none -ml-6;
-}
-
-.milkdown-editor .editor input[type="checkbox"] {
-  @apply mr-2 accent-primary;
+/* Placeholder */
+.tiptap p.is-editor-empty:first-child::before {
+  @apply text-muted-foreground/50 float-left h-0 pointer-events-none;
+  content: attr(data-placeholder);
 }

@@ -4,145 +4,174 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom/vitest';
 import { EditorToolbar } from './EditorToolbar';
+import { type Editor } from '@tiptap/react';
 
-function createHandlers() {
-  return {
-    onBold: vi.fn(),
-    onItalic: vi.fn(),
-    onH1: vi.fn(),
-    onH2: vi.fn(),
-    onH3: vi.fn(),
-    onBulletList: vi.fn(),
-    onOrderedList: vi.fn(),
-    onTaskList: vi.fn(),
-    onLink: vi.fn(),
-    onCode: vi.fn(),
-    onCopy: vi.fn(),
+function createMockEditor(): Editor {
+  const chainable = {
+    focus: vi.fn().mockReturnThis(),
+    toggleBold: vi.fn().mockReturnThis(),
+    toggleItalic: vi.fn().mockReturnThis(),
+    toggleHeading: vi.fn().mockReturnThis(),
+    toggleBulletList: vi.fn().mockReturnThis(),
+    toggleOrderedList: vi.fn().mockReturnThis(),
+    toggleTaskList: vi.fn().mockReturnThis(),
+    toggleBlockquote: vi.fn().mockReturnThis(),
+    toggleCodeBlock: vi.fn().mockReturnThis(),
+    setLink: vi.fn().mockReturnThis(),
+    setHorizontalRule: vi.fn().mockReturnThis(),
+    run: vi.fn(),
   };
+
+  return {
+    chain: vi.fn(() => chainable),
+    isActive: vi.fn(() => false),
+    storage: {
+      markdown: { getMarkdown: vi.fn(() => '# Hello') },
+    },
+  } as unknown as Editor;
 }
 
 describe('EditorToolbar', () => {
   it('renders all toolbar buttons', () => {
-    const handlers = createHandlers();
-    render(<EditorToolbar {...handlers} />);
+    const editor = createMockEditor();
+    render(<EditorToolbar editor={editor} />);
 
     expect(screen.getByTitle('Bold')).toBeInTheDocument();
     expect(screen.getByTitle('Italic')).toBeInTheDocument();
-    expect(screen.getByTitle('Heading 1')).toBeInTheDocument();
-    expect(screen.getByTitle('Heading 2')).toBeInTheDocument();
-    expect(screen.getByTitle('Heading 3')).toBeInTheDocument();
+    expect(screen.getByTitle('H1')).toBeInTheDocument();
+    expect(screen.getByTitle('H2')).toBeInTheDocument();
+    expect(screen.getByTitle('H3')).toBeInTheDocument();
     expect(screen.getByTitle('Bullet list')).toBeInTheDocument();
     expect(screen.getByTitle('Numbered list')).toBeInTheDocument();
     expect(screen.getByTitle('Task list')).toBeInTheDocument();
-    expect(screen.getByTitle('Link')).toBeInTheDocument();
+    expect(screen.getByTitle('Quote')).toBeInTheDocument();
     expect(screen.getByTitle('Code block')).toBeInTheDocument();
-    expect(screen.getByTitle('Copy')).toBeInTheDocument();
+    expect(screen.getByTitle('Link')).toBeInTheDocument();
+    expect(screen.getByTitle('Divider')).toBeInTheDocument();
+    expect(screen.getByTitle('Copy markdown')).toBeInTheDocument();
   });
 
-  it('calls onBold when Bold button is clicked', async () => {
+  it('calls toggleBold when Bold button is clicked', async () => {
     const user = userEvent.setup();
-    const handlers = createHandlers();
-    render(<EditorToolbar {...handlers} />);
+    const editor = createMockEditor();
+    render(<EditorToolbar editor={editor} />);
 
     await user.click(screen.getByTitle('Bold'));
-    expect(handlers.onBold).toHaveBeenCalledOnce();
+    const chain = editor.chain();
+    expect(chain.focus).toHaveBeenCalled();
+    expect(chain.toggleBold).toHaveBeenCalled();
   });
 
-  it('calls onItalic when Italic button is clicked', async () => {
+  it('calls toggleItalic when Italic button is clicked', async () => {
     const user = userEvent.setup();
-    const handlers = createHandlers();
-    render(<EditorToolbar {...handlers} />);
+    const editor = createMockEditor();
+    render(<EditorToolbar editor={editor} />);
 
     await user.click(screen.getByTitle('Italic'));
-    expect(handlers.onItalic).toHaveBeenCalledOnce();
+    const chain = editor.chain();
+    expect(chain.focus).toHaveBeenCalled();
+    expect(chain.toggleItalic).toHaveBeenCalled();
   });
 
-  it('calls heading handlers when heading buttons are clicked', async () => {
+  it('calls toggleHeading for heading buttons', async () => {
     const user = userEvent.setup();
-    const handlers = createHandlers();
-    render(<EditorToolbar {...handlers} />);
+    const editor = createMockEditor();
+    render(<EditorToolbar editor={editor} />);
 
-    await user.click(screen.getByTitle('Heading 1'));
-    expect(handlers.onH1).toHaveBeenCalledOnce();
+    await user.click(screen.getByTitle('H1'));
+    const chain = editor.chain();
+    expect(chain.toggleHeading).toHaveBeenCalledWith({ level: 1 });
 
-    await user.click(screen.getByTitle('Heading 2'));
-    expect(handlers.onH2).toHaveBeenCalledOnce();
+    await user.click(screen.getByTitle('H2'));
+    expect(chain.toggleHeading).toHaveBeenCalledWith({ level: 2 });
 
-    await user.click(screen.getByTitle('Heading 3'));
-    expect(handlers.onH3).toHaveBeenCalledOnce();
+    await user.click(screen.getByTitle('H3'));
+    expect(chain.toggleHeading).toHaveBeenCalledWith({ level: 3 });
   });
 
-  it('calls list handlers when list buttons are clicked', async () => {
+  it('calls list toggles when list buttons are clicked', async () => {
     const user = userEvent.setup();
-    const handlers = createHandlers();
-    render(<EditorToolbar {...handlers} />);
+    const editor = createMockEditor();
+    render(<EditorToolbar editor={editor} />);
 
     await user.click(screen.getByTitle('Bullet list'));
-    expect(handlers.onBulletList).toHaveBeenCalledOnce();
+    const chain = editor.chain();
+    expect(chain.toggleBulletList).toHaveBeenCalled();
 
     await user.click(screen.getByTitle('Numbered list'));
-    expect(handlers.onOrderedList).toHaveBeenCalledOnce();
+    expect(chain.toggleOrderedList).toHaveBeenCalled();
 
     await user.click(screen.getByTitle('Task list'));
-    expect(handlers.onTaskList).toHaveBeenCalledOnce();
+    expect(chain.toggleTaskList).toHaveBeenCalled();
   });
 
-  it('opens link URL popover when Link button is clicked', async () => {
+  it('calls toggleBlockquote when Quote button is clicked', async () => {
     const user = userEvent.setup();
-    const handlers = createHandlers();
-    render(<EditorToolbar {...handlers} />);
+    const editor = createMockEditor();
+    render(<EditorToolbar editor={editor} />);
 
-    await user.click(screen.getByTitle('Link'));
-    expect(screen.getByTestId('link-url-input')).toBeInTheDocument();
-    expect(handlers.onLink).not.toHaveBeenCalled();
+    await user.click(screen.getByTitle('Quote'));
+    const chain = editor.chain();
+    expect(chain.toggleBlockquote).toHaveBeenCalled();
   });
 
-  it('calls onLink with URL when Enter is pressed in link popover', async () => {
+  it('calls toggleCodeBlock when Code block button is clicked', async () => {
     const user = userEvent.setup();
-    const handlers = createHandlers();
-    render(<EditorToolbar {...handlers} />);
-
-    await user.click(screen.getByTitle('Link'));
-    const input = screen.getByTestId('link-url-input');
-    await user.type(input, 'https://example.com');
-    await user.keyboard('{Enter}');
-    expect(handlers.onLink).toHaveBeenCalledOnce();
-    expect(handlers.onLink).toHaveBeenCalledWith('https://example.com');
-  });
-
-  it('closes link popover on Escape without calling onLink', async () => {
-    const user = userEvent.setup();
-    const handlers = createHandlers();
-    render(<EditorToolbar {...handlers} />);
-
-    await user.click(screen.getByTitle('Link'));
-    expect(screen.getByTestId('link-url-input')).toBeInTheDocument();
-    await user.keyboard('{Escape}');
-    expect(handlers.onLink).not.toHaveBeenCalled();
-  });
-
-  it('calls onCode when Code block button is clicked', async () => {
-    const user = userEvent.setup();
-    const handlers = createHandlers();
-    render(<EditorToolbar {...handlers} />);
+    const editor = createMockEditor();
+    render(<EditorToolbar editor={editor} />);
 
     await user.click(screen.getByTitle('Code block'));
-    expect(handlers.onCode).toHaveBeenCalledOnce();
+    const chain = editor.chain();
+    expect(chain.toggleCodeBlock).toHaveBeenCalled();
   });
 
-  it('calls onCopy when Copy button is clicked', async () => {
+  it('calls setHorizontalRule when Divider button is clicked', async () => {
     const user = userEvent.setup();
-    const handlers = createHandlers();
-    render(<EditorToolbar {...handlers} />);
+    const editor = createMockEditor();
+    render(<EditorToolbar editor={editor} />);
 
-    await user.click(screen.getByTitle('Copy'));
-    expect(handlers.onCopy).toHaveBeenCalledOnce();
+    await user.click(screen.getByTitle('Divider'));
+    const chain = editor.chain();
+    expect(chain.setHorizontalRule).toHaveBeenCalled();
   });
 
-  it('renders dividers between button groups', () => {
-    const handlers = createHandlers();
-    const { container } = render(<EditorToolbar {...handlers} />);
-    const dividers = container.querySelectorAll('[data-testid="toolbar-divider"]');
-    expect(dividers.length).toBe(3);
+  it('copies markdown when Copy button is clicked', async () => {
+    const user = userEvent.setup();
+    const editor = createMockEditor();
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText },
+      writable: true,
+      configurable: true,
+    });
+
+    render(<EditorToolbar editor={editor} />);
+    await user.click(screen.getByTitle('Copy markdown'));
+    expect(writeText).toHaveBeenCalledWith('# Hello');
+  });
+
+  it('prompts for URL and sets link when Link button is clicked', async () => {
+    const user = userEvent.setup();
+    const editor = createMockEditor();
+    vi.spyOn(window, 'prompt').mockReturnValue('https://example.com');
+
+    render(<EditorToolbar editor={editor} />);
+    await user.click(screen.getByTitle('Link'));
+
+    expect(window.prompt).toHaveBeenCalledWith('URL');
+    const chain = editor.chain();
+    expect(chain.setLink).toHaveBeenCalledWith({ href: 'https://example.com' });
+  });
+
+  it('does not set link when prompt is cancelled', async () => {
+    const user = userEvent.setup();
+    const editor = createMockEditor();
+    vi.spyOn(window, 'prompt').mockReturnValue(null);
+
+    render(<EditorToolbar editor={editor} />);
+    await user.click(screen.getByTitle('Link'));
+
+    const chain = editor.chain();
+    expect(chain.setLink).not.toHaveBeenCalled();
   });
 });

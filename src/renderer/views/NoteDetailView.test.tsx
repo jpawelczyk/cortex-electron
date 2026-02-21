@@ -4,7 +4,7 @@ import { render, screen, fireEvent, act } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import type { Note, Context, Project } from '@shared/types';
 
-// Mock MarkdownEditor to avoid milkdown DOM issues
+// Mock MarkdownEditor to avoid TipTap DOM issues
 vi.mock('../components/MarkdownEditor', () => ({
   MarkdownEditor: ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
     <textarea data-testid="mock-editor" value={value} onChange={e => onChange(e.target.value)} />
