@@ -204,7 +204,7 @@ export function CommandPalette({
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) closeCommandPalette(); }}>
-      <DialogContent className="p-0 gap-0 max-w-lg" showCloseButton={false}>
+      <DialogContent className="p-0 gap-0 max-w-lg border-border/50 bg-card/80 backdrop-blur-xl shadow-2xl" showCloseButton={false}>
         <DialogTitle className="sr-only">Command Palette</DialogTitle>
         <DialogDescription className="sr-only">Search tasks, projects, and notes</DialogDescription>
         <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
