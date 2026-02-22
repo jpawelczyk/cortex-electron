@@ -4,7 +4,8 @@
 
 bucket_definitions:
   user_data:
-    parameters: SELECT id AS user_id FROM auth.users WHERE id = token_parameters.user_id
+    # token_parameters.user_id is extracted from the Supabase JWT
+    parameters: SELECT token_parameters.user_id AS user_id
     data:
       - SELECT * FROM public.contexts WHERE user_id = bucket.user_id
       - SELECT * FROM public.projects WHERE user_id = bucket.user_id
