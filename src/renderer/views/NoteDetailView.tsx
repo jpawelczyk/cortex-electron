@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Pin, Trash2, Check, X } from 'lucide-react';
 import { useStore } from '../stores';
-import { MarkdownEditor } from '../components/MarkdownEditor';
+import { MarkdownEditor, type MarkdownEditorHandle } from '../components/MarkdownEditor';
 import { useDebouncedCallback } from '../hooks/useDebouncedCallback';
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
 
@@ -24,6 +24,7 @@ export function NoteDetailView({ noteId }: NoteDetailViewProps) {
   const [title, setTitle] = useState(note?.title ?? '');
   const [content, setContent] = useState(note?.content ?? '');
   const titleRef = useRef<HTMLInputElement>(null);
+  const editorRef = useRef<MarkdownEditorHandle>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [contextOpen, setContextOpen] = useState(false);
   const [projectOpen, setProjectOpen] = useState(false);
@@ -128,6 +129,12 @@ export function NoteDetailView({ noteId }: NoteDetailViewProps) {
             setTitle(e.target.value);
             debouncedSaveTitle(e.target.value);
           }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              editorRef.current?.focus();
+            }
+          }}
           className="w-full text-2xl font-bold bg-transparent border-0 outline-none mb-4 text-foreground placeholder:text-muted-foreground/50"
           placeholder="Note title"
         />
@@ -224,6 +231,7 @@ export function NoteDetailView({ noteId }: NoteDetailViewProps) {
 
         {/* Editor */}
         <MarkdownEditor
+          ref={editorRef}
           key={noteId}
           value={content}
           onChange={(md) => {
