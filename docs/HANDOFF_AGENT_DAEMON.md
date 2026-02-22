@@ -219,9 +219,204 @@ Add to `agent/package.json`:
 3. CLI detects daemon and uses HTTP when available
 4. Falls back to direct DB when daemon is down
 5. Service file for auto-start on boot
+6. Watches for tasks assigned to agent and triggers webhook
 
 ## Notes
 
 - Daemon binds to 127.0.0.1 only (not exposed to network)
 - No auth needed since it's local-only
 - Port 7654 arbitrary, configurable via env
+
+---
+
+## Task Assignment Feature
+
+### Data Model Change
+
+Add `assignee_id` to tasks table. Create migration `supabase/migrations/003_task_assignee.sql`:
+
+```sql
+-- Add assignee field to tasks (can be user or AI agent)
+ALTER TABLE public.tasks ADD COLUMN assignee_id TEXT;
+
+-- Index for efficient lookup
+CREATE INDEX idx_tasks_assignee ON public.tasks(assignee_id) WHERE deleted_at IS NULL;
+```
+
+Also update `src/main/sync/schema.ts`:
+```typescript
+const tasks = new Table({
+  // ... existing fields
+  assignee_id: column.text,
+});
+```
+
+### Daemon: Watch for Assigned Tasks
+
+Add to `agent/daemon.ts`:
+
+```typescript
+const AGENT_ID = process.env.CORTEX_AGENT_ID;  // My agent UUID
+const WEBHOOK_URL = process.env.CORTEX_WEBHOOK_URL;  // Optional: notify externally
+
+// Track seen tasks to detect new assignments
+const seenAssignments = new Set<string>();
+
+async function watchAssignments(db: PowerSyncDatabase) {
+  // PowerSync reactive query
+  db.watch(
+    `SELECT * FROM tasks 
+     WHERE assignee_id = ? 
+       AND status NOT IN ('logbook', 'cancelled') 
+       AND deleted_at IS NULL`,
+    [AGENT_ID],
+    {
+      onResult: async (results) => {
+        for (const task of results.rows?._array || []) {
+          if (!seenAssignments.has(task.id)) {
+            seenAssignments.add(task.id);
+            await onTaskAssigned(task);
+          }
+        }
+      },
+    }
+  );
+}
+
+async function onTaskAssigned(task: Task) {
+  console.log(`📋 New task assigned: ${task.title}`);
+  
+  // Option 1: Write to file for OpenClaw to pick up
+  const notification = {
+    type: 'task_assigned',
+    task_id: task.id,
+    title: task.title,
+    priority: task.priority,
+    deadline: task.deadline,
+    timestamp: new Date().toISOString(),
+  };
+  
+  await fs.appendFile(
+    '/tmp/cortex-agent-events.jsonl',
+    JSON.stringify(notification) + '\n'
+  );
+
+  // Option 2: Webhook (if configured)
+  if (WEBHOOK_URL) {
+    await fetch(WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(notification),
+    }).catch(console.error);
+  }
+}
+
+// Call in start():
+async function start() {
+  const db = await initDatabase();
+  await waitForSync(db);
+  
+  if (AGENT_ID) {
+    watchAssignments(db);
+    console.log(`✓ Watching for tasks assigned to ${AGENT_ID}`);
+  }
+  
+  // ... rest of HTTP server setup
+}
+```
+
+### API Endpoints for Assignments
+
+Add to daemon HTTP API:
+
+```typescript
+// Get tasks assigned to this agent
+app.get('/tasks/assigned', async () => {
+  return db.getAll(
+    `SELECT * FROM tasks 
+     WHERE assignee_id = ? 
+       AND status NOT IN ('logbook', 'cancelled') 
+       AND deleted_at IS NULL
+     ORDER BY 
+       CASE priority WHEN 'P0' THEN 0 WHEN 'P1' THEN 1 WHEN 'P2' THEN 2 ELSE 3 END,
+       deadline ASC NULLS LAST`,
+    [AGENT_ID]
+  );
+});
+
+// Update task status (agent marks progress)
+app.patch('/tasks/:id', async (req) => {
+  const { id } = req.params;
+  const { status, notes } = req.body as any;
+  
+  const updates: string[] = [];
+  const values: any[] = [];
+  
+  if (status) {
+    updates.push('status = ?');
+    values.push(status);
+    if (status === 'logbook') {
+      updates.push('completed_at = ?');
+      values.push(new Date().toISOString());
+    }
+  }
+  if (notes !== undefined) {
+    updates.push('notes = ?');
+    values.push(notes);
+  }
+  
+  updates.push('updated_at = ?');
+  values.push(new Date().toISOString());
+  values.push(id);
+  
+  await db.execute(
+    `UPDATE tasks SET ${updates.join(', ')} WHERE id = ?`,
+    values
+  );
+  
+  return { success: true };
+});
+```
+
+### Environment Variables
+
+Add to `.env`:
+```bash
+CORTEX_AGENT_ID=f6670db8-3866-4828-baa0-887f6ef4adc4
+CORTEX_WEBHOOK_URL=  # Optional, for external notifications
+```
+
+### User Flow
+
+1. User creates task in Cortex app
+2. User sets `assignee_id` to agent (UI: dropdown with AI agents)
+3. Task syncs to Supabase → PowerSync → Agent's local DB
+4. Daemon detects new assignment via reactive query
+5. Daemon writes to `/tmp/cortex-agent-events.jsonl` (or calls webhook)
+6. OpenClaw heartbeat picks up the event file
+7. Agent works on task, updates status via API
+8. Changes sync back to user's app
+
+### UI Addition (Cortex App)
+
+Add assignee selector to task editor:
+
+```typescript
+// In task form
+<Select value={task.assignee_id} onValueChange={setAssignee}>
+  <SelectItem value={null}>Unassigned</SelectItem>
+  <SelectItem value={currentUser.id}>Me</SelectItem>
+  {aiAgents.map(agent => (
+    <SelectItem key={agent.id} value={agent.id}>
+      {agent.name} (AI)
+    </SelectItem>
+  ))}
+</Select>
+```
+
+### Additional Success Criteria
+
+7. `assignee_id` column exists on tasks
+8. Daemon watches for assigned tasks and logs/notifies
+9. `/tasks/assigned` endpoint returns agent's task queue
+10. Agent can update task status via PATCH endpoint
