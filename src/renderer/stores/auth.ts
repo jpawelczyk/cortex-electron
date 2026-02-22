@@ -5,6 +5,7 @@ export interface AuthSlice {
   authSession: unknown | null;
   authLoading: boolean;
   authError: string | null;
+  authConfigured: boolean | null; // null = not yet checked
 
   checkSession: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
@@ -17,9 +18,20 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set) => ({
   authSession: null,
   authLoading: true,
   authError: null,
+  authConfigured: null,
 
   checkSession: async () => {
     try {
+      // Check if auth/sync is configured at all
+      const configured = await window.cortex.auth.isConfigured();
+      if (!configured) {
+        // No sync config — skip auth, go straight to app
+        set({ authConfigured: false, authLoading: false, authSession: 'offline' });
+        return;
+      }
+
+      set({ authConfigured: true });
+
       const result = await window.cortex.auth.getSession() as {
         success: boolean;
         data?: { session: unknown & { user?: unknown } | null };

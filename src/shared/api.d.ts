@@ -68,6 +68,7 @@ declare global {
       onFocusTaskInput(callback: () => void): () => void;
       onStaleCheckComplete(callback: () => void): () => void;
       auth: {
+        isConfigured(): Promise<boolean>;
         signIn(credentials: { email: string; password: string }): Promise<unknown>;
         signUp(credentials: { email: string; password: string }): Promise<unknown>;
         signOut(): Promise<unknown>;

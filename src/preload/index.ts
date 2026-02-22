@@ -79,6 +79,7 @@ const api = {
   },
 
   auth: {
+    isConfigured: (): Promise<boolean> => ipcRenderer.invoke('auth:is-configured'),
     signIn: (credentials: { email: string; password: string }): Promise<unknown> =>
       ipcRenderer.invoke('auth:sign-in', credentials),
     signUp: (credentials: { email: string; password: string }): Promise<unknown> =>

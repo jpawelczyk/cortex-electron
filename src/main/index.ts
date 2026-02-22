@@ -1,4 +1,4 @@
-import { app, BrowserWindow, nativeImage } from 'electron';
+import { app, BrowserWindow, ipcMain, nativeImage } from 'electron';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import { initDatabase, closeDatabase } from './db/index.js';
@@ -118,6 +118,9 @@ app.whenReady().then(async () => {
     const connector = new SupabaseConnector(syncConfig);
     registerAuthHandlers(connector);
   }
+
+  // Let renderer know whether auth is required
+  ipcMain.handle('auth:is-configured', () => !!syncConfig);
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

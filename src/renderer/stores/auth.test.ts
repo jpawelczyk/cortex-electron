@@ -29,6 +29,7 @@ function createStore(overrides?: Partial<AuthSlice>): AuthSlice {
 
 const mockCortex = {
   auth: {
+    isConfigured: vi.fn(),
     signIn: vi.fn(),
     signUp: vi.fn(),
     signOut: vi.fn(),
@@ -70,7 +71,18 @@ describe('AuthSlice', () => {
   });
 
   describe('checkSession', () => {
+    it('skips auth when not configured (offline mode)', async () => {
+      mockCortex.auth.isConfigured.mockResolvedValue(false);
+
+      const store = createStore();
+      await store.checkSession();
+
+      expect(mockCortex.auth.getSession).not.toHaveBeenCalled();
+      expect(mockCortex.sync.connect).not.toHaveBeenCalled();
+    });
+
     it('sets session and user when existing session found', async () => {
+      mockCortex.auth.isConfigured.mockResolvedValue(true);
       const session = { access_token: 'tok', user: { id: '123', email: 'test@example.com' } };
       mockCortex.auth.getSession.mockResolvedValue({
         success: true,
@@ -86,6 +98,7 @@ describe('AuthSlice', () => {
     });
 
     it('sets loading false with null session when no session', async () => {
+      mockCortex.auth.isConfigured.mockResolvedValue(true);
       mockCortex.auth.getSession.mockResolvedValue({
         success: true,
         data: { session: null },
@@ -99,6 +112,7 @@ describe('AuthSlice', () => {
     });
 
     it('handles getSession failure gracefully', async () => {
+      mockCortex.auth.isConfigured.mockResolvedValue(true);
       mockCortex.auth.getSession.mockResolvedValue({
         success: false,
         error: 'Network error',
