@@ -5,16 +5,17 @@
 bucket_definitions:
   user_data:
     # token_parameters.user_id is extracted from the Supabase JWT
-    parameters: SELECT token_parameters.user_id AS user_id
+    # "id" column required by PowerSync, user_id used for filtering
+    parameters: SELECT token_parameters.user_id AS id
     data:
-      - SELECT * FROM public.contexts WHERE user_id = bucket.user_id
-      - SELECT * FROM public.projects WHERE user_id = bucket.user_id
-      - SELECT * FROM public.project_headings WHERE user_id = bucket.user_id
-      - SELECT * FROM public.tasks WHERE user_id = bucket.user_id
-      - SELECT * FROM public.task_checklists WHERE user_id = bucket.user_id
-      - SELECT * FROM public.stakeholders WHERE user_id = bucket.user_id
-      - SELECT * FROM public.meetings WHERE user_id = bucket.user_id
-      - SELECT * FROM public.meeting_attendees WHERE user_id = bucket.user_id
-      - SELECT * FROM public.notes WHERE user_id = bucket.user_id
-      - SELECT * FROM public.note_stakeholders WHERE user_id = bucket.user_id
-      - SELECT * FROM public.daily_notes WHERE user_id = bucket.user_id
+      - SELECT * FROM public.contexts WHERE user_id = bucket.id
+      - SELECT * FROM public.projects WHERE user_id = bucket.id
+      - SELECT * FROM public.project_headings WHERE user_id = bucket.id
+      - SELECT * FROM public.tasks WHERE user_id = bucket.id
+      - SELECT * FROM public.task_checklists WHERE user_id = bucket.id
+      - SELECT * FROM public.stakeholders WHERE user_id = bucket.id
+      - SELECT * FROM public.meetings WHERE user_id = bucket.id
+      - SELECT * FROM public.meeting_attendees WHERE user_id = bucket.id
+      - SELECT * FROM public.notes WHERE user_id = bucket.id
+      - SELECT * FROM public.note_stakeholders WHERE user_id = bucket.id
+      - SELECT * FROM public.daily_notes WHERE user_id = bucket.id
