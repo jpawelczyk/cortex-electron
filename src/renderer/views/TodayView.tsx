@@ -3,6 +3,7 @@ import { Sun } from 'lucide-react';
 import { useStore } from '../stores';
 import { TaskList } from '../components/TaskList';
 import { filterTasksByContext } from '../lib/contextFilter';
+import { useLiveQuery } from '../hooks/useLiveQuery';
 
 const SORT_DELAY_MS = 400;
 
@@ -11,10 +12,9 @@ function getToday(): string {
 }
 
 export function TodayView() {
-  const tasks = useStore((s) => s.tasks);
-  const projects = useStore((s) => s.projects);
+  const { data: tasks } = useLiveQuery(() => window.cortex.tasks.list(), ['tasks']);
+  const { data: projects } = useLiveQuery(() => window.cortex.projects.list(), ['projects']);
   const activeContextIds = useStore((s) => s.activeContextIds);
-  const fetchTasks = useStore((s) => s.fetchTasks);
   const updateTask = useStore((s) => s.updateTask);
   const selectTask = useStore((s) => s.selectTask);
   const selectedTaskId = useStore((s) => s.selectedTaskId);
@@ -57,10 +57,6 @@ export function TodayView() {
       return 0;
     });
   }, [tasks, today, settledIds, activeContextIds, projects]);
-
-  useEffect(() => {
-    fetchTasks();
-  }, [fetchTasks]);
 
   const handleComplete = useCallback(
     (id: string) => {

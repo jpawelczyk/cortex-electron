@@ -65,6 +65,9 @@ function AuthenticatedApp() {
   const trashedTasks = useStore((s) => s.trashedTasks);
   const fetchTasks = useStore((s) => s.fetchTasks);
   const fetchTrashedTasks = useStore((s) => s.fetchTrashedTasks);
+  const fetchProjects = useStore((s) => s.fetchProjects);
+  const fetchContexts = useStore((s) => s.fetchContexts);
+  const fetchNotes = useStore((s) => s.fetchNotes);
   const deselectTask = useStore((s) => s.deselectTask);
   const startInlineCreate = useStore((s) => s.startInlineCreate);
   const startInlineProjectCreate = useStore((s) => s.startInlineProjectCreate);
@@ -96,7 +99,21 @@ function AuthenticatedApp() {
     fetchTrashedTasks();
   }, [fetchTrashedTasks]);
 
-  // Refresh tasks when stale check completes on window focus
+  // Auto-refresh stores when PowerSync detects table changes (sync or local writes)
+  useEffect(() => {
+    const cleanup = window.cortex.sync.onTablesUpdated((tables) => {
+      if (tables.includes('tasks')) {
+        fetchTasks();
+        fetchTrashedTasks();
+      }
+      if (tables.includes('projects')) fetchProjects();
+      if (tables.includes('contexts')) fetchContexts();
+      if (tables.includes('notes')) fetchNotes();
+    });
+    return cleanup;
+  }, [fetchTasks, fetchTrashedTasks, fetchProjects, fetchContexts, fetchNotes]);
+
+  // Also refresh tasks when stale check completes on window focus
   useEffect(() => {
     const cleanup = window.cortex.onStaleCheckComplete(() => {
       fetchTasks();

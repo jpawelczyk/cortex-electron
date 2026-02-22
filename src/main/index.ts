@@ -2,7 +2,7 @@ import 'dotenv/config';
 import { app, BrowserWindow, ipcMain, nativeImage } from 'electron';
 import { fileURLToPath } from 'url';
 import path from 'path';
-import { initDatabase, closeDatabase } from './db/index.js';
+import { initDatabase, closeDatabase, getPowerSyncDatabase } from './db/index.js';
 import { registerHandlers } from './ipc/handlers.js';
 import { registerAuthHandlers } from './ipc/auth.js';
 import { registerGlobalShortcuts, unregisterGlobalShortcuts } from './shortcuts.js';
@@ -41,6 +41,7 @@ if (!gotTheLock) {
 }
 
 let mainWindow: BrowserWindow | null = null;
+let disposeTableWatcher: (() => void) | null = null;
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -104,6 +105,19 @@ app.whenReady().then(async () => {
   createWindow();
   registerGlobalShortcuts(mainWindow!);
 
+  // Watch for PowerSync table changes and notify the renderer
+  const psDb = getPowerSyncDatabase();
+  disposeTableWatcher = psDb.onChange(
+    {
+      onChange: (event) => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('powersync:tables-updated', event.changedTables);
+        }
+      },
+    },
+    { throttleMs: 50 },
+  );
+
   // Re-check stale tasks on window focus (handles long-running sessions)
   mainWindow!.on('focus', () => {
     taskService.markStaleTasks(5).then((count) => {
@@ -139,6 +153,7 @@ app.on('window-all-closed', () => {
 });
 
 app.on('before-quit', () => {
+  disposeTableWatcher?.();
   unregisterGlobalShortcuts();
   closeDatabase().catch(() => {});
 });

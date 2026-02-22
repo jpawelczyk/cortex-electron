@@ -97,6 +97,11 @@ const api = {
   sync: {
     connect: (): Promise<unknown> => ipcRenderer.invoke('sync:connect'),
     disconnect: (): Promise<unknown> => ipcRenderer.invoke('sync:disconnect'),
+    onTablesUpdated: (callback: (tables: string[]) => void) => {
+      const handler = (_event: unknown, tables: string[]) => callback(tables);
+      ipcRenderer.on('powersync:tables-updated', handler);
+      return () => { ipcRenderer.removeListener('powersync:tables-updated', handler); };
+    },
   },
 
   system: {

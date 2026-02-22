@@ -7,19 +7,24 @@ import { TodayView } from './TodayView';
 let mockTasks: Record<string, unknown>[] = [];
 let mockProjects: Record<string, unknown>[] = [];
 let mockActiveContextIds: string[] = [];
-const mockFetchTasks = vi.fn();
 const mockUpdateTask = vi.fn();
 const mockSelectTask = vi.fn();
+
+vi.mock('../hooks/useLiveQuery', () => ({
+  useLiveQuery: (_queryFn: unknown, tables: string[]) => {
+    if (tables.includes('tasks')) return { data: mockTasks, isLoading: false, error: null };
+    if (tables.includes('projects')) return { data: mockProjects, isLoading: false, error: null };
+    return { data: [], isLoading: false, error: null };
+  },
+}));
 
 vi.mock('../stores', () => ({
   useStore: (selector: (state: Record<string, unknown>) => unknown) => {
     const state = {
-      tasks: mockTasks,
-      tasksLoading: false,
-      fetchTasks: mockFetchTasks,
       updateTask: mockUpdateTask,
       selectTask: mockSelectTask,
       selectedTaskId: null,
+      activeContextIds: mockActiveContextIds,
       checklistItems: {},
       checklistsLoading: {},
       fetchChecklistItems: vi.fn(),
@@ -27,7 +32,6 @@ vi.mock('../stores', () => ({
       deleteChecklistItem: vi.fn(),
       updateChecklistItem: vi.fn(),
       projects: mockProjects,
-      activeContextIds: mockActiveContextIds,
       contexts: [],
       fetchProjects: vi.fn(),
       agents: [],

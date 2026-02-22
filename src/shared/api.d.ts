@@ -83,6 +83,7 @@ declare global {
       sync: {
         connect(): Promise<unknown>;
         disconnect(): Promise<unknown>;
+        onTablesUpdated(callback: (tables: string[]) => void): () => void;
       };
       system: {
         exportData(): Promise<unknown>;
