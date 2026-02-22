@@ -1,109 +1,67 @@
-# Architecture
+# Cortex v3 Architecture
 
-> A local-first, privacy-focused personal OS for managing your work — more focused than Notion, more powerful than Obsidian, AI-native but never AI-dependent, highly opinionated.
+> Decided: 2026-02-22
 
-## Philosophy
+## Core Principle
 
-| Principle | Meaning |
-|-----------|---------|
-| **Local-first** | Data lives on your machine — always. Works offline. Sync is optional. |
-| **Privacy by architecture** | No telemetry, no cloud dependencies. Your data never leaves unless you opt in. |
-| **Single-user** | Optimized for one person's workflow. Not a team tool. |
-| **Opinionated simplicity** | Few features, done well. No plugin sprawl. |
-| **Data portability** | SQLite + Markdown. You can leave anytime. |
-| **Fast & light** | Sub-100ms interactions. No spinners. |
-| **AI-native, not AI-dependent** | Designed for AI integration, but fully functional without it. |
-| **Visual appeal** | Futuristic UI, but never form over function. |
+**Local-first.** App always reads/writes to local SQLite. Instant operations. Sync is background, invisible to user.
 
-### Anti-Goals
+## Stack
 
-- Team collaboration / multiplayer
-- Plugin ecosystem
-- File-based storage (we're not Obsidian)
-- Everything-app bloat (we're not Notion)
+| Layer | Technology |
+|-------|------------|
+| Desktop | Electron |
+| UI | React + shadcn |
+| Local DB | SQLite |
+| Sync | PowerSync |
+| Cloud DB | Supabase (Postgres) |
+| Auth | Supabase Auth |
 
-## Tech Stack
-
-| Layer | Technology | Rationale |
-|-------|------------|-----------|
-| **Runtime** | Electron | Cross-platform desktop, always-on |
-| **Renderer** | React 18+ | Component model, ecosystem |
-| **Build** | Vite | Fast HMR, native ESM |
-| **Database** | SQLite (better-sqlite3) | Local, fast, sync-ready |
-| **ORM** | Drizzle ORM | Type-safe, SQLite-native |
-| **State** | Zustand | Simple, fast, no boilerplate |
-| **Styling** | Tailwind CSS | Utility-first |
-| **Components** | shadcn/ui | Radix + Tailwind, copy-paste |
-| **Editor** | Milkdown | Markdown-native WYSIWYG |
-| **Testing** | Vitest + Playwright | Unit + E2E |
-| **Packaging** | electron-builder | Cross-platform builds |
-
-## Project Structure
+## Data Flow
 
 ```
-cortex-electron/
-├── docs/
-│   ├── ARCHITECTURE.md     # This file (overview)
-│   ├── SCHEMA.md           # Database schema
-│   ├── TASK_SYSTEM.md      # Task model (Things-inspired)
-│   ├── STATE.md            # Zustand stores
-│   ├── IPC.md              # Electron IPC & security
-│   ├── SYNC.md             # Sync-ready patterns
-│   ├── AI.md               # AI integration layer
-│   └── DESIGN_SYSTEM.md    # Visual language
-├── src/
-│   ├── main/               # Electron main process
-│   │   ├── database/       # SQLite, migrations
-│   │   ├── ipc/            # IPC handlers
-│   │   └── services/       # Business logic
-│   ├── renderer/           # React app
-│   │   ├── components/     # UI components
-│   │   ├── views/          # Page-level views
-│   │   ├── stores/         # Zustand stores
-│   │   └── hooks/          # Custom hooks
-│   ├── shared/             # Types, validation, constants
-│   └── preload/            # Secure IPC bridge
-├── migrations/             # SQLite migrations
-└── tests/                  # Unit, integration, e2e
+User Action → Local SQLite → Instant UI Update
+                   ↓
+            PowerSync (background)
+                   ↓
+            Supabase Postgres
+                   ↓
+            Other devices sync
 ```
 
-## Data Model
+## Key Decisions
 
-```
-┌─────────────┐       ┌─────────────┐
-│  Contexts   │       │ Stakeholders│  (global, no context)
-└──────┬──────┘       └──────┬──────┘
-       │ 1                   │ M
-       ▼ M                   ▼ M
-┌─────────────┐       ┌─────────────┐
-│  Projects   │◄──────│  Meetings   │
-└──────┬──────┘       └─────────────┘
-       │ 1
-       ▼ M
-┌─────────────┐       ┌─────────────┐
-│    Tasks    │       │    Notes    │
-└──────┬──────┘       └─────────────┘
-       │ 1
-       ▼ M
-┌─────────────┐       ┌─────────────┐
-│  Checklists │       │ Daily Notes │  (global, one per day)
-└─────────────┘       └─────────────┘
-```
+1. **Electron over Tauri** — Handles complexity better. Obsidian/Notion precedent. RAM overhead acceptable for desktop productivity app.
 
-**Key relationships:**
-- Tasks inherit context from their project (hard inheritance)
-- Stakeholders exist outside contexts (global)
-- Daily notes are global (one per day, cross-context)
-- Inbox tasks have no context until triaged
+2. **PowerSync over alternatives** — Field-level LWW, self-hostable, Electron SDK, Supabase integration. ElectricSQL post-pivot not ready. Triplit no Postgres.
 
-## Detailed Documentation
+3. **Supabase over self-hosted Postgres** — Zero ops for MVP. Managed Postgres + Auth in one. Migrate to self-hosted later if cost requires.
 
-| Doc | When to Load |
-|-----|--------------|
-| [SCHEMA.md](SCHEMA.md) | Working on database, migrations |
-| [TASK_SYSTEM.md](TASK_SYSTEM.md) | Working on task logic |
-| [STATE.md](STATE.md) | Working on stores, state |
-| [IPC.md](IPC.md) | Working on main/renderer communication |
-| [SYNC.md](SYNC.md) | Implementing sync features |
-| [AI.md](AI.md) | Implementing AI integration |
-| [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md) | Working on UI/components |
+4. **Local-first = simpler multi-tenancy** — Each user's data isolated on their device. Cloud is backup/sync, not primary store.
+
+## AI Integration (Two-Tier)
+
+1. **Self-hosted AI (Claudius):** Syncs as device → queries local SQLite replica directly
+2. **External AI tools:** Query Postgres via API
+
+AI agents = distinct users in system (`type: 'ai'`) for audit trails.
+
+## Future Additions
+
+| When | What |
+|------|------|
+| When needed | Yjs for text CRDTs (character-level merge) |
+| When needed | Hono API layer (AI/external access) |
+| At scale | Self-hosted PowerSync + Postgres |
+| Later | Mobile (React Native + PowerSync SDK) |
+
+## Out of Scope (MVP)
+
+- Mobile app
+- Collaborative editing
+- Real-time presence
+- Rich text CRDTs
+
+---
+
+*Source: Architecture discussion 2026-02-22*
