@@ -1,33 +1,47 @@
 # CLAUDE.md
 
-Cortex is a local-first, privacy-focused personal operating system and "external brain" for managing your work — more focused than Notion, more powerful than Obsidian, AI-native but never AI-dependent, highly opinionated.
+Cortex is a local-first, AI-native personal operating system — more focused than Notion, more powerful than Obsidian, AI-native but never AI-dependent, highly opinionated. Local SQLite is the source of truth. All reads and writes are instant. Cloud sync is invisible background infrastructure.
+
+## Architecture
+
+```
+Electron + React + shadcn/ui + Lucide
+           ↓
+     Local SQLite (better-sqlite3)
+           ↓
+     PowerSync (sync layer)
+           ↓
+     Supabase (Postgres + Auth)
+```
+
+**Core principle:** The app NEVER waits on network for user operations. Local DB handles everything. Sync happens async.
+
+## Stack
+
+| Layer | Technology |
+|-------|------------|
+| Desktop | Electron |
+| UI | React + Vite + shadcn/ui + Lucide |
+| Local DB | SQLite (better-sqlite3) |
+| Sync | PowerSync |
+| Cloud DB | Supabase Postgres |
+| Auth | Supabase Auth |
+| State | Zustand |
+| Validation | Zod |
+| Editor | TipTap (Markdown storage) |
 
 ## Commands
 
 ```bash
-npm run dev      # Start dev mode (Electron + Vite)
-npm run test     # Run tests (Vitest)
-npm run test:e2e # Run E2E tests (Playwright)
-npm run build    # Production build
-npm run lint     # Lint + typecheck
-```
-
-## Native Modules
-
-This project uses `better-sqlite3`, a native Node module. Electron bundles its own Node version, so native modules must be rebuilt for Electron.
-
-```bash
+npm run dev       # Electron + Vite dev mode
+npm run build     # Production build
+npm run test      # Vitest
+npm run test:e2e  # Playwright
+npm run lint      # Lint + typecheck
 npm run rebuild   # Rebuild native modules for Electron
 ```
 
-**Run this after:**
-- `npm install`
-- Upgrading Electron
-- Switching machines/architectures
-
-**Symptoms if you forget:** `NODE_MODULE_VERSION` mismatch error on startup.
-
-**How it works:** Both `npm run dev` and `npm test` use Electron's Node environment (tests run with `ELECTRON_RUN_AS_NODE=1`), so one rebuild works for both.
+**Run `npm run rebuild` after:** `npm install`, upgrading Electron, or switching architectures.
 
 ## Structure
 
@@ -39,6 +53,10 @@ src/preload/     # Secure IPC bridge
 migrations/      # SQLite migrations
 ```
 
+## Entities
+
+Tasks, Projects, Notes, Meetings, Stakeholders, Daily Notes. Full schema in [SCHEMA](docs/SCHEMA.md).
+
 ## Conventions
 
 - **IDs:** UUIDs everywhere (`crypto.randomUUID()`)
@@ -46,38 +64,57 @@ migrations/      # SQLite migrations
 - **Dates:** ISO 8601 strings
 - **Validation:** Zod schemas at IPC boundary
 - **State:** Zustand stores, no prop drilling
-- **Styling:** Tailwind + shadcn/ui components
+- **Styling:** Tailwind + shadcn/ui
 - **Rich text:** Stored as Markdown
+
+## Testing
+
+- Vitest for unit/integration
+- Playwright for E2E
+- Test before commit
 
 ## Hard Rules
 
-- ❌ NO network calls without explicit user opt-in
-- ❌ NO telemetry
+- ❌ NO loading spinners for data operations
+- ❌ NO telemetry without explicit opt-in
 - ❌ NO hard deletes
-- ❌ NO code before tests (see TDD below)
+- ✅ All operations write to local SQLite first
+- ✅ Sync failures are silent and retry automatically
+- ✅ App works fully offline
 - ✅ Validate all IPC inputs
 - ✅ Type everything
 
-## TDD (Non-Negotiable)
+## Local-First Principles
 
-**Test-driven, not "with tests".** Write tests FIRST, then implementation.
+1. **Instant writes:** User creates task → written to SQLite → UI updates → done. Sync happens later.
+2. **Offline-first:** No network? App works perfectly. Sync catches up when online.
+3. **Conflict resolution:** PowerSync handles field-level LWW. Same-field conflicts → last write wins.
+4. **No loading states for data:** Data is always local. Only show loading for heavy operations (AI, export).
+
+## Data Flow
 
 ```
-1. Write failing test (what behavior do I need?)
-2. Write minimal code to pass
-3. Refactor (tests still pass)
+User Action
+    ↓
+SQLite Write (0ms)
+    ↓
+UI Update (immediate)
+    ↓
+PowerSync Queue (background)
+    ↓
+Supabase Postgres (async)
+    ↓
+Other Devices Sync
 ```
 
-**Never:**
-- Write implementation before test
-- Change tests to match broken code
-- Write tests just for coverage numbers
+## AI Integration
 
-**Before committing any test, ask:**
-- Did I write this before the implementation?
-- What breaks if I delete this test?
+Two-tier model:
 
-→ Full philosophy: [TESTING.md](docs/TESTING.md)
+1. **Self-hosted AI (local sync):** AI assistant syncs as a device, queries local SQLite replica directly.
+2. **External AI (API):** Future Hono API layer for external AI tools to query cloud Postgres (out of scope for MVP).
+
+AI agents are users with `type: 'ai'` for audit trails.
 
 ## Task Status
 
@@ -86,6 +123,15 @@ Things-inspired: `inbox` → `today` | `upcoming` | `anytime` | `someday` → `l
 - `when_date` = "I plan to work on this day"
 - `deadline` = "Must be done by this date"
 - Tasks inherit context from project (hard rule)
+
+## Future Additions
+
+| When | What |
+|------|------|
+| When needed | Yjs for text CRDTs (character-level merge) |
+| When needed | Hono API layer (AI/external access) |
+| At scale | Self-hosted PowerSync + Postgres |
+| Later | Mobile (React Native + PowerSync SDK) |
 
 ## Docs
 
@@ -99,7 +145,7 @@ Things-inspired: `inbox` → `today` | `upcoming` | `anytime` | `someday` → `l
 | [NOTES](docs/NOTES.md) | Notes system, markdown editing |
 | [STATE](docs/STATE.md) | Zustand stores |
 | [IPC](docs/IPC.md) | Main/renderer communication |
-| [SYNC](docs/SYNC.md) | Sync-ready patterns |
-| [AI](docs/AI.md) | AI integration layer |
+| [SYNC](docs/SYNC.md) | PowerSync setup, conflict handling |
+| [AI](docs/AI.md) | AI integration patterns |
 | [DESIGN_SYSTEM](docs/DESIGN_SYSTEM.md) | Visual language |
-| [TESTING](docs/TESTING.md) | TDD philosophy, patterns |
+| [TESTING](docs/TESTING.md) | Testing patterns |

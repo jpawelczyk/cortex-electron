@@ -1,172 +1,129 @@
-# Sync-Ready Patterns
+# Sync
 
-Architecture decisions to enable future sync without rewrites.
+PowerSync configuration for Cortex.
 
-## Core Principles
+## Overview
 
-Even though sync is post-MVP, we architect for it from day one:
+```
+Local SQLite ←→ PowerSync ←→ Supabase Postgres
+```
 
-1. **UUIDs everywhere** — no auto-increment IDs
-2. **Soft deletes** — never lose data
-3. **Timestamps on everything** — for ordering and conflict detection
-4. **Vector clocks** — reserved field for CRDT sync
-5. **Event log** — optional append-only audit trail
+- All reads/writes hit local SQLite
+- PowerSync syncs changes bidirectionally in background
+- User never waits on sync
 
-## UUIDs
+## Setup
 
-All entity IDs are UUIDs (not auto-increment):
+### Dependencies
+
+```bash
+npm install @powersync/node @powersync/common
+```
+
+### PowerSync Client (Main Process)
 
 ```typescript
-import { randomUUID } from 'crypto';
+import { PowerSyncDatabase } from '@powersync/node';
 
-function generateId(): string {
-  return randomUUID();
-}
+const db = new PowerSyncDatabase({
+  schema: AppSchema,
+  database: { dbFilename: 'cortex.db' }
+});
 
-// Usage
-const task = {
-  id: generateId(), // "550e8400-e29b-41d4-a716-446655440000"
-  title: 'New task',
-  // ...
-};
+await db.connect(new SupabaseConnector());
 ```
 
-**Why:** Auto-increment IDs collide when syncing between devices.
-
-## Soft Deletes
-
-Never hard delete. Always set `deleted_at`:
-
-```sql
--- Delete = soft delete
-UPDATE tasks SET deleted_at = datetime('now') WHERE id = ?;
-
--- All queries filter out deleted
-SELECT * FROM tasks WHERE deleted_at IS NULL;
-
--- To actually see deleted items (restore feature)
-SELECT * FROM tasks WHERE deleted_at IS NOT NULL;
-```
-
-**Why:** Hard deletes can't sync (how do you tell another device to delete something that doesn't exist?).
-
-## Timestamps
-
-Every entity has:
+### Supabase Connector
 
 ```typescript
-interface BaseEntity {
-  id: string;           // UUID
-  created_at: string;   // ISO 8601
-  updated_at: string;   // ISO 8601
-  deleted_at: string | null;
-}
-```
-
-Update `updated_at` on every change:
-
-```typescript
-function updateTask(id: string, changes: Partial<Task>): Task {
-  return db.prepare(`
-    UPDATE tasks 
-    SET ${Object.keys(changes).map(k => `${k} = ?`).join(', ')},
-        updated_at = datetime('now')
-    WHERE id = ?
-  `).run(...Object.values(changes), id);
-}
-```
-
-## Vector Clocks
-
-Reserved column for future CRDT sync:
-
-```sql
-vector_clock TEXT  -- JSON: {"device_id": counter, ...}
-```
-
-Not used in MVP, but the column exists. When sync is implemented:
-
-```typescript
-interface VectorClock {
-  [deviceId: string]: number;
-}
-
-// On each write, increment local counter
-function incrementClock(clock: VectorClock, deviceId: string): VectorClock {
-  return {
-    ...clock,
-    [deviceId]: (clock[deviceId] || 0) + 1,
-  };
-}
-
-// Merge clocks (take max of each)
-function mergeClock(a: VectorClock, b: VectorClock): VectorClock {
-  const result: VectorClock = { ...a };
-  for (const [device, count] of Object.entries(b)) {
-    result[device] = Math.max(result[device] || 0, count);
+class SupabaseConnector implements PowerSyncBackendConnector {
+  async fetchCredentials() {
+    const session = await supabase.auth.getSession();
+    return {
+      endpoint: POWERSYNC_URL,
+      token: session.access_token
+    };
   }
-  return result;
+
+  async uploadData(database: AbstractPowerSyncDatabase) {
+    // Called when local changes need to sync to Supabase
+    const batch = await database.getCrudBatch();
+    // Apply to Supabase via REST or direct connection
+  }
 }
 ```
 
-## Event Log
+## Sync Rules
 
-Optional append-only log of all changes:
+PowerSync uses Sync Rules to define what data syncs to each client.
 
-```sql
-CREATE TABLE event_log (
-  id TEXT PRIMARY KEY,
-  entity_type TEXT NOT NULL,   -- 'task', 'project', etc.
-  entity_id TEXT NOT NULL,
-  action TEXT NOT NULL,        -- 'create', 'update', 'delete'
-  payload TEXT NOT NULL,       -- JSON of the change
-  timestamp TEXT NOT NULL,
-  vector_clock TEXT,
-  synced_at TEXT               -- NULL until synced
-);
+```yaml
+# sync-rules.yaml
+bucket_definitions:
+  user_data:
+    parameters: SELECT id AS user_id FROM auth.users WHERE id = token_parameters.user_id
+    data:
+      - SELECT * FROM tasks WHERE user_id = bucket.user_id
+      - SELECT * FROM projects WHERE user_id = bucket.user_id
+      - SELECT * FROM notes WHERE user_id = bucket.user_id
+      - SELECT * FROM meetings WHERE user_id = bucket.user_id
+      - SELECT * FROM stakeholders WHERE user_id = bucket.user_id
+      - SELECT * FROM daily_notes WHERE user_id = bucket.user_id
 ```
 
-**Usage:**
+## Conflict Resolution
+
+PowerSync uses **field-level last-write-wins**:
+
+- Concurrent edits to different fields: both preserved
+- Concurrent edits to same field: last write wins (by timestamp)
+
+For MVP, this is sufficient. CRDTs (Yjs) can be added later for text fields.
+
+## Offline Behavior
+
+1. App starts → loads from local SQLite immediately
+2. PowerSync connects in background
+3. Queued changes sync when online
+4. Incoming changes merge automatically
+
+No loading states. No "connecting..." spinners.
+
+## Multi-Device
+
+Each device has its own SQLite. PowerSync ensures convergence:
+
+```
+Device A: Create task → Local SQLite → Sync queue
+Device B: Receives sync → Local SQLite updated
+```
+
+## AI Device Sync
+
+Self-hosted AI (e.g., Claudius) is treated as another device:
+
+1. AI has its own SQLite replica
+2. Syncs via PowerSync like any other client
+3. Queries local DB directly (no API latency)
+4. Writes sync back to user's devices
+
+## Debugging
 
 ```typescript
-function logEvent(type: string, id: string, action: string, payload: object) {
-  db.prepare(`
-    INSERT INTO event_log (id, entity_type, entity_id, action, payload, timestamp)
-    VALUES (?, ?, ?, ?, ?, datetime('now'))
-  `).run(generateId(), type, id, action, JSON.stringify(payload));
-}
-
-// On task create
-logEvent('task', task.id, 'create', task);
-
-// On task update
-logEvent('task', task.id, 'update', { changes, previous });
-
-// On task delete
-logEvent('task', task.id, 'delete', { deleted_at: now });
+// Watch sync status
+db.currentStatus.subscribe(status => {
+  console.log('Connected:', status.connected);
+  console.log('Uploading:', status.uploading);
+  console.log('Downloading:', status.downloading);
+});
 ```
 
-## Future: cr-sqlite
+## Schema Considerations
 
-When implementing sync, consider [cr-sqlite](https://github.com/vlcn-io/cr-sqlite):
+PowerSync requires certain patterns:
 
-- Drop-in SQLite replacement with built-in CRDTs
-- Automatic conflict resolution
-- Works with existing schema (mostly)
+- **UUIDs for IDs** — no auto-increment (already in place)
+- **Soft deletes** — `deleted_at` column (already in place)
+- **Timestamps** — `created_at`, `updated_at` (already in place)
 
-```typescript
-// Future pseudo-code
-import { crsqlite } from '@vlcn.io/crsqlite';
-
-const db = crsqlite.open('cortex.db');
-
-// Changes are automatically tracked as CRDTs
-// Sync just exchanges CRDT operations between devices
-```
-
-## Migration Path
-
-1. **MVP:** Single device, no sync, but sync-ready schema
-2. **Phase 1:** Export/import (manual sync via file)
-3. **Phase 2:** cr-sqlite integration (automatic sync)
-4. **Phase 3:** Optional cloud relay for remote sync
+The existing schema is sync-ready.
