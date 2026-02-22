@@ -109,7 +109,7 @@ export function NotesOverviewView() {
           <select
             value={sort}
             onChange={e => setSort(e.target.value as NoteSort)}
-            className="text-xs bg-accent/50 text-foreground border-0 rounded-md px-2 py-1 cursor-default"
+            className="text-xs bg-accent/50 text-foreground border-0 rounded-md px-2 py-1 cursor-default outline-none"
             data-testid="notes-sort"
           >
             <option value="updated">Recently updated</option>
