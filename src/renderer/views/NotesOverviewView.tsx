@@ -103,7 +103,7 @@ export function NotesOverviewView() {
 
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="max-w-3xl mx-auto px-8 py-8">
+      <div className="max-w-5xl mx-auto px-8 py-8">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-foreground">Notes</h2>
           <select
