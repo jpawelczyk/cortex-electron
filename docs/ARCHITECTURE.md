@@ -1,6 +1,6 @@
-# Cortex v3 Architecture
+# Cortex Architecture
 
-> Decided: 2026-02-22
+Cortex is a personal operating system and "external brain" for managing your work — more focused than Notion, more powerful than Obsidian, AI-native but never AI-dependent, highly opinionated.
 
 ## Core Principle
 
@@ -11,7 +11,7 @@
 | Layer | Technology |
 |-------|------------|
 | Desktop | Electron |
-| UI | React + shadcn |
+| UI | React + shadcn + Lucide |
 | Local DB | SQLite |
 | Sync | PowerSync |
 | Cloud DB | Supabase (Postgres) |
@@ -29,20 +29,10 @@ User Action → Local SQLite → Instant UI Update
             Other devices sync
 ```
 
-## Key Decisions
-
-1. **Electron over Tauri** — Handles complexity better. Obsidian/Notion precedent. RAM overhead acceptable for desktop productivity app.
-
-2. **PowerSync over alternatives** — Field-level LWW, self-hostable, Electron SDK, Supabase integration. ElectricSQL post-pivot not ready. Triplit no Postgres.
-
-3. **Supabase over self-hosted Postgres** — Zero ops for MVP. Managed Postgres + Auth in one. Migrate to self-hosted later if cost requires.
-
-4. **Local-first = simpler multi-tenancy** — Each user's data isolated on their device. Cloud is backup/sync, not primary store.
-
 ## AI Integration (Two-Tier)
 
-1. **Self-hosted AI (Claudius):** Syncs as device → queries local SQLite replica directly
-2. **External AI tools:** Query Postgres via API
+1. **Self-hosted AI:** Syncs as device → queries local SQLite replica directly
+2. **External AI tools:** Query Postgres via API (out of scope for MVP!)
 
 AI agents = distinct users in system (`type: 'ai'`) for audit trails.
 
@@ -61,7 +51,3 @@ AI agents = distinct users in system (`type: 'ai'`) for audit trails.
 - Collaborative editing
 - Real-time presence
 - Rich text CRDTs
-
----
-
-*Source: Architecture discussion 2026-02-22*
