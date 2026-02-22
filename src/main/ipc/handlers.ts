@@ -5,9 +5,10 @@ import { createContextService } from '../services/context.service';
 import { createStakeholderService } from '../services/stakeholder.service';
 import { createChecklistService } from '../services/checklist.service';
 import { createNoteService } from '../services/note.service';
+import { createAIAgentService } from '../services/ai-agent.service';
 import type { AsyncDatabase } from '../db/types';
 import type { DbContext } from '../db/types';
-import { CreateNoteSchema, UpdateNoteSchema, NoteIdSchema } from '@shared/validation';
+import { CreateNoteSchema, UpdateNoteSchema, NoteIdSchema, CreateAIAgentSchema, AIAgentIdSchema } from '@shared/validation';
 
 export function registerHandlers(db: AsyncDatabase): void {
   const ctx: DbContext = { db };
@@ -18,6 +19,7 @@ export function registerHandlers(db: AsyncDatabase): void {
   const stakeholderService = createStakeholderService(ctx);
   const checklistService = createChecklistService(ctx);
   const noteService = createNoteService(ctx);
+  const agentService = createAIAgentService(ctx);
 
   // Tasks
   ipcMain.handle('tasks:list', async () => taskService.list());
@@ -64,4 +66,9 @@ export function registerHandlers(db: AsyncDatabase): void {
   ipcMain.handle('notes:create', async (_, input) => noteService.create(CreateNoteSchema.parse(input)));
   ipcMain.handle('notes:update', async (_, id: string, input) => noteService.update(NoteIdSchema.parse(id), UpdateNoteSchema.parse(input)));
   ipcMain.handle('notes:delete', async (_, id: string) => noteService.delete(NoteIdSchema.parse(id)));
+
+  // AI Agents
+  ipcMain.handle('agents:list', async () => agentService.list());
+  ipcMain.handle('agents:create', async (_, input) => agentService.create(CreateAIAgentSchema.parse(input)));
+  ipcMain.handle('agents:revoke', async (_, id: string) => agentService.revoke(AIAgentIdSchema.parse(id)));
 }

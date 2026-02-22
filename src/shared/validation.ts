@@ -21,6 +21,17 @@ export const UpdateNoteSchema = z.object({
 
 export const NoteIdSchema = uuid;
 
+// AI Agents
+export const CreateAIAgentSchema = z.object({
+  name: z.string().min(1),
+  permissions: z.object({
+    read: z.boolean(),
+    write: z.boolean(),
+  }).optional(),
+});
+
+export const AIAgentIdSchema = z.string().uuid();
+
 // Auth
 export const SignInSchema = z.object({
   email: z.string().email(),

@@ -3,6 +3,7 @@ import type {
   Project, CreateProjectInput, UpdateProjectInput,
   Context, CreateContextInput, UpdateContextInput,
   ChecklistItem, CreateChecklistItemInput, UpdateChecklistItemInput,
+  AIAgent, CreateAIAgentInput,
 } from './types';
 
 declare global {
@@ -53,6 +54,11 @@ declare global {
         update(id: string, input: UpdateChecklistItemInput): Promise<ChecklistItem>;
         delete(id: string): Promise<void>;
         reorder(taskId: string, itemIds: string[]): Promise<void>;
+      };
+      agents: {
+        list(): Promise<AIAgent[]>;
+        create(input: CreateAIAgentInput): Promise<{ agent: AIAgent; key: string }>;
+        revoke(id: string): Promise<void>;
       };
       stakeholders: {
         list(): Promise<unknown[]>;

@@ -18,6 +18,7 @@ import { ProjectsOverviewView } from './views/ProjectsOverviewView';
 import { ProjectDetailView } from './views/ProjectDetailView';
 import { NotesOverviewView } from './views/NotesOverviewView';
 import { NoteDetailView } from './views/NoteDetailView';
+import { SettingsView } from './views/SettingsView';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
 import { SignIn } from './views/auth/sign-in';
@@ -202,6 +203,7 @@ function AuthenticatedApp() {
             ? <NoteDetailView noteId={selectedNoteId} />
             : <NotesOverviewView />
         )}
+        {activeView === 'settings' && <SettingsView />}
       </main>
 
       <CommandPalette

@@ -1,6 +1,6 @@
 import { Inbox, Sun, Calendar, Layers, Cloud, Clock, BookOpen, Trash2, FolderKanban, FileText, Settings } from 'lucide-react';
 
-export type SidebarView = 'inbox' | 'today' | 'upcoming' | 'anytime' | 'someday' | 'stale' | 'logbook' | 'trash' | 'projects' | 'notes';
+export type SidebarView = 'inbox' | 'today' | 'upcoming' | 'anytime' | 'someday' | 'stale' | 'logbook' | 'trash' | 'projects' | 'notes' | 'settings';
 
 interface TaskCounts {
   inbox: number;
@@ -98,7 +98,12 @@ export function Sidebar({ activeView, onViewChange, taskCounts }: SidebarProps) 
       {/* Bottom section */}
       <div className="no-drag px-3 py-3">
         <button
-          className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          onClick={() => onViewChange('settings')}
+          className={`p-1.5 rounded-lg transition-colors ${
+            activeView === 'settings'
+              ? 'text-primary bg-primary/10'
+              : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+          }`}
         >
           <Settings className="size-4" />
         </button>

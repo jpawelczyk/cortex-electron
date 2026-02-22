@@ -1,5 +1,21 @@
 // Core entity types
 
+export type DataSource = 'user' | 'ai' | 'import' | 'api';
+
+export interface AIAgent {
+  id: string;
+  name: string;
+  permissions: { read: boolean; write: boolean };
+  last_used_at: string | null;
+  created_at: string;
+  revoked_at: string | null;
+}
+
+export interface CreateAIAgentInput {
+  name: string;
+  permissions?: { read: boolean; write: boolean };
+}
+
 export type TaskStatus =
   | 'inbox'
   | 'today'

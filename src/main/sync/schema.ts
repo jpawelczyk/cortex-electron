@@ -17,6 +17,8 @@ const tasks = new Table({
   deleted_at: column.text,
   permanently_deleted_at: column.text,
   stale_at: column.text,
+  source: column.text,
+  agent_id: column.text,
 });
 
 const projects = new Table({
@@ -29,6 +31,8 @@ const projects = new Table({
   updated_at: column.text,
   completed_at: column.text,
   deleted_at: column.text,
+  source: column.text,
+  agent_id: column.text,
 });
 
 const contexts = new Table({
@@ -39,6 +43,8 @@ const contexts = new Table({
   created_at: column.text,
   updated_at: column.text,
   deleted_at: column.text,
+  source: column.text,
+  agent_id: column.text,
 });
 
 const project_headings = new Table({
@@ -48,6 +54,8 @@ const project_headings = new Table({
   created_at: column.text,
   updated_at: column.text,
   deleted_at: column.text,
+  source: column.text,
+  agent_id: column.text,
 });
 
 const task_checklists = new Table({
@@ -58,6 +66,8 @@ const task_checklists = new Table({
   created_at: column.text,
   updated_at: column.text,
   deleted_at: column.text,
+  source: column.text,
+  agent_id: column.text,
 });
 
 const stakeholders = new Table({
@@ -71,6 +81,8 @@ const stakeholders = new Table({
   created_at: column.text,
   updated_at: column.text,
   deleted_at: column.text,
+  source: column.text,
+  agent_id: column.text,
 });
 
 const meetings = new Table({
@@ -85,11 +97,15 @@ const meetings = new Table({
   created_at: column.text,
   updated_at: column.text,
   deleted_at: column.text,
+  source: column.text,
+  agent_id: column.text,
 });
 
 const meeting_attendees = new Table({
   meeting_id: column.text,
   stakeholder_id: column.text,
+  source: column.text,
+  agent_id: column.text,
 });
 
 const notes = new Table({
@@ -101,11 +117,15 @@ const notes = new Table({
   created_at: column.text,
   updated_at: column.text,
   deleted_at: column.text,
+  source: column.text,
+  agent_id: column.text,
 });
 
 const note_stakeholders = new Table({
   note_id: column.text,
   stakeholder_id: column.text,
+  source: column.text,
+  agent_id: column.text,
 });
 
 const daily_notes = new Table({
@@ -113,6 +133,17 @@ const daily_notes = new Table({
   content: column.text,
   created_at: column.text,
   updated_at: column.text,
+  source: column.text,
+  agent_id: column.text,
+});
+
+const ai_agents = new Table({
+  name: column.text,
+  api_key_hash: column.text,
+  permissions: column.text,
+  last_used_at: column.text,
+  created_at: column.text,
+  revoked_at: column.text,
 });
 
 export const AppSchema = new Schema({
@@ -127,4 +158,5 @@ export const AppSchema = new Schema({
   notes,
   note_stakeholders,
   daily_notes,
+  ai_agents,
 });

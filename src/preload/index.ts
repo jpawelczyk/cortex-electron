@@ -61,6 +61,12 @@ const api = {
     delete: (id: string): Promise<void> => ipcRenderer.invoke('stakeholders:delete', id),
   },
 
+  agents: {
+    list: (): Promise<unknown[]> => ipcRenderer.invoke('agents:list'),
+    create: (input: unknown): Promise<unknown> => ipcRenderer.invoke('agents:create', input),
+    revoke: (id: string): Promise<void> => ipcRenderer.invoke('agents:revoke', id),
+  },
+
   dailyNotes: {
     get: (date: string): Promise<unknown> => ipcRenderer.invoke('dailyNotes:get', date),
     upsert: (date: string, content: string): Promise<unknown> => ipcRenderer.invoke('dailyNotes:upsert', date, content),

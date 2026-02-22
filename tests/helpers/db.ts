@@ -17,9 +17,8 @@ export interface TestDb extends DbContext {
   // Fixture helpers
   createContext(data: { name: string; color?: string }): string;
   createProject(data: { title: string; context_id?: string }): string;
-
-  // Note helpers
   createNote(data: { title: string; content?: string; context_id?: string; project_id?: string; is_pinned?: boolean }): string;
+  createAgent(data: { name: string; api_key_hash: string; permissions?: string }): string;
 
   // Raw access for assertions
   getRawTask(id: string): RawTask | undefined;
@@ -28,6 +27,7 @@ export interface TestDb extends DbContext {
   getRawStakeholder(id: string): RawStakeholder | undefined;
   getRawChecklistItem(id: string): RawChecklistItem | undefined;
   getRawNote(id: string): RawNote | undefined;
+  getRawAgent(id: string): RawAgent | undefined;
 
   // Cleanup
   close(): void;
@@ -80,6 +80,17 @@ export interface RawChecklistItem {
   [key: string]: unknown;
 }
 
+export interface RawAgent {
+  id: string;
+  name: string;
+  api_key_hash: string;
+  permissions: string;
+  last_used_at: string | null;
+  created_at: string;
+  revoked_at: string | null;
+  [key: string]: unknown;
+}
+
 function createAsyncAdapter(sqliteDb: Database.Database): AsyncDatabase & Pick<Database.Database, 'prepare' | 'exec'> {
   return {
     async execute(sql: string, params: unknown[] = []): Promise<{ rowsAffected: number }> {
@@ -118,6 +129,16 @@ export function createTestDb(): TestDb {
 
   // Create tables
   sqliteDb.exec(`
+    CREATE TABLE ai_agents (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      api_key_hash TEXT NOT NULL,
+      permissions TEXT DEFAULT '{"read": true, "write": true}',
+      last_used_at TEXT,
+      created_at TEXT NOT NULL,
+      revoked_at TEXT
+    );
+
     CREATE TABLE contexts (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
@@ -126,7 +147,9 @@ export function createTestDb(): TestDb {
       sort_order INTEGER DEFAULT 0,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL,
-      deleted_at TEXT
+      deleted_at TEXT,
+      source TEXT DEFAULT 'user',
+      agent_id TEXT REFERENCES ai_agents(id)
     );
 
     CREATE TABLE projects (
@@ -139,7 +162,9 @@ export function createTestDb(): TestDb {
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL,
       completed_at TEXT,
-      deleted_at TEXT
+      deleted_at TEXT,
+      source TEXT DEFAULT 'user',
+      agent_id TEXT REFERENCES ai_agents(id)
     );
 
     CREATE TABLE stakeholders (
@@ -153,7 +178,9 @@ export function createTestDb(): TestDb {
       avatar_url TEXT,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL,
-      deleted_at TEXT
+      deleted_at TEXT,
+      source TEXT DEFAULT 'user',
+      agent_id TEXT REFERENCES ai_agents(id)
     );
 
     CREATE TABLE tasks (
@@ -173,7 +200,9 @@ export function createTestDb(): TestDb {
       completed_at TEXT,
       deleted_at TEXT,
       permanently_deleted_at TEXT,
-      stale_at TEXT
+      stale_at TEXT,
+      source TEXT DEFAULT 'user',
+      agent_id TEXT REFERENCES ai_agents(id)
     );
 
     CREATE TABLE task_checklists (
@@ -184,7 +213,9 @@ export function createTestDb(): TestDb {
       sort_order INTEGER DEFAULT 0,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL,
-      deleted_at TEXT
+      deleted_at TEXT,
+      source TEXT DEFAULT 'user',
+      agent_id TEXT REFERENCES ai_agents(id)
     );
   `);
 
@@ -198,7 +229,9 @@ export function createTestDb(): TestDb {
       is_pinned INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL,
-      deleted_at TEXT
+      deleted_at TEXT,
+      source TEXT DEFAULT 'user',
+      agent_id TEXT REFERENCES ai_agents(id)
     );
   `);
 
@@ -237,6 +270,16 @@ export function createTestDb(): TestDb {
       return id;
     },
 
+    createAgent({ name, api_key_hash, permissions }) {
+      const id = uuid();
+      const now = new Date().toISOString();
+      sqliteDb.prepare(`
+        INSERT INTO ai_agents (id, name, api_key_hash, permissions, created_at)
+        VALUES (?, ?, ?, ?, ?)
+      `).run(id, name, api_key_hash, permissions ?? '{"read": true, "write": true}', now);
+      return id;
+    },
+
     getRawTask(id: string) {
       return sqliteDb.prepare('SELECT * FROM tasks WHERE id = ?').get(id) as RawTask | undefined;
     },
@@ -259,6 +302,10 @@ export function createTestDb(): TestDb {
 
     getRawNote(id: string) {
       return sqliteDb.prepare('SELECT * FROM notes WHERE id = ?').get(id) as RawNote | undefined;
+    },
+
+    getRawAgent(id: string) {
+      return sqliteDb.prepare('SELECT * FROM ai_agents WHERE id = ?').get(id) as RawAgent | undefined;
     },
 
     close() {
