@@ -94,6 +94,7 @@ class AgentConnector implements PowerSyncBackendConnector {
       const id = entry.id;
 
       if (entry.op === 'PUT') {
+        // New record: set creator info (source/agent_id)
         const { error } = await authClient
           .from(table)
           .upsert({
@@ -105,12 +106,13 @@ class AgentConnector implements PowerSyncBackendConnector {
           });
         if (error) throw error;
       } else if (entry.op === 'PATCH') {
+        // Update: set modifier info (updated_by_*), preserve original creator
         const { error } = await authClient
           .from(table)
           .update({
             ...entry.opData,
-            source: 'ai',
-            agent_id: agentId,
+            updated_by_source: 'ai',
+            updated_by_agent_id: agentId,
           })
           .eq('id', id);
         if (error) throw error;

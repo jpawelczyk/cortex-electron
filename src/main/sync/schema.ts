@@ -20,6 +20,8 @@ const tasks = new Table({
   assignee_id: column.text,
   source: column.text,
   agent_id: column.text,
+  updated_by_source: column.text,
+  updated_by_agent_id: column.text,
 });
 
 const projects = new Table({
@@ -34,6 +36,8 @@ const projects = new Table({
   deleted_at: column.text,
   source: column.text,
   agent_id: column.text,
+  updated_by_source: column.text,
+  updated_by_agent_id: column.text,
 });
 
 const contexts = new Table({
@@ -46,6 +50,8 @@ const contexts = new Table({
   deleted_at: column.text,
   source: column.text,
   agent_id: column.text,
+  updated_by_source: column.text,
+  updated_by_agent_id: column.text,
 });
 
 const project_headings = new Table({
@@ -57,6 +63,8 @@ const project_headings = new Table({
   deleted_at: column.text,
   source: column.text,
   agent_id: column.text,
+  updated_by_source: column.text,
+  updated_by_agent_id: column.text,
 });
 
 const task_checklists = new Table({
@@ -69,6 +77,8 @@ const task_checklists = new Table({
   deleted_at: column.text,
   source: column.text,
   agent_id: column.text,
+  updated_by_source: column.text,
+  updated_by_agent_id: column.text,
 });
 
 const stakeholders = new Table({
@@ -84,6 +94,8 @@ const stakeholders = new Table({
   deleted_at: column.text,
   source: column.text,
   agent_id: column.text,
+  updated_by_source: column.text,
+  updated_by_agent_id: column.text,
 });
 
 const meetings = new Table({
@@ -100,6 +112,8 @@ const meetings = new Table({
   deleted_at: column.text,
   source: column.text,
   agent_id: column.text,
+  updated_by_source: column.text,
+  updated_by_agent_id: column.text,
 });
 
 const meeting_attendees = new Table({
@@ -120,6 +134,8 @@ const notes = new Table({
   deleted_at: column.text,
   source: column.text,
   agent_id: column.text,
+  updated_by_source: column.text,
+  updated_by_agent_id: column.text,
 });
 
 const note_stakeholders = new Table({
@@ -136,6 +152,8 @@ const daily_notes = new Table({
   updated_at: column.text,
   source: column.text,
   agent_id: column.text,
+  updated_by_source: column.text,
+  updated_by_agent_id: column.text,
 });
 
 const ai_agents = new Table({
