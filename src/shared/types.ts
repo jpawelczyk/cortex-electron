@@ -45,6 +45,7 @@ export interface Task {
   completed_at: string | null;
   deleted_at: string | null;
   stale_at: string | null;
+  assignee_id: string | null;
 }
 
 export interface CreateTaskInput {
@@ -70,6 +71,7 @@ export interface UpdateTaskInput {
   context_id?: string | null;
   priority?: Priority | null;
   sort_order?: number;
+  assignee_id?: string | null;
 }
 
 export interface Project {

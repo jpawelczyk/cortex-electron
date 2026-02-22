@@ -27,7 +27,7 @@ describe('AppSchema', () => {
   describe('tasks table', () => {
     it('has the correct number of columns', () => {
       const cols: Column[] = AppSchema.props.tasks.columns;
-      expect(cols).toHaveLength(18);
+      expect(cols).toHaveLength(19);
     });
 
     it('has TEXT columns for title, notes, status, when_date, deadline, project_id, heading_id, context_id, priority, created_at, updated_at, completed_at, deleted_at, permanently_deleted_at, stale_at', () => {

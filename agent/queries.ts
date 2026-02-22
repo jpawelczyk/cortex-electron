@@ -127,6 +127,66 @@ export async function getNotes(): Promise<Note[]> {
   );
 }
 
+export async function getAssignedTasks(agentId: string): Promise<Task[]> {
+  const db = getDatabase();
+  return db.getAll<Task>(
+    `SELECT * FROM tasks
+     WHERE assignee_id = ?
+       AND status NOT IN ('logbook', 'cancelled')
+       AND deleted_at IS NULL
+     ORDER BY
+       CASE priority WHEN 'P0' THEN 0 WHEN 'P1' THEN 1 WHEN 'P2' THEN 2 ELSE 3 END,
+       deadline ASC NULLS LAST`,
+    [agentId],
+  );
+}
+
+const VALID_STATUSES = new Set([
+  'inbox', 'today', 'upcoming', 'anytime', 'someday', 'stale', 'logbook', 'cancelled',
+]);
+
+export async function updateTask(
+  id: string,
+  fields: { status?: string; notes?: string },
+): Promise<boolean> {
+  const db = getDatabase();
+
+  // Verify task exists
+  const existing = await db.getOptional<Task>('SELECT id FROM tasks WHERE id = ?', [id]);
+  if (!existing) return false;
+
+  const updates: string[] = [];
+  const values: unknown[] = [];
+
+  if (fields.status !== undefined) {
+    if (!VALID_STATUSES.has(fields.status)) {
+      throw new Error(`Invalid status: ${fields.status}`);
+    }
+    updates.push('status = ?');
+    values.push(fields.status);
+    if (fields.status === 'logbook') {
+      updates.push('completed_at = ?');
+      values.push(new Date().toISOString());
+    }
+  }
+  if (fields.notes !== undefined) {
+    updates.push('notes = ?');
+    values.push(fields.notes);
+  }
+
+  if (updates.length === 0) return true;
+
+  updates.push('updated_at = ?');
+  values.push(new Date().toISOString());
+  values.push(id);
+
+  await db.execute(
+    `UPDATE tasks SET ${updates.join(', ')} WHERE id = ?`,
+    values,
+  );
+  return true;
+}
+
 export async function getTodayContext(): Promise<TodayContext> {
   const today = new Date().toISOString().split('T')[0];
   const [tasks, meetings, dailyNote, overdueTasks, projects] = await Promise.all([

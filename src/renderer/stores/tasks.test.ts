@@ -63,6 +63,7 @@ const fakeTask = (overrides = {}) => ({
   completed_at: null,
   deleted_at: null,
   stale_at: null,
+  assignee_id: null,
   ...overrides,
 });
 

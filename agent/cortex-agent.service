@@ -1,0 +1,15 @@
+[Unit]
+Description=Cortex Agent Daemon
+After=network.target
+
+[Service]
+Type=simple
+# UPDATE: Set to your agent directory path
+WorkingDirectory=/path/to/cortex/agent
+ExecStart=/usr/bin/npx tsx daemon.ts
+Restart=always
+RestartSec=5
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=default.target

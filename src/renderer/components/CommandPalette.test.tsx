@@ -29,6 +29,7 @@ const mockTasks: Task[] = [
     updated_at: '2024-01-01T00:00:00.000Z',
     completed_at: null,
     stale_at: null,
+    assignee_id: null,
   },
   {
     id: 't2',
@@ -47,6 +48,7 @@ const mockTasks: Task[] = [
     updated_at: '2024-01-01T00:00:00.000Z',
     completed_at: null,
     stale_at: null,
+    assignee_id: null,
   },
   {
     id: 't3',
@@ -65,6 +67,7 @@ const mockTasks: Task[] = [
     updated_at: '2024-01-01T00:00:00.000Z',
     completed_at: null,
     stale_at: null,
+    assignee_id: null,
   },
 ];
 
@@ -205,6 +208,7 @@ describe('CommandPalette', () => {
       updated_at: '2024-01-01T00:00:00.000Z',
       completed_at: null,
       stale_at: null,
+    assignee_id: null,
     }));
     mockStore.tasks = manyTasks;
 

@@ -17,6 +17,7 @@ const tasks = new Table({
   deleted_at: column.text,
   permanently_deleted_at: column.text,
   stale_at: column.text,
+  assignee_id: column.text,
   source: column.text,
   agent_id: column.text,
 });
