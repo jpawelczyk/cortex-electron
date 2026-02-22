@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { app, BrowserWindow, ipcMain, nativeImage } from 'electron';
 import { fileURLToPath } from 'url';
 import path from 'path';
