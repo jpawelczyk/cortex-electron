@@ -82,14 +82,14 @@ export interface RawChecklistItem {
 
 function createAsyncAdapter(sqliteDb: Database.Database): AsyncDatabase & Pick<Database.Database, 'prepare' | 'exec'> {
   return {
-    async execute(sql: string, params: any[] = []): Promise<{ rowsAffected: number }> {
+    async execute(sql: string, params: unknown[] = []): Promise<{ rowsAffected: number }> {
       const result = sqliteDb.prepare(sql).run(...params);
       return { rowsAffected: result.changes };
     },
-    async getAll<T>(sql: string, params: any[] = []): Promise<T[]> {
+    async getAll<T>(sql: string, params: unknown[] = []): Promise<T[]> {
       return sqliteDb.prepare(sql).all(...params) as T[];
     },
-    async getOptional<T>(sql: string, params: any[] = []): Promise<T | null> {
+    async getOptional<T>(sql: string, params: unknown[] = []): Promise<T | null> {
       const row = sqliteDb.prepare(sql).get(...params) as T | undefined;
       return row ?? null;
     },

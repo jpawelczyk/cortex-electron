@@ -4,13 +4,13 @@ export interface QueryResult {
 
 export interface AsyncDatabase {
   /** Execute a write query (INSERT, UPDATE, DELETE) */
-  execute(sql: string, params?: any[]): Promise<QueryResult>;
+  execute(sql: string, params?: unknown[]): Promise<QueryResult>;
 
   /** Get all rows matching a query */
-  getAll<T>(sql: string, params?: any[]): Promise<T[]>;
+  getAll<T>(sql: string, params?: unknown[]): Promise<T[]>;
 
   /** Get a single row or null */
-  getOptional<T>(sql: string, params?: any[]): Promise<T | null>;
+  getOptional<T>(sql: string, params?: unknown[]): Promise<T | null>;
 
   /** Execute multiple statements in a write transaction */
   writeTransaction<T>(fn: (tx: AsyncDatabase) => Promise<T>): Promise<T>;

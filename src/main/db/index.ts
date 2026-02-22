@@ -12,27 +12,27 @@ function createPowerSyncAdapter(
   psDb: Pick<PowerSyncDatabase, 'execute' | 'getAll' | 'getOptional' | 'writeTransaction'>
 ): AsyncDatabase {
   return {
-    async execute(sql: string, params: any[] = []): Promise<QueryResult> {
+    async execute(sql: string, params: unknown[] = []): Promise<QueryResult> {
       const result = await psDb.execute(sql, params);
       return { rowsAffected: result.rowsAffected };
     },
-    async getAll<T>(sql: string, params: any[] = []): Promise<T[]> {
+    async getAll<T>(sql: string, params: unknown[] = []): Promise<T[]> {
       return await psDb.getAll<T>(sql, params);
     },
-    async getOptional<T>(sql: string, params: any[] = []): Promise<T | null> {
+    async getOptional<T>(sql: string, params: unknown[] = []): Promise<T | null> {
       return await psDb.getOptional<T>(sql, params);
     },
     async writeTransaction<T>(fn: (tx: AsyncDatabase) => Promise<T>): Promise<T> {
       return await psDb.writeTransaction(async (psTx) => {
         const txAdapter: AsyncDatabase = {
-          async execute(sql: string, params: any[] = []): Promise<QueryResult> {
+          async execute(sql: string, params: unknown[] = []): Promise<QueryResult> {
             const result = await psTx.execute(sql, params);
             return { rowsAffected: result.rowsAffected };
           },
-          async getAll<T>(sql: string, params: any[] = []): Promise<T[]> {
+          async getAll<T>(sql: string, params: unknown[] = []): Promise<T[]> {
             return await psTx.getAll<T>(sql, params);
           },
-          async getOptional<T>(sql: string, params: any[] = []): Promise<T | null> {
+          async getOptional<T>(sql: string, params: unknown[] = []): Promise<T | null> {
             return await psTx.getOptional<T>(sql, params);
           },
           writeTransaction(): Promise<never> {
