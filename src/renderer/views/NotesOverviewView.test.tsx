@@ -10,6 +10,7 @@ let mockContexts: Record<string, unknown>[] = [];
 const mockFetchNotes = vi.fn();
 const mockCreateNote = vi.fn().mockResolvedValue({ id: 'new-note-id', title: 'Untitled' });
 const mockSelectNote = vi.fn();
+const mockSetAutoFocusNoteTitle = vi.fn();
 
 vi.mock('../stores', () => ({
   useStore: (selector: (state: Record<string, unknown>) => unknown) => {
@@ -21,6 +22,7 @@ vi.mock('../stores', () => ({
       fetchNotes: mockFetchNotes,
       createNote: mockCreateNote,
       selectNote: mockSelectNote,
+      setAutoFocusNoteTitle: mockSetAutoFocusNoteTitle,
     };
     return selector(state);
   },

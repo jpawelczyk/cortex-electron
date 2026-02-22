@@ -66,6 +66,7 @@ export function NotesOverviewView() {
   const fetchNotes = useStore(s => s.fetchNotes);
   const createNote = useStore(s => s.createNote);
   const selectNote = useStore(s => s.selectNote);
+  const setAutoFocusNoteTitle = useStore(s => s.setAutoFocusNoteTitle);
 
   const [sort, setSort] = useState<NoteSort>('updated');
 
@@ -118,6 +119,7 @@ export function NotesOverviewView() {
           data-testid="new-note-trigger"
           onClick={async () => {
             const note = await createNote({ title: 'Untitled' });
+            setAutoFocusNoteTitle(true);
             selectNote(note.id);
           }}
           className="flex items-center gap-3 w-full px-4 py-3 mb-4 rounded-lg border border-dashed border-border/60 bg-card/20 text-muted-foreground/60 hover:text-muted-foreground hover:bg-accent/30 hover:border-border transition-colors cursor-pointer"

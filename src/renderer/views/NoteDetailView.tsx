@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Pin, Trash2, Check, X } from 'lucide-react';
 import { useStore } from '../stores';
 import { MarkdownEditor } from '../components/MarkdownEditor';
@@ -16,11 +16,14 @@ export function NoteDetailView({ noteId }: NoteDetailViewProps) {
   const deselectNote = useStore((s) => s.deselectNote);
   const contexts = useStore((s) => s.contexts);
   const projects = useStore((s) => s.projects);
+  const autoFocusNoteTitle = useStore((s) => s.autoFocusNoteTitle);
+  const setAutoFocusNoteTitle = useStore((s) => s.setAutoFocusNoteTitle);
 
   const note = notes.find((n) => n.id === noteId);
 
   const [title, setTitle] = useState(note?.title ?? '');
   const [content, setContent] = useState(note?.content ?? '');
+  const titleRef = useRef<HTMLInputElement>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [contextOpen, setContextOpen] = useState(false);
   const [projectOpen, setProjectOpen] = useState(false);
@@ -32,6 +35,14 @@ export function NoteDetailView({ noteId }: NoteDetailViewProps) {
       setContent(note.content ?? '');
     }
   }, [noteId]); // eslint-disable-line react-hooks/exhaustive-deps -- Only sync on note ID change, not on every note update
+
+  useEffect(() => {
+    if (autoFocusNoteTitle && titleRef.current) {
+      titleRef.current.focus();
+      titleRef.current.select();
+      setAutoFocusNoteTitle(false);
+    }
+  }, [autoFocusNoteTitle, setAutoFocusNoteTitle]);
 
   const { debouncedFn: debouncedSaveTitle } = useDebouncedCallback(
     (newTitle: string) => updateNote(noteId, { title: newTitle }),
@@ -110,6 +121,7 @@ export function NoteDetailView({ noteId }: NoteDetailViewProps) {
 
         {/* Title */}
         <input
+          ref={titleRef}
           value={title}
           data-testid="note-title-input"
           onChange={(e) => {

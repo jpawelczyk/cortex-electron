@@ -6,6 +6,7 @@ export interface NoteSlice {
   notesLoading: boolean;
   notesError: string | null;
   selectedNoteId: string | null;
+  autoFocusNoteTitle: boolean;
 
   fetchNotes: () => Promise<void>;
   createNote: (input: CreateNoteInput) => Promise<Note>;
@@ -14,6 +15,7 @@ export interface NoteSlice {
 
   selectNote: (id: string) => void;
   deselectNote: () => void;
+  setAutoFocusNoteTitle: (value: boolean) => void;
 }
 
 export const createNoteSlice: StateCreator<NoteSlice> = (set) => ({
@@ -21,6 +23,7 @@ export const createNoteSlice: StateCreator<NoteSlice> = (set) => ({
   notesLoading: false,
   notesError: null,
   selectedNoteId: null,
+  autoFocusNoteTitle: false,
 
   fetchNotes: async () => {
     set({ notesLoading: true, notesError: null });
@@ -55,4 +58,5 @@ export const createNoteSlice: StateCreator<NoteSlice> = (set) => ({
 
   selectNote: (id) => set({ selectedNoteId: id }),
   deselectNote: () => set({ selectedNoteId: null }),
+  setAutoFocusNoteTitle: (value) => set({ autoFocusNoteTitle: value }),
 });
