@@ -32,6 +32,12 @@ export default tseslint.config(
     },
   },
   {
+    files: ['agent/**/*.ts'],
+    rules: {
+      'no-console': 'off',
+    },
+  },
+  {
     ignores: ['dist/**', 'release/**', 'node_modules/**'],
   }
 );

@@ -10,6 +10,13 @@ import {
   getProjects,
   getOverdueTasks,
 } from './queries.js';
+import type { Task, Project } from '../src/shared/types.js';
+
+interface Meeting {
+  title: string;
+  start_time: string;
+  is_all_day: number;
+}
 
 const program = new Command();
 const DAEMON_URL = process.env.CORTEX_DAEMON_URL || 'http://127.0.0.1:7654';
@@ -81,7 +88,7 @@ program
   .description('List today\'s tasks')
   .action(async () => {
     if (await useDaemon()) {
-      const tasks = await fetchDaemon<any[]>('/tasks/today');
+      const tasks = await fetchDaemon<Task[]>('/tasks/today');
       if (tasks.length === 0) { console.log('No tasks for today.'); return; }
       for (const task of tasks) console.log(formatTask(task));
       console.log(`\n${tasks.length} task(s)`);
@@ -101,7 +108,7 @@ program
   .option('-s, --status <status>', 'Filter by status', 'inbox')
   .action(async (opts) => {
     if (await useDaemon()) {
-      const tasks = await fetchDaemon<any[]>(`/tasks?status=${opts.status}`);
+      const tasks = await fetchDaemon<Task[]>(`/tasks?status=${opts.status}`);
       if (tasks.length === 0) { console.log(`No ${opts.status} tasks.`); return; }
       for (const task of tasks) {
         const project = task.project_id ? ` #${task.project_id.slice(0, 8)}` : '';
@@ -126,7 +133,7 @@ program
   .description('List overdue tasks')
   .action(async () => {
     if (await useDaemon()) {
-      const tasks = await fetchDaemon<any[]>('/tasks/overdue');
+      const tasks = await fetchDaemon<Task[]>('/tasks/overdue');
       if (tasks.length === 0) { console.log('No overdue tasks.'); return; }
       for (const task of tasks) console.log(formatTask(task));
       console.log(`\n${tasks.length} overdue task(s)`);
@@ -146,7 +153,7 @@ program
   .option('-d, --days <days>', 'Number of days ahead', '7')
   .action(async (opts) => {
     if (await useDaemon()) {
-      const meetings = await fetchDaemon<any[]>(`/meetings?days=${opts.days}`);
+      const meetings = await fetchDaemon<Meeting[]>(`/meetings?days=${opts.days}`);
       if (meetings.length === 0) { console.log('No upcoming meetings.'); return; }
       for (const m of meetings) {
         const time = m.is_all_day ? 'all day' : new Date(m.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -175,7 +182,7 @@ program
   .action(async (opts) => {
     if (await useDaemon()) {
       const url = opts.status ? `/projects?status=${opts.status}` : '/projects';
-      const projects = await fetchDaemon<any[]>(url);
+      const projects = await fetchDaemon<Project[]>(url);
       if (projects.length === 0) { console.log('No projects.'); return; }
       for (const p of projects) console.log(`  [${p.status}] ${p.title}`);
       console.log(`\n${projects.length} project(s)`);

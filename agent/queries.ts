@@ -36,7 +36,6 @@ export interface TodayContext {
 
 export async function getTodayTasks(): Promise<Task[]> {
   const db = getDatabase();
-  const today = new Date().toISOString().split('T')[0];
   return db.getAll<Task>(
     `SELECT * FROM tasks
      WHERE status = 'today' AND deleted_at IS NULL
