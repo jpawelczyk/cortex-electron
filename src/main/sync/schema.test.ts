@@ -27,7 +27,7 @@ describe('AppSchema', () => {
   describe('tasks table', () => {
     it('has the correct number of columns', () => {
       const cols: Column[] = AppSchema.props.tasks.columns;
-      expect(cols).toHaveLength(19);
+      expect(cols).toHaveLength(21);
     });
 
     it('has TEXT columns for title, notes, status, when_date, deadline, project_id, heading_id, context_id, priority, created_at, updated_at, completed_at, deleted_at, permanently_deleted_at, stale_at', () => {
@@ -50,7 +50,7 @@ describe('AppSchema', () => {
   describe('projects table', () => {
     it('has the correct number of columns', () => {
       const cols: Column[] = AppSchema.props.projects.columns;
-      expect(cols).toHaveLength(11);
+      expect(cols).toHaveLength(13);
     });
 
     it('has TEXT columns for title, description, status, context_id, created_at, updated_at, completed_at, deleted_at', () => {
@@ -73,7 +73,7 @@ describe('AppSchema', () => {
   describe('contexts table', () => {
     it('has the correct number of columns', () => {
       const cols: Column[] = AppSchema.props.contexts.columns;
-      expect(cols).toHaveLength(9);
+      expect(cols).toHaveLength(11);
     });
 
     it('has TEXT columns for name, color, icon, created_at, updated_at, deleted_at', () => {
@@ -96,7 +96,7 @@ describe('AppSchema', () => {
   describe('project_headings table', () => {
     it('has the correct number of columns', () => {
       const cols: Column[] = AppSchema.props.project_headings.columns;
-      expect(cols).toHaveLength(8);
+      expect(cols).toHaveLength(10);
     });
 
     it('has TEXT columns for project_id, title, created_at, updated_at, deleted_at', () => {
@@ -119,7 +119,7 @@ describe('AppSchema', () => {
   describe('task_checklists table', () => {
     it('has the correct number of columns', () => {
       const cols: Column[] = AppSchema.props.task_checklists.columns;
-      expect(cols).toHaveLength(9);
+      expect(cols).toHaveLength(11);
     });
 
     it('has TEXT columns for task_id, title, created_at, updated_at, deleted_at', () => {
@@ -143,7 +143,7 @@ describe('AppSchema', () => {
   describe('stakeholders table', () => {
     it('has the correct number of columns', () => {
       const cols: Column[] = AppSchema.props.stakeholders.columns;
-      expect(cols).toHaveLength(12);
+      expect(cols).toHaveLength(14);
     });
 
     it('has TEXT columns for name, organization, role, email, phone, notes, avatar_url, created_at, updated_at, deleted_at', () => {
@@ -160,7 +160,7 @@ describe('AppSchema', () => {
   describe('meetings table', () => {
     it('has the correct number of columns', () => {
       const cols: Column[] = AppSchema.props.meetings.columns;
-      expect(cols).toHaveLength(13);
+      expect(cols).toHaveLength(15);
     });
 
     it('has TEXT columns for title, description, start_time, end_time, context_id, project_id, notes, created_at, updated_at, deleted_at', () => {
@@ -197,7 +197,7 @@ describe('AppSchema', () => {
   describe('notes table', () => {
     it('has the correct number of columns', () => {
       const cols: Column[] = AppSchema.props.notes.columns;
-      expect(cols).toHaveLength(10);
+      expect(cols).toHaveLength(12);
     });
 
     it('has TEXT columns for title, content, context_id, project_id, created_at, updated_at, deleted_at', () => {
@@ -234,7 +234,7 @@ describe('AppSchema', () => {
   describe('daily_notes table', () => {
     it('has the correct number of columns', () => {
       const cols: Column[] = AppSchema.props.daily_notes.columns;
-      expect(cols).toHaveLength(6);
+      expect(cols).toHaveLength(8);
     });
 
     it('has TEXT columns for date, content, created_at, updated_at', () => {

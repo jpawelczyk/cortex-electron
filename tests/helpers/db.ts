@@ -201,6 +201,7 @@ export function createTestDb(): TestDb {
       deleted_at TEXT,
       permanently_deleted_at TEXT,
       stale_at TEXT,
+      assignee_id TEXT,
       source TEXT DEFAULT 'user',
       agent_id TEXT REFERENCES ai_agents(id)
     );
