@@ -192,6 +192,75 @@ async function start() {
     }
   });
 
+  app.delete('/tasks/:id', async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const found = await queries.deleteTask(id);
+    if (!found) return reply.code(404).send({ error: 'Task not found' });
+    return { success: true };
+  });
+
+  // --- Notes ---
+
+  app.get('/notes', async () => queries.getNotes());
+
+  app.post('/notes', async (req, reply) => {
+    const { title, content, context_id, project_id } = req.body as {
+      title?: string;
+      content?: string;
+      context_id?: string;
+      project_id?: string;
+    };
+    if (!title || typeof title !== 'string') {
+      return reply.code(400).send({ error: 'title is required' });
+    }
+    return queries.createNote(title, { content, context_id, project_id });
+  });
+
+  app.patch('/notes/:id', async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const fields = req.body as { title?: string; content?: string; context_id?: string | null; project_id?: string | null; is_pinned?: number };
+    const found = await queries.updateNote(id, fields);
+    if (!found) return reply.code(404).send({ error: 'Note not found' });
+    return { success: true };
+  });
+
+  app.delete('/notes/:id', async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const found = await queries.deleteNote(id);
+    if (!found) return reply.code(404).send({ error: 'Note not found' });
+    return { success: true };
+  });
+
+  // --- Projects ---
+
+  app.post('/projects', async (req, reply) => {
+    const { title, description, status, context_id } = req.body as {
+      title?: string;
+      description?: string;
+      status?: string;
+      context_id?: string;
+    };
+    if (!title || typeof title !== 'string') {
+      return reply.code(400).send({ error: 'title is required' });
+    }
+    return queries.createProject(title, { description, status, context_id });
+  });
+
+  app.patch('/projects/:id', async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const fields = req.body as { title?: string; description?: string; status?: string; context_id?: string | null };
+    const found = await queries.updateProject(id, fields);
+    if (!found) return reply.code(404).send({ error: 'Project not found' });
+    return { success: true };
+  });
+
+  app.delete('/projects/:id', async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const found = await queries.deleteProject(id);
+    if (!found) return reply.code(404).send({ error: 'Project not found' });
+    return { success: true };
+  });
+
   // --- Graceful shutdown ---
 
   const shutdown = async () => {

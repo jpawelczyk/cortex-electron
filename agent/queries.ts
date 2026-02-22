@@ -156,8 +156,8 @@ export async function updateTask(
   const existing = await db.getOptional<Task>('SELECT id FROM tasks WHERE id = ?', [id]);
   if (!existing) return false;
 
-  const updates: string[] = [];
-  const values: unknown[] = [];
+  const updates: string[] = ['updated_at = ?', 'updated_by_source = ?', 'updated_by_agent_id = ?'];
+  const values: unknown[] = [new Date().toISOString(), 'ai', AGENT_ID ?? null];
 
   if (fields.status !== undefined) {
     if (!VALID_STATUSES.has(fields.status)) {
@@ -175,10 +175,6 @@ export async function updateTask(
     values.push(fields.notes);
   }
 
-  if (updates.length === 0) return true;
-
-  updates.push('updated_at = ?');
-  values.push(new Date().toISOString());
   values.push(id);
 
   await db.execute(
@@ -187,6 +183,127 @@ export async function updateTask(
   );
   return true;
 }
+
+// --- Notes CRUD ---
+
+export async function createNote(
+  title: string,
+  options: { content?: string; context_id?: string; project_id?: string } = {},
+): Promise<Note> {
+  const db = getDatabase();
+  const now = new Date().toISOString();
+  const id = crypto.randomUUID();
+
+  await db.execute(
+    `INSERT INTO notes (id, title, content, context_id, project_id, is_pinned, created_at, updated_at, source, agent_id)
+     VALUES (?, ?, ?, ?, ?, 0, ?, ?, 'ai', ?)`,
+    [id, title, options.content ?? null, options.context_id ?? null, options.project_id ?? null, now, now, AGENT_ID ?? null],
+  );
+
+  return (await db.getOptional<Note>('SELECT * FROM notes WHERE id = ?', [id]))!;
+}
+
+export async function updateNote(
+  id: string,
+  fields: { title?: string; content?: string; context_id?: string | null; project_id?: string | null; is_pinned?: number },
+): Promise<boolean> {
+  const db = getDatabase();
+  const existing = await db.getOptional<Note>('SELECT id FROM notes WHERE id = ?', [id]);
+  if (!existing) return false;
+
+  const updates: string[] = ['updated_at = ?', 'updated_by_source = ?', 'updated_by_agent_id = ?'];
+  const values: unknown[] = [new Date().toISOString(), 'ai', AGENT_ID ?? null];
+
+  if (fields.title !== undefined) { updates.push('title = ?'); values.push(fields.title); }
+  if (fields.content !== undefined) { updates.push('content = ?'); values.push(fields.content); }
+  if (fields.context_id !== undefined) { updates.push('context_id = ?'); values.push(fields.context_id); }
+  if (fields.project_id !== undefined) { updates.push('project_id = ?'); values.push(fields.project_id); }
+  if (fields.is_pinned !== undefined) { updates.push('is_pinned = ?'); values.push(fields.is_pinned); }
+
+  values.push(id);
+  await db.execute(`UPDATE notes SET ${updates.join(', ')} WHERE id = ?`, values);
+  return true;
+}
+
+export async function deleteNote(id: string): Promise<boolean> {
+  const db = getDatabase();
+  const now = new Date().toISOString();
+  const result = await db.execute(
+    'UPDATE notes SET deleted_at = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL',
+    [now, now, id],
+  );
+  return (result.rowsAffected ?? 0) > 0;
+}
+
+// --- Projects CRUD ---
+
+export async function createProject(
+  title: string,
+  options: { description?: string; status?: string; context_id?: string } = {},
+): Promise<Project> {
+  const db = getDatabase();
+  const now = new Date().toISOString();
+  const id = crypto.randomUUID();
+  const status = options.status ?? 'active';
+
+  await db.execute(
+    `INSERT INTO projects (id, title, description, status, context_id, sort_order, created_at, updated_at, source, agent_id)
+     VALUES (?, ?, ?, ?, ?, 0, ?, ?, 'ai', ?)`,
+    [id, title, options.description ?? null, status, options.context_id ?? null, now, now, AGENT_ID ?? null],
+  );
+
+  return (await db.getOptional<Project>('SELECT * FROM projects WHERE id = ?', [id]))!;
+}
+
+export async function updateProject(
+  id: string,
+  fields: { title?: string; description?: string; status?: string; context_id?: string | null },
+): Promise<boolean> {
+  const db = getDatabase();
+  const existing = await db.getOptional<Project>('SELECT id FROM projects WHERE id = ?', [id]);
+  if (!existing) return false;
+
+  const updates: string[] = ['updated_at = ?', 'updated_by_source = ?', 'updated_by_agent_id = ?'];
+  const values: unknown[] = [new Date().toISOString(), 'ai', AGENT_ID ?? null];
+
+  if (fields.title !== undefined) { updates.push('title = ?'); values.push(fields.title); }
+  if (fields.description !== undefined) { updates.push('description = ?'); values.push(fields.description); }
+  if (fields.status !== undefined) { updates.push('status = ?'); values.push(fields.status); }
+  if (fields.context_id !== undefined) { updates.push('context_id = ?'); values.push(fields.context_id); }
+
+  if (fields.status === 'completed') {
+    updates.push('completed_at = ?');
+    values.push(new Date().toISOString());
+  }
+
+  values.push(id);
+  await db.execute(`UPDATE projects SET ${updates.join(', ')} WHERE id = ?`, values);
+  return true;
+}
+
+export async function deleteProject(id: string): Promise<boolean> {
+  const db = getDatabase();
+  const now = new Date().toISOString();
+  const result = await db.execute(
+    'UPDATE projects SET deleted_at = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL',
+    [now, now, id],
+  );
+  return (result.rowsAffected ?? 0) > 0;
+}
+
+// --- Tasks (delete) ---
+
+export async function deleteTask(id: string): Promise<boolean> {
+  const db = getDatabase();
+  const now = new Date().toISOString();
+  const result = await db.execute(
+    'UPDATE tasks SET deleted_at = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL',
+    [now, now, id],
+  );
+  return (result.rowsAffected ?? 0) > 0;
+}
+
+// --- Context ---
 
 export async function getTodayContext(): Promise<TodayContext> {
   const today = new Date().toISOString().split('T')[0];
