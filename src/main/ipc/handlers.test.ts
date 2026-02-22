@@ -24,7 +24,7 @@ describe('IPC handlers', () => {
   });
 
   function getHandler(channel: string) {
-    registerHandlers(testDb.db);
+    registerHandlers(testDb.db, vi.fn());
     const call = vi.mocked(ipcMain.handle).mock.calls.find(
       ([ch]) => ch === channel
     );
@@ -33,7 +33,7 @@ describe('IPC handlers', () => {
   }
 
   it('registers all expected channels', () => {
-    registerHandlers(testDb.db);
+    registerHandlers(testDb.db, vi.fn());
 
     const channels = vi.mocked(ipcMain.handle).mock.calls.map(([ch]) => ch);
     const expected = [
@@ -57,7 +57,7 @@ describe('IPC handlers', () => {
     });
 
     it('tasks:create → tasks:get round-trip', async () => {
-      registerHandlers(testDb.db);
+      registerHandlers(testDb.db, vi.fn());
       const handlers = Object.fromEntries(
         vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
       );
@@ -71,7 +71,7 @@ describe('IPC handlers', () => {
     });
 
     it('tasks:update modifies a task', async () => {
-      registerHandlers(testDb.db);
+      registerHandlers(testDb.db, vi.fn());
       const handlers = Object.fromEntries(
         vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
       );
@@ -82,7 +82,7 @@ describe('IPC handlers', () => {
     });
 
     it('tasks:delete soft-deletes a task', async () => {
-      registerHandlers(testDb.db);
+      registerHandlers(testDb.db, vi.fn());
       const handlers = Object.fromEntries(
         vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
       );
@@ -100,7 +100,7 @@ describe('IPC handlers', () => {
     });
 
     it('tasks:listTrashed returns deleted tasks', async () => {
-      registerHandlers(testDb.db);
+      registerHandlers(testDb.db, vi.fn());
       const handlers = Object.fromEntries(
         vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
       );
@@ -114,7 +114,7 @@ describe('IPC handlers', () => {
     });
 
     it('tasks:restore brings task back from trash', async () => {
-      registerHandlers(testDb.db);
+      registerHandlers(testDb.db, vi.fn());
       const handlers = Object.fromEntries(
         vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
       );
@@ -128,7 +128,7 @@ describe('IPC handlers', () => {
     });
 
     it('tasks:emptyTrash permanently deletes all trashed tasks', async () => {
-      registerHandlers(testDb.db);
+      registerHandlers(testDb.db, vi.fn());
       const handlers = Object.fromEntries(
         vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
       );
@@ -150,7 +150,7 @@ describe('IPC handlers', () => {
     });
 
     it('projects:create → projects:get round-trip', async () => {
-      registerHandlers(testDb.db);
+      registerHandlers(testDb.db, vi.fn());
       const handlers = Object.fromEntries(
         vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
       );
@@ -163,7 +163,7 @@ describe('IPC handlers', () => {
     });
 
     it('projects:delete soft-deletes a project', async () => {
-      registerHandlers(testDb.db);
+      registerHandlers(testDb.db, vi.fn());
       const handlers = Object.fromEntries(
         vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
       );
@@ -187,7 +187,7 @@ describe('IPC handlers', () => {
     });
 
     it('contexts:create → contexts:get round-trip', async () => {
-      registerHandlers(testDb.db);
+      registerHandlers(testDb.db, vi.fn());
       const handlers = Object.fromEntries(
         vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
       );
@@ -200,7 +200,7 @@ describe('IPC handlers', () => {
     });
 
     it('contexts:delete soft-deletes a context', async () => {
-      registerHandlers(testDb.db);
+      registerHandlers(testDb.db, vi.fn());
       const handlers = Object.fromEntries(
         vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
       );
@@ -224,7 +224,7 @@ describe('IPC handlers', () => {
     });
 
     it('notes:create → notes:get round-trip', async () => {
-      registerHandlers(testDb.db);
+      registerHandlers(testDb.db, vi.fn());
       const handlers = Object.fromEntries(
         vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
       );
@@ -238,7 +238,7 @@ describe('IPC handlers', () => {
     });
 
     it('notes:create with content and optional fields', async () => {
-      registerHandlers(testDb.db);
+      registerHandlers(testDb.db, vi.fn());
       const handlers = Object.fromEntries(
         vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
       );
@@ -252,7 +252,7 @@ describe('IPC handlers', () => {
     });
 
     it('notes:update modifies a note', async () => {
-      registerHandlers(testDb.db);
+      registerHandlers(testDb.db, vi.fn());
       const handlers = Object.fromEntries(
         vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
       );
@@ -264,7 +264,7 @@ describe('IPC handlers', () => {
     });
 
     it('notes:delete soft-deletes a note', async () => {
-      registerHandlers(testDb.db);
+      registerHandlers(testDb.db, vi.fn());
       const handlers = Object.fromEntries(
         vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
       );
@@ -282,7 +282,7 @@ describe('IPC handlers', () => {
     });
 
     it('notes:list returns only non-deleted notes', async () => {
-      registerHandlers(testDb.db);
+      registerHandlers(testDb.db, vi.fn());
       const handlers = Object.fromEntries(
         vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
       );
@@ -297,7 +297,7 @@ describe('IPC handlers', () => {
     });
 
     it('notes:create rejects missing title', async () => {
-      registerHandlers(testDb.db);
+      registerHandlers(testDb.db, vi.fn());
       const handlers = Object.fromEntries(
         vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
       );
@@ -308,7 +308,7 @@ describe('IPC handlers', () => {
     });
 
     it('notes:create rejects empty title', async () => {
-      registerHandlers(testDb.db);
+      registerHandlers(testDb.db, vi.fn());
       const handlers = Object.fromEntries(
         vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
       );
@@ -319,7 +319,7 @@ describe('IPC handlers', () => {
     });
 
     it('notes:create rejects wrong types', async () => {
-      registerHandlers(testDb.db);
+      registerHandlers(testDb.db, vi.fn());
       const handlers = Object.fromEntries(
         vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
       );
@@ -330,7 +330,7 @@ describe('IPC handlers', () => {
     });
 
     it('notes:update rejects invalid id type', async () => {
-      registerHandlers(testDb.db);
+      registerHandlers(testDb.db, vi.fn());
       const handlers = Object.fromEntries(
         vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
       );

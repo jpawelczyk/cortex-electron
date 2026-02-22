@@ -10,7 +10,25 @@ import type { AsyncDatabase } from '../db/types';
 import type { DbContext } from '../db/types';
 import { CreateNoteSchema, UpdateNoteSchema, NoteIdSchema, CreateAIAgentSchema, AIAgentIdSchema } from '@shared/validation';
 
-export function registerHandlers(db: AsyncDatabase): void {
+export type NotifyChangeFn = (tables: string[]) => void;
+
+/** Register a write handler that notifies the renderer after the operation completes. */
+function handleWrite(
+  channel: string,
+  tables: string[],
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  handler: (...args: any[]) => Promise<unknown>,
+  notify: NotifyChangeFn,
+): void {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ipcMain.handle(channel, async (_: any, ...args: any[]) => {
+    const result = await handler(...args);
+    notify(tables);
+    return result;
+  });
+}
+
+export function registerHandlers(db: AsyncDatabase, notify: NotifyChangeFn): void {
   const ctx: DbContext = { db };
 
   const taskService = createTaskService(ctx);
@@ -21,54 +39,68 @@ export function registerHandlers(db: AsyncDatabase): void {
   const noteService = createNoteService(ctx);
   const agentService = createAIAgentService(ctx);
 
-  // Tasks
+  // Tasks — reads
   ipcMain.handle('tasks:list', async () => taskService.list());
   ipcMain.handle('tasks:get', async (_, id: string) => taskService.get(id));
-  ipcMain.handle('tasks:create', async (_, input) => taskService.create(input));
-  ipcMain.handle('tasks:update', async (_, id: string, input) => taskService.update(id, input));
-  ipcMain.handle('tasks:delete', async (_, id: string) => taskService.delete(id));
   ipcMain.handle('tasks:listTrashed', async () => taskService.listTrashed());
-  ipcMain.handle('tasks:restore', async (_, id: string) => taskService.restore(id));
-  ipcMain.handle('tasks:emptyTrash', async () => taskService.emptyTrash());
-  ipcMain.handle('tasks:purgeExpiredTrash', async (_, days: number) => taskService.purgeExpiredTrash(days));
 
-  // Projects
+  // Tasks — writes
+  handleWrite('tasks:create', ['tasks'], (input) => taskService.create(input), notify);
+  handleWrite('tasks:update', ['tasks'], (id, input) => taskService.update(id as string, input), notify);
+  handleWrite('tasks:delete', ['tasks'], (id) => taskService.delete(id as string), notify);
+  handleWrite('tasks:restore', ['tasks'], (id) => taskService.restore(id as string), notify);
+  handleWrite('tasks:emptyTrash', ['tasks'], () => taskService.emptyTrash(), notify);
+  handleWrite('tasks:purgeExpiredTrash', ['tasks'], (days) => taskService.purgeExpiredTrash(days as number), notify);
+
+  // Projects — reads
   ipcMain.handle('projects:list', async () => projectService.getAll());
   ipcMain.handle('projects:get', async (_, id: string) => projectService.get(id));
-  ipcMain.handle('projects:create', async (_, input) => projectService.create(input));
-  ipcMain.handle('projects:update', async (_, id: string, input) => projectService.update(id, input));
-  ipcMain.handle('projects:delete', async (_, id: string) => projectService.delete(id));
 
-  // Contexts
+  // Projects — writes
+  handleWrite('projects:create', ['projects'], (input) => projectService.create(input), notify);
+  handleWrite('projects:update', ['projects'], (id, input) => projectService.update(id as string, input), notify);
+  handleWrite('projects:delete', ['projects'], (id) => projectService.delete(id as string), notify);
+
+  // Contexts — reads
   ipcMain.handle('contexts:list', async () => contextService.getAll());
   ipcMain.handle('contexts:get', async (_, id: string) => contextService.get(id));
-  ipcMain.handle('contexts:create', async (_, input) => contextService.create(input));
-  ipcMain.handle('contexts:update', async (_, id: string, input) => contextService.update(id, input));
-  ipcMain.handle('contexts:delete', async (_, id: string) => contextService.delete(id));
 
-  // Stakeholders
+  // Contexts — writes
+  handleWrite('contexts:create', ['contexts'], (input) => contextService.create(input), notify);
+  handleWrite('contexts:update', ['contexts'], (id, input) => contextService.update(id as string, input), notify);
+  handleWrite('contexts:delete', ['contexts'], (id) => contextService.delete(id as string), notify);
+
+  // Stakeholders — reads
   ipcMain.handle('stakeholders:list', async () => stakeholderService.getAll());
   ipcMain.handle('stakeholders:get', async (_, id: string) => stakeholderService.get(id));
-  ipcMain.handle('stakeholders:create', async (_, input) => stakeholderService.create(input));
-  ipcMain.handle('stakeholders:update', async (_, id: string, input) => stakeholderService.update(id, input));
-  ipcMain.handle('stakeholders:delete', async (_, id: string) => stakeholderService.delete(id));
 
-  // Checklists
+  // Stakeholders — writes
+  handleWrite('stakeholders:create', ['stakeholders'], (input) => stakeholderService.create(input), notify);
+  handleWrite('stakeholders:update', ['stakeholders'], (id, input) => stakeholderService.update(id as string, input), notify);
+  handleWrite('stakeholders:delete', ['stakeholders'], (id) => stakeholderService.delete(id as string), notify);
+
+  // Checklists — reads
   ipcMain.handle('checklists:list', async (_, taskId: string) => checklistService.listByTask(taskId));
-  ipcMain.handle('checklists:create', async (_, input) => checklistService.create(input));
-  ipcMain.handle('checklists:update', async (_, id: string, input) => checklistService.update(id, input));
-  ipcMain.handle('checklists:delete', async (_, id: string) => checklistService.delete(id));
-  ipcMain.handle('checklists:reorder', async (_, taskId: string, itemIds: string[]) => checklistService.reorder(taskId, itemIds));
 
-  // Notes
+  // Checklists — writes
+  handleWrite('checklists:create', ['task_checklists'], (input) => checklistService.create(input), notify);
+  handleWrite('checklists:update', ['task_checklists'], (id, input) => checklistService.update(id as string, input), notify);
+  handleWrite('checklists:delete', ['task_checklists'], (id) => checklistService.delete(id as string), notify);
+  handleWrite('checklists:reorder', ['task_checklists'], (taskId, itemIds) => checklistService.reorder(taskId as string, itemIds as string[]), notify);
+
+  // Notes — reads
   ipcMain.handle('notes:list', async () => noteService.list());
   ipcMain.handle('notes:get', async (_, id: string) => noteService.get(NoteIdSchema.parse(id)));
-  ipcMain.handle('notes:create', async (_, input) => noteService.create(CreateNoteSchema.parse(input)));
-  ipcMain.handle('notes:update', async (_, id: string, input) => noteService.update(NoteIdSchema.parse(id), UpdateNoteSchema.parse(input)));
-  ipcMain.handle('notes:delete', async (_, id: string) => noteService.delete(NoteIdSchema.parse(id)));
 
-  // AI Agents
+  // Notes — writes
+  handleWrite('notes:create', ['notes'], (input) => noteService.create(CreateNoteSchema.parse(input)), notify);
+  handleWrite('notes:update', ['notes'], (id, input) => noteService.update(NoteIdSchema.parse(id as string), UpdateNoteSchema.parse(input)), notify);
+  handleWrite('notes:delete', ['notes'], (id) => noteService.delete(NoteIdSchema.parse(id as string)), notify);
+
+  // AI Agents — reads
   ipcMain.handle('agents:list', async () => agentService.list());
-  ipcMain.handle('agents:create', async (_, input) => agentService.create(CreateAIAgentSchema.parse(input)));
-  ipcMain.handle('agents:revoke', async (_, id: string) => agentService.revoke(AIAgentIdSchema.parse(id)));
+
+  // AI Agents — writes
+  handleWrite('agents:create', ['ai_agents'], (input) => agentService.create(CreateAIAgentSchema.parse(input)), notify);
+  handleWrite('agents:revoke', ['ai_agents'], (id) => agentService.revoke(AIAgentIdSchema.parse(id as string)), notify);
 }

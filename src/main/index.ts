@@ -88,7 +88,12 @@ app.on('second-instance', () => {
 
 app.whenReady().then(async () => {
   const db = await initDatabase();
-  registerHandlers(db);
+  const notifyRenderer = (tables: string[]) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('powersync:tables-updated', tables);
+    }
+  };
+  registerHandlers(db, notifyRenderer);
 
   const ctx: DbContext = { db };
 
