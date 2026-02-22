@@ -1,12 +1,17 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import type { AbstractPowerSyncDatabase, PowerSyncBackendConnector, PowerSyncCredentials } from '@powersync/common';
+import type { SupportedStorage } from '@supabase/auth-js';
 
 export class SupabaseConnector implements PowerSyncBackendConnector {
   private supabase: SupabaseClient;
   private powersyncUrl: string;
 
-  constructor(config: { supabaseUrl: string; supabaseAnonKey: string; powersyncUrl: string }) {
-    this.supabase = createClient(config.supabaseUrl, config.supabaseAnonKey);
+  constructor(config: { supabaseUrl: string; supabaseAnonKey: string; powersyncUrl: string }, storage?: SupportedStorage) {
+    this.supabase = createClient(config.supabaseUrl, config.supabaseAnonKey, {
+      auth: {
+        ...(storage && { storage }),
+      },
+    });
     this.powersyncUrl = config.powersyncUrl;
   }
 

@@ -51,7 +51,20 @@ describe('SupabaseConnector', () => {
     it('creates Supabase client with provided config', () => {
       expect(createClient).toHaveBeenCalledWith(
         TEST_CONFIG.supabaseUrl,
-        TEST_CONFIG.supabaseAnonKey
+        TEST_CONFIG.supabaseAnonKey,
+        { auth: {} }
+      );
+    });
+
+    it('passes storage adapter to Supabase client when provided', () => {
+      vi.mocked(createClient).mockClear();
+      const mockStorage = { getItem: vi.fn(), setItem: vi.fn(), removeItem: vi.fn() };
+      new SupabaseConnector(TEST_CONFIG, mockStorage);
+
+      expect(createClient).toHaveBeenCalledWith(
+        TEST_CONFIG.supabaseUrl,
+        TEST_CONFIG.supabaseAnonKey,
+        { auth: { storage: mockStorage } }
       );
     });
 

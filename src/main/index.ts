@@ -9,6 +9,7 @@ import { registerGlobalShortcuts, unregisterGlobalShortcuts } from './shortcuts.
 import { createTaskService } from './services/task.service.js';
 import { seedDefaultContexts } from './services/context.service.js';
 import { SupabaseConnector } from './sync/connector.js';
+import { FileAuthStorage } from './sync/auth-storage.js';
 import { getSyncConfig } from '../shared/config.js';
 import type { DbContext } from './db/types.js';
 
@@ -116,7 +117,8 @@ app.whenReady().then(async () => {
   // Sync connection is now driven by the renderer after successful auth
   const syncConfig = getSyncConfig();
   if (syncConfig) {
-    const connector = new SupabaseConnector(syncConfig);
+    const authStorage = new FileAuthStorage(app.getPath('userData'));
+    const connector = new SupabaseConnector(syncConfig, authStorage);
     registerAuthHandlers(connector);
   }
 
