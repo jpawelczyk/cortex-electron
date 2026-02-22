@@ -7,16 +7,18 @@ const PORT = parseInt(process.env.CORTEX_AGENT_PORT ?? '7654', 10);
 if (isNaN(PORT)) throw new Error('Invalid CORTEX_AGENT_PORT');
 
 const AGENT_ID = process.env.CORTEX_AGENT_ID;
-const WEBHOOK_URL = process.env.CORTEX_WEBHOOK_URL;
+const OPENCLAW_URL = process.env.OPENCLAW_WEBHOOK_URL || 'http://127.0.0.1:18789';
+const OPENCLAW_TOKEN = process.env.OPENCLAW_WEBHOOK_TOKEN;
 const EVENTS_FILE = '/tmp/cortex-agent-events.jsonl';
 
 // --- Assignment watcher ---
 
 const seenAssignments = new Set<string>();
 
-async function onTaskAssigned(task: { id: string; title: string; priority: string | null; deadline: string | null }) {
-  console.log(`New task assigned: ${task.title}`);
+async function onTaskAssigned(task: { id: string; title: string; notes: string | null; priority: string | null; deadline: string | null }) {
+  console.log(`📋 New task assigned: ${task.title}`);
 
+  // Always log to events file
   const notification = {
     type: 'task_assigned',
     task_id: task.id,
@@ -32,12 +34,46 @@ async function onTaskAssigned(task: { id: string; title: string; priority: strin
     console.error('Failed to write event file:', err);
   }
 
-  if (WEBHOOK_URL) {
-    fetch(WEBHOOK_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(notification),
-    }).catch((err) => console.error('Webhook failed:', err));
+  // Call OpenClaw webhook to spawn isolated session
+  if (OPENCLAW_TOKEN) {
+    const priorityStr = task.priority ? ` [${task.priority}]` : '';
+    const deadlineStr = task.deadline ? `\nDeadline: ${task.deadline}` : '';
+    const notesStr = task.notes ? `\n\nNotes:\n${task.notes}` : '';
+    
+    const message = `New Cortex task assigned to you:${priorityStr}
+
+**${task.title}**${deadlineStr}${notesStr}
+
+Task ID: ${task.id}
+
+Work on this task. When done, update the task status to 'logbook' via the Cortex daemon API:
+curl -X PATCH http://127.0.0.1:7654/tasks/${task.id} -H "Content-Type: application/json" -d '{"status": "logbook"}'`;
+
+    try {
+      const res = await fetch(`${OPENCLAW_URL}/hooks/agent`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OPENCLAW_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message,
+          name: 'Cortex',
+          sessionKey: `cortex-task-${task.id.slice(0, 8)}`,
+          deliver: true,
+          channel: 'telegram',
+        }),
+      });
+      
+      if (res.ok) {
+        console.log(`✓ OpenClaw agent spawned for task: ${task.title}`);
+      } else {
+        const err = await res.text();
+        console.error(`✗ OpenClaw webhook failed (${res.status}): ${err}`);
+      }
+    } catch (err) {
+      console.error('✗ OpenClaw webhook error:', err);
+    }
   }
 }
 
