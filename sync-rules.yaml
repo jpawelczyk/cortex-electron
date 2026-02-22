@@ -4,9 +4,8 @@
 
 bucket_definitions:
   user_data:
-    # token_parameters.user_id is extracted from the Supabase JWT
-    # "id" column required by PowerSync, user_id used for filtering
-    parameters: SELECT token_parameters.user_id AS id
+    # request.user_id() returns the JWT subject (Supabase user ID)
+    parameters: SELECT request.user_id() AS id
     data:
       - SELECT * FROM public.contexts WHERE user_id = bucket.id
       - SELECT * FROM public.projects WHERE user_id = bucket.id
