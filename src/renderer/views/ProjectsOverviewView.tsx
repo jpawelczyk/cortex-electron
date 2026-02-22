@@ -322,6 +322,13 @@ export function ProjectsOverviewView() {
             );
           })}
         </div>}
+
+        {activeTab === 'active' && !isCreating && activeProjects.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-20 text-muted-foreground" data-testid="projects-empty">
+            <Briefcase className="size-10 mb-3 opacity-30" strokeWidth={1.25} />
+            <p className="text-sm">No projects yet</p>
+          </div>
+        )}
       </div>
     </div>
   );
