@@ -16,7 +16,7 @@ export default defineConfig({
           build: {
             outDir: path.resolve(__dirname, 'dist/main'),
             rollupOptions: {
-              external: ['better-sqlite3'],
+              external: ['better-sqlite3', '@powersync/node', '@powersync/common', '@supabase/supabase-js'],
             },
           },
           resolve: {

@@ -21,20 +21,19 @@ const DEFAULT_CONTEXTS: { name: string; color: string; icon: string; sort_order:
 export async function seedDefaultContexts(ctx: DbContext): Promise<void> {
   const { db } = ctx;
 
-  const count = db.prepare(
+  const count = await db.getOptional<{ count: number }>(
     'SELECT COUNT(*) as count FROM contexts WHERE deleted_at IS NULL'
-  ).get() as { count: number };
+  );
 
-  if (count.count > 0) return;
+  if (count && count.count > 0) return;
 
   const now = new Date().toISOString();
-  const insert = db.prepare(`
-    INSERT INTO contexts (id, name, color, icon, sort_order, created_at, updated_at, deleted_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `);
 
   for (const def of DEFAULT_CONTEXTS) {
-    insert.run(uuid(), def.name, def.color, def.icon, def.sort_order, now, now, null);
+    await db.execute(
+      'INSERT INTO contexts (id, name, color, icon, sort_order, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [uuid(), def.name, def.color, def.icon, def.sort_order, now, now, null]
+    );
   }
 }
 
@@ -57,30 +56,30 @@ export function createContextService(ctx: DbContext): ContextService {
         deleted_at: null,
       };
 
-      db.prepare(`
+      await db.execute(`
         INSERT INTO contexts (
           id, name, color, icon, sort_order,
           created_at, updated_at, deleted_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
+      `, [
         context.id, context.name, context.color, context.icon, context.sort_order,
-        context.created_at, context.updated_at, context.deleted_at
-      );
+        context.created_at, context.updated_at, context.deleted_at,
+      ]);
 
       return context;
     },
 
     async get(id: string): Promise<Context | null> {
-      const row = db.prepare(
-        'SELECT * FROM contexts WHERE id = ? AND deleted_at IS NULL'
-      ).get(id) as Context | undefined;
-      return row ?? null;
+      return db.getOptional<Context>(
+        'SELECT * FROM contexts WHERE id = ? AND deleted_at IS NULL',
+        [id]
+      );
     },
 
     async getAll(): Promise<Context[]> {
-      return db.prepare(
+      return db.getAll<Context>(
         'SELECT * FROM contexts WHERE deleted_at IS NULL ORDER BY sort_order, created_at'
-      ).all() as Context[];
+      );
     },
 
     async update(id: string, input: UpdateContextInput): Promise<Context> {
@@ -97,14 +96,14 @@ export function createContextService(ctx: DbContext): ContextService {
         updated_at: now,
       };
 
-      db.prepare(`
+      await db.execute(`
         UPDATE contexts SET
           name = ?, color = ?, icon = ?, sort_order = ?, updated_at = ?
         WHERE id = ?
-      `).run(
+      `, [
         updated.name, updated.color, updated.icon, updated.sort_order, updated.updated_at,
-        id
-      );
+        id,
+      ]);
 
       return updated;
     },
@@ -117,31 +116,36 @@ export function createContextService(ctx: DbContext): ContextService {
 
       const now = new Date().toISOString();
 
-      db.transaction(() => {
-        db.prepare(
-          'UPDATE contexts SET deleted_at = ?, updated_at = ? WHERE id = ?'
-        ).run(now, now, id);
+      await db.writeTransaction(async (tx) => {
+        await tx.execute(
+          'UPDATE contexts SET deleted_at = ?, updated_at = ? WHERE id = ?',
+          [now, now, id]
+        );
 
         // Orphan all items belonging to this context
-        db.prepare(
-          'UPDATE projects SET context_id = NULL, updated_at = ? WHERE context_id = ?'
-        ).run(now, id);
-        db.prepare(
-          'UPDATE tasks SET context_id = NULL, updated_at = ? WHERE context_id = ?'
-        ).run(now, id);
-      })();
+        await tx.execute(
+          'UPDATE projects SET context_id = NULL, updated_at = ? WHERE context_id = ?',
+          [now, id]
+        );
+        await tx.execute(
+          'UPDATE tasks SET context_id = NULL, updated_at = ? WHERE context_id = ?',
+          [now, id]
+        );
+      });
     },
 
     async getProjectsForContext(contextId: string): Promise<Project[]> {
-      return db.prepare(
-        'SELECT * FROM projects WHERE context_id = ? AND deleted_at IS NULL ORDER BY sort_order, created_at'
-      ).all(contextId) as Project[];
+      return db.getAll<Project>(
+        'SELECT * FROM projects WHERE context_id = ? AND deleted_at IS NULL ORDER BY sort_order, created_at',
+        [contextId]
+      );
     },
 
     async getTasksForContext(contextId: string): Promise<Task[]> {
-      return db.prepare(
-        'SELECT * FROM tasks WHERE context_id = ? AND deleted_at IS NULL ORDER BY sort_order, created_at'
-      ).all(contextId) as Task[];
+      return db.getAll<Task>(
+        'SELECT * FROM tasks WHERE context_id = ? AND deleted_at IS NULL ORDER BY sort_order, created_at',
+        [contextId]
+      );
     },
   };
 }

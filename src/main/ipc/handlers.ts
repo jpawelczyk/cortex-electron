@@ -1,4 +1,3 @@
-import type Database from 'better-sqlite3';
 import { ipcMain } from 'electron';
 import { createTaskService } from '../services/task.service';
 import { createProjectService } from '../services/project.service';
@@ -6,10 +5,11 @@ import { createContextService } from '../services/context.service';
 import { createStakeholderService } from '../services/stakeholder.service';
 import { createChecklistService } from '../services/checklist.service';
 import { createNoteService } from '../services/note.service';
+import type { AsyncDatabase } from '../db/types';
 import type { DbContext } from '../db/types';
 import { CreateNoteSchema, UpdateNoteSchema, NoteIdSchema } from '@shared/validation';
 
-export function registerHandlers(db: Database.Database): void {
+export function registerHandlers(db: AsyncDatabase): void {
   const ctx: DbContext = { db };
 
   const taskService = createTaskService(ctx);

@@ -34,30 +34,31 @@ export function createNoteService(ctx: DbContext): NoteService {
         deleted_at: null,
       };
 
-      db.prepare(`
+      await db.execute(`
         INSERT INTO notes (
           id, title, content, context_id, project_id,
           is_pinned, created_at, updated_at, deleted_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
+      `, [
         note.id, note.title, note.content, note.context_id, note.project_id,
-        note.is_pinned ? 1 : 0, note.created_at, note.updated_at, note.deleted_at
-      );
+        note.is_pinned ? 1 : 0, note.created_at, note.updated_at, note.deleted_at,
+      ]);
 
       return note;
     },
 
     async get(id: string): Promise<Note | null> {
-      const row = db.prepare(
-        'SELECT * FROM notes WHERE id = ? AND deleted_at IS NULL'
-      ).get(id) as Record<string, unknown> | undefined;
+      const row = await db.getOptional<Record<string, unknown>>(
+        'SELECT * FROM notes WHERE id = ? AND deleted_at IS NULL',
+        [id]
+      );
       return row ? rowToNote(row) : null;
     },
 
     async list(): Promise<Note[]> {
-      const rows = db.prepare(
+      const rows = await db.getAll<Record<string, unknown>>(
         'SELECT * FROM notes WHERE deleted_at IS NULL ORDER BY updated_at DESC'
-      ).all() as Record<string, unknown>[];
+      );
       return rows.map(rowToNote);
     },
 
@@ -75,16 +76,16 @@ export function createNoteService(ctx: DbContext): NoteService {
         updated_at: now,
       };
 
-      db.prepare(`
+      await db.execute(`
         UPDATE notes SET
           title = ?, content = ?, context_id = ?, project_id = ?,
           is_pinned = ?, updated_at = ?
         WHERE id = ?
-      `).run(
+      `, [
         updated.title, updated.content, updated.context_id, updated.project_id,
         updated.is_pinned ? 1 : 0, updated.updated_at,
-        id
-      );
+        id,
+      ]);
 
       return updated;
     },
@@ -96,9 +97,10 @@ export function createNoteService(ctx: DbContext): NoteService {
       }
 
       const now = new Date().toISOString();
-      db.prepare(
-        'UPDATE notes SET deleted_at = ?, updated_at = ? WHERE id = ?'
-      ).run(now, now, id);
+      await db.execute(
+        'UPDATE notes SET deleted_at = ?, updated_at = ? WHERE id = ?',
+        [now, now, id]
+      );
     },
   };
 }

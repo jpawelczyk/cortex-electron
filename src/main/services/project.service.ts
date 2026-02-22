@@ -33,35 +33,36 @@ export function createProjectService(ctx: DbContext): ProjectService {
         deleted_at: null,
       };
 
-      db.prepare(`
+      await db.execute(`
         INSERT INTO projects (
           id, title, description, status, context_id,
           sort_order, created_at, updated_at, completed_at, deleted_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
+      `, [
         project.id, project.title, project.description, project.status, project.context_id,
-        project.sort_order, project.created_at, project.updated_at, project.completed_at, project.deleted_at
-      );
+        project.sort_order, project.created_at, project.updated_at, project.completed_at, project.deleted_at,
+      ]);
 
       return project;
     },
 
     async get(id: string): Promise<Project | null> {
-      const row = db.prepare(
-        'SELECT * FROM projects WHERE id = ? AND deleted_at IS NULL'
-      ).get(id) as Project | undefined;
-      return row ?? null;
+      return db.getOptional<Project>(
+        'SELECT * FROM projects WHERE id = ? AND deleted_at IS NULL',
+        [id]
+      );
     },
 
     async getAll(filter?: { contextId?: string }): Promise<Project[]> {
       if (filter?.contextId) {
-        return db.prepare(
-          'SELECT * FROM projects WHERE deleted_at IS NULL AND context_id = ? ORDER BY sort_order, created_at'
-        ).all(filter.contextId) as Project[];
+        return db.getAll<Project>(
+          'SELECT * FROM projects WHERE deleted_at IS NULL AND context_id = ? ORDER BY sort_order, created_at',
+          [filter.contextId]
+        );
       }
-      return db.prepare(
+      return db.getAll<Project>(
         'SELECT * FROM projects WHERE deleted_at IS NULL ORDER BY sort_order, created_at'
-      ).all() as Project[];
+      );
     },
 
     async update(id: string, input: UpdateProjectInput): Promise<Project> {
@@ -83,16 +84,16 @@ export function createProjectService(ctx: DbContext): ProjectService {
         completed_at: completedAt,
       };
 
-      db.prepare(`
+      await db.execute(`
         UPDATE projects SET
           title = ?, description = ?, status = ?, context_id = ?,
           sort_order = ?, updated_at = ?, completed_at = ?
         WHERE id = ?
-      `).run(
+      `, [
         updated.title, updated.description, updated.status, updated.context_id,
         updated.sort_order, updated.updated_at, updated.completed_at,
-        id
-      );
+        id,
+      ]);
 
       return updated;
     },
@@ -104,21 +105,24 @@ export function createProjectService(ctx: DbContext): ProjectService {
       }
 
       const now = new Date().toISOString();
-      db.prepare(
-        'UPDATE projects SET deleted_at = ?, updated_at = ? WHERE id = ?'
-      ).run(now, now, id);
+      await db.execute(
+        'UPDATE projects SET deleted_at = ?, updated_at = ? WHERE id = ?',
+        [now, now, id]
+      );
     },
 
     async getByStatus(status: ProjectStatus): Promise<Project[]> {
-      return db.prepare(
-        'SELECT * FROM projects WHERE status = ? AND deleted_at IS NULL ORDER BY sort_order, created_at'
-      ).all(status) as Project[];
+      return db.getAll<Project>(
+        'SELECT * FROM projects WHERE status = ? AND deleted_at IS NULL ORDER BY sort_order, created_at',
+        [status]
+      );
     },
 
     async getTasksForProject(projectId: string): Promise<Task[]> {
-      return db.prepare(
-        'SELECT * FROM tasks WHERE project_id = ? AND deleted_at IS NULL ORDER BY sort_order, created_at'
-      ).all(projectId) as Task[];
+      return db.getAll<Task>(
+        'SELECT * FROM tasks WHERE project_id = ? AND deleted_at IS NULL ORDER BY sort_order, created_at',
+        [projectId]
+      );
     },
   };
 }

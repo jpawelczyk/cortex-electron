@@ -1,11 +1,13 @@
 import { app, BrowserWindow, nativeImage } from 'electron';
 import { fileURLToPath } from 'url';
 import path from 'path';
-import { initDatabase, closeDatabase, getDb } from './db/index.js';
+import { initDatabase, closeDatabase, getPowerSyncDatabase } from './db/index.js';
 import { registerHandlers } from './ipc/handlers.js';
 import { registerGlobalShortcuts, unregisterGlobalShortcuts } from './shortcuts.js';
 import { createTaskService } from './services/task.service.js';
 import { seedDefaultContexts } from './services/context.service.js';
+import { SupabaseConnector } from './sync/connector.js';
+import { getSyncConfig } from '../shared/config.js';
 import type { DbContext } from './db/types.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -80,9 +82,8 @@ app.on('second-instance', () => {
   }
 });
 
-app.whenReady().then(() => {
-  initDatabase();
-  const db = getDb();
+app.whenReady().then(async () => {
+  const db = await initDatabase();
   registerHandlers(db);
 
   const ctx: DbContext = { db };
@@ -109,6 +110,16 @@ app.whenReady().then(() => {
     }).catch(() => {});
   });
 
+  // Connect to PowerSync sync service if configured
+  const syncConfig = getSyncConfig();
+  if (syncConfig) {
+    const connector = new SupabaseConnector(syncConfig);
+    const psDb = getPowerSyncDatabase();
+    psDb.connect(connector).catch((err) => {
+      console.warn('PowerSync sync connection failed (will retry):', err.message);
+    });
+  }
+
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
@@ -124,5 +135,5 @@ app.on('window-all-closed', () => {
 
 app.on('before-quit', () => {
   unregisterGlobalShortcuts();
-  closeDatabase();
+  closeDatabase().catch(() => {});
 });

@@ -33,10 +33,11 @@ export function createTaskService(ctx: DbContext): TaskService {
   /**
    * Get project's context_id for inheritance
    */
-  function getProjectContextId(projectId: string): string | null {
-    const project = db.prepare(
-      'SELECT context_id FROM projects WHERE id = ? AND deleted_at IS NULL'
-    ).get(projectId) as { context_id: string | null } | undefined;
+  async function getProjectContextId(projectId: string): Promise<string | null> {
+    const project = await db.getOptional<{ context_id: string | null }>(
+      'SELECT context_id FROM projects WHERE id = ? AND deleted_at IS NULL',
+      [projectId]
+    );
     return project?.context_id ?? null;
   }
 
@@ -44,11 +45,11 @@ export function createTaskService(ctx: DbContext): TaskService {
     async create(input: CreateTaskInput): Promise<Task> {
       const id = uuid();
       const now = new Date().toISOString();
-      
+
       // Determine context_id: inherit from project if project_id is set
       let contextId: string | null = null;
       if (input.project_id) {
-        contextId = getProjectContextId(input.project_id);
+        contextId = await getProjectContextId(input.project_id);
       } else {
         contextId = input.context_id ?? null;
       }
@@ -83,7 +84,7 @@ export function createTaskService(ctx: DbContext): TaskService {
         stale_at: null,
       };
 
-      db.prepare(`
+      await db.execute(`
         INSERT INTO tasks (
           id, title, notes, status, when_date, deadline,
           project_id, heading_id, context_id, priority,
@@ -93,27 +94,26 @@ export function createTaskService(ctx: DbContext): TaskService {
           ?, ?, ?, ?,
           ?, ?, ?, ?, ?, ?
         )
-      `).run(
+      `, [
         task.id, task.title, task.notes, task.status, task.when_date, task.deadline,
         task.project_id, task.heading_id, task.context_id, task.priority,
-        task.sort_order, task.created_at, task.updated_at, task.completed_at, task.deleted_at, task.stale_at
-      );
+        task.sort_order, task.created_at, task.updated_at, task.completed_at, task.deleted_at, task.stale_at,
+      ]);
 
       return task;
     },
 
     async get(id: string): Promise<Task | null> {
-      const row = db.prepare(
-        'SELECT * FROM tasks WHERE id = ? AND deleted_at IS NULL'
-      ).get(id) as Task | undefined;
-      return row ?? null;
+      return db.getOptional<Task>(
+        'SELECT * FROM tasks WHERE id = ? AND deleted_at IS NULL',
+        [id]
+      );
     },
 
     async list(): Promise<Task[]> {
-      const rows = db.prepare(
+      return db.getAll<Task>(
         'SELECT * FROM tasks WHERE deleted_at IS NULL ORDER BY sort_order, created_at'
-      ).all() as Task[];
-      return rows;
+      );
     },
 
     async update(id: string, input: UpdateTaskInput): Promise<Task> {
@@ -174,18 +174,18 @@ export function createTaskService(ctx: DbContext): TaskService {
         stale_at: staleAt,
       };
 
-      db.prepare(`
+      await db.execute(`
         UPDATE tasks SET
           title = ?, notes = ?, status = ?, when_date = ?, deadline = ?,
           project_id = ?, heading_id = ?, context_id = ?, priority = ?,
           sort_order = ?, updated_at = ?, completed_at = ?, stale_at = ?
         WHERE id = ?
-      `).run(
+      `, [
         updated.title, updated.notes, updated.status, updated.when_date, updated.deadline,
         updated.project_id, updated.heading_id, updated.context_id, updated.priority,
         updated.sort_order, updated.updated_at, updated.completed_at, updated.stale_at,
-        id
-      );
+        id,
+      ]);
 
       return updated;
     },
@@ -197,52 +197,58 @@ export function createTaskService(ctx: DbContext): TaskService {
       }
 
       const now = new Date().toISOString();
-      db.transaction(() => {
-        db.prepare(
-          'UPDATE tasks SET deleted_at = ?, updated_at = ? WHERE id = ?'
-        ).run(now, now, id);
-        db.prepare(
-          'UPDATE task_checklists SET deleted_at = ?, updated_at = ? WHERE task_id = ? AND deleted_at IS NULL'
-        ).run(now, now, id);
-      })();
+      await db.writeTransaction(async (tx) => {
+        await tx.execute(
+          'UPDATE tasks SET deleted_at = ?, updated_at = ? WHERE id = ?',
+          [now, now, id]
+        );
+        await tx.execute(
+          'UPDATE task_checklists SET deleted_at = ?, updated_at = ? WHERE task_id = ? AND deleted_at IS NULL',
+          [now, now, id]
+        );
+      });
     },
 
     async listTrashed(): Promise<Task[]> {
-      return db.prepare(
+      return db.getAll<Task>(
         'SELECT * FROM tasks WHERE deleted_at IS NOT NULL AND permanently_deleted_at IS NULL ORDER BY deleted_at DESC'
-      ).all() as Task[];
+      );
     },
 
     async restore(id: string): Promise<Task> {
-      const row = db.prepare(
-        'SELECT * FROM tasks WHERE id = ? AND deleted_at IS NOT NULL AND permanently_deleted_at IS NULL'
-      ).get(id) as Task | undefined;
+      const row = await db.getOptional<Task>(
+        'SELECT * FROM tasks WHERE id = ? AND deleted_at IS NOT NULL AND permanently_deleted_at IS NULL',
+        [id]
+      );
 
       if (!row) {
         throw new Error('Task is not in trash');
       }
 
       const now = new Date().toISOString();
-      db.prepare(
-        'UPDATE tasks SET deleted_at = NULL, status = ?, updated_at = ? WHERE id = ?'
-      ).run('inbox', now, id);
+      await db.execute(
+        'UPDATE tasks SET deleted_at = NULL, status = ?, updated_at = ? WHERE id = ?',
+        ['inbox', now, id]
+      );
 
       return { ...row, deleted_at: null, status: 'inbox', updated_at: now };
     },
 
     async emptyTrash(): Promise<void> {
       const now = new Date().toISOString();
-      db.prepare(
-        'UPDATE tasks SET permanently_deleted_at = ? WHERE deleted_at IS NOT NULL AND permanently_deleted_at IS NULL'
-      ).run(now);
+      await db.execute(
+        'UPDATE tasks SET permanently_deleted_at = ? WHERE deleted_at IS NOT NULL AND permanently_deleted_at IS NULL',
+        [now]
+      );
     },
 
     async purgeExpiredTrash(days: number): Promise<void> {
       const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
       const now = new Date().toISOString();
-      db.prepare(
-        'UPDATE tasks SET permanently_deleted_at = ? WHERE deleted_at IS NOT NULL AND permanently_deleted_at IS NULL AND deleted_at < ?'
-      ).run(now, cutoff);
+      await db.execute(
+        'UPDATE tasks SET permanently_deleted_at = ? WHERE deleted_at IS NOT NULL AND permanently_deleted_at IS NULL AND deleted_at < ?',
+        [now, cutoff]
+      );
     },
 
     async markStaleTasks(thresholdDays: number): Promise<number> {
@@ -253,7 +259,7 @@ export function createTaskService(ctx: DbContext): TaskService {
       cutoff.setDate(cutoff.getDate() - thresholdDays);
       const cutoffDate = cutoff.toISOString().split('T')[0];
 
-      const result = db.prepare(`
+      const result = await db.execute(`
         UPDATE tasks SET
           status = 'stale',
           stale_at = COALESCE(stale_at, ?),
@@ -264,9 +270,9 @@ export function createTaskService(ctx: DbContext): TaskService {
           AND (deadline IS NULL OR deadline >= ?)
           AND deleted_at IS NULL
           AND completed_at IS NULL
-      `).run(now, now, cutoffDate, today);
+      `, [now, now, cutoffDate, today]);
 
-      return result.changes;
+      return result.rowsAffected;
     },
   };
 }

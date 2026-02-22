@@ -1,16 +1,23 @@
 import Database from 'better-sqlite3';
 import { v4 as uuid } from 'uuid';
-import type { DbContext } from '../../src/main/db/types';
+import type { AsyncDatabase, DbContext } from '../../src/main/db/types';
 
 /**
  * In-memory SQLite database for testing.
  * Extends DbContext with helper methods for setting up test fixtures.
+ *
+ * db exposes both the AsyncDatabase interface (used by services) and
+ * better-sqlite3's prepare() method (used by test assertions that need
+ * synchronous raw access).
  */
 export interface TestDb extends DbContext {
+  // Override db to also expose better-sqlite3's prepare and exec for test assertions
+  db: AsyncDatabase & Pick<Database.Database, 'prepare' | 'exec'>;
+
   // Fixture helpers
   createContext(data: { name: string; color?: string }): string;
   createProject(data: { title: string; context_id?: string }): string;
-  
+
   // Note helpers
   createNote(data: { title: string; content?: string; context_id?: string; project_id?: string; is_pinned?: boolean }): string;
 
@@ -73,11 +80,44 @@ export interface RawChecklistItem {
   [key: string]: unknown;
 }
 
+function createAsyncAdapter(sqliteDb: Database.Database): AsyncDatabase & Pick<Database.Database, 'prepare' | 'exec'> {
+  return {
+    async execute(sql: string, params: any[] = []): Promise<{ rowsAffected: number }> {
+      const result = sqliteDb.prepare(sql).run(...params);
+      return { rowsAffected: result.changes };
+    },
+    async getAll<T>(sql: string, params: any[] = []): Promise<T[]> {
+      return sqliteDb.prepare(sql).all(...params) as T[];
+    },
+    async getOptional<T>(sql: string, params: any[] = []): Promise<T | null> {
+      const row = sqliteDb.prepare(sql).get(...params) as T | undefined;
+      return row ?? null;
+    },
+    async writeTransaction<T>(fn: (tx: AsyncDatabase) => Promise<T>): Promise<T> {
+      // better-sqlite3 does not support async transaction functions.
+      // Use manual BEGIN/COMMIT so we can await the async fn in between.
+      const self = createAsyncAdapter(sqliteDb);
+      sqliteDb.prepare('BEGIN').run();
+      try {
+        const result = await fn(self);
+        sqliteDb.prepare('COMMIT').run();
+        return result;
+      } catch (err) {
+        sqliteDb.prepare('ROLLBACK').run();
+        throw err;
+      }
+    },
+    // Expose prepare() and exec() for test assertions that need synchronous raw access
+    prepare: sqliteDb.prepare.bind(sqliteDb),
+    exec: sqliteDb.exec.bind(sqliteDb),
+  };
+}
+
 export function createTestDb(): TestDb {
-  const db = new Database(':memory:');
-  
+  const sqliteDb = new Database(':memory:');
+
   // Create tables
-  db.exec(`
+  sqliteDb.exec(`
     CREATE TABLE contexts (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
@@ -148,7 +188,7 @@ export function createTestDb(): TestDb {
     );
   `);
 
-  db.exec(`
+  sqliteDb.exec(`
     CREATE TABLE notes (
       id TEXT PRIMARY KEY,
       title TEXT NOT NULL,
@@ -162,13 +202,15 @@ export function createTestDb(): TestDb {
     );
   `);
 
+  const db = createAsyncAdapter(sqliteDb);
+
   return {
     db,
 
     createContext({ name, color }) {
       const id = uuid();
       const now = new Date().toISOString();
-      db.prepare(`
+      sqliteDb.prepare(`
         INSERT INTO contexts (id, name, color, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?)
       `).run(id, name, color ?? null, now, now);
@@ -178,7 +220,7 @@ export function createTestDb(): TestDb {
     createNote({ title, content, context_id, project_id, is_pinned }) {
       const id = uuid();
       const now = new Date().toISOString();
-      db.prepare(`
+      sqliteDb.prepare(`
         INSERT INTO notes (id, title, content, context_id, project_id, is_pinned, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `).run(id, title, content ?? null, context_id ?? null, project_id ?? null, is_pinned ? 1 : 0, now, now);
@@ -188,7 +230,7 @@ export function createTestDb(): TestDb {
     createProject({ title, context_id }) {
       const id = uuid();
       const now = new Date().toISOString();
-      db.prepare(`
+      sqliteDb.prepare(`
         INSERT INTO projects (id, title, context_id, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?)
       `).run(id, title, context_id ?? null, now, now);
@@ -196,31 +238,31 @@ export function createTestDb(): TestDb {
     },
 
     getRawTask(id: string) {
-      return db.prepare('SELECT * FROM tasks WHERE id = ?').get(id) as RawTask | undefined;
+      return sqliteDb.prepare('SELECT * FROM tasks WHERE id = ?').get(id) as RawTask | undefined;
     },
 
     getRawProject(id: string) {
-      return db.prepare('SELECT * FROM projects WHERE id = ?').get(id) as RawProject | undefined;
+      return sqliteDb.prepare('SELECT * FROM projects WHERE id = ?').get(id) as RawProject | undefined;
     },
 
     getRawContext(id: string) {
-      return db.prepare('SELECT * FROM contexts WHERE id = ?').get(id) as RawContext | undefined;
+      return sqliteDb.prepare('SELECT * FROM contexts WHERE id = ?').get(id) as RawContext | undefined;
     },
 
     getRawStakeholder(id: string) {
-      return db.prepare('SELECT * FROM stakeholders WHERE id = ?').get(id) as RawStakeholder | undefined;
+      return sqliteDb.prepare('SELECT * FROM stakeholders WHERE id = ?').get(id) as RawStakeholder | undefined;
     },
 
     getRawChecklistItem(id: string) {
-      return db.prepare('SELECT * FROM task_checklists WHERE id = ?').get(id) as RawChecklistItem | undefined;
+      return sqliteDb.prepare('SELECT * FROM task_checklists WHERE id = ?').get(id) as RawChecklistItem | undefined;
     },
 
     getRawNote(id: string) {
-      return db.prepare('SELECT * FROM notes WHERE id = ?').get(id) as RawNote | undefined;
+      return sqliteDb.prepare('SELECT * FROM notes WHERE id = ?').get(id) as RawNote | undefined;
     },
 
     close() {
-      db.close();
+      sqliteDb.close();
     },
   };
 }

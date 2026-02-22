@@ -33,14 +33,16 @@ export function createChecklistService(ctx: DbContext): ChecklistService {
       const id = uuid();
       const now = new Date().toISOString();
 
-      const { next_order } = db.prepare(
-        'SELECT COALESCE(MAX(sort_order), -1) + 1 as next_order FROM task_checklists WHERE task_id = ? AND deleted_at IS NULL'
-      ).get(input.task_id) as { next_order: number };
+      const orderRow = await db.getOptional<{ next_order: number }>(
+        'SELECT COALESCE(MAX(sort_order), -1) + 1 as next_order FROM task_checklists WHERE task_id = ? AND deleted_at IS NULL',
+        [input.task_id]
+      );
+      const next_order = orderRow?.next_order ?? 0;
 
-      db.prepare(`
-        INSERT INTO task_checklists (id, task_id, title, is_done, sort_order, created_at, updated_at, deleted_at)
-        VALUES (?, ?, ?, 0, ?, ?, ?, NULL)
-      `).run(id, input.task_id, input.title, next_order, now, now);
+      await db.execute(
+        'INSERT INTO task_checklists (id, task_id, title, is_done, sort_order, created_at, updated_at, deleted_at) VALUES (?, ?, ?, 0, ?, ?, ?, NULL)',
+        [id, input.task_id, input.title, next_order, now, now]
+      );
 
       return {
         id,
@@ -55,16 +57,18 @@ export function createChecklistService(ctx: DbContext): ChecklistService {
     },
 
     async listByTask(taskId: string): Promise<ChecklistItem[]> {
-      const rows = db.prepare(
-        'SELECT * FROM task_checklists WHERE task_id = ? AND deleted_at IS NULL ORDER BY sort_order'
-      ).all(taskId) as RawChecklistRow[];
+      const rows = await db.getAll<RawChecklistRow>(
+        'SELECT * FROM task_checklists WHERE task_id = ? AND deleted_at IS NULL ORDER BY sort_order',
+        [taskId]
+      );
       return rows.map(toChecklistItem);
     },
 
     async update(id: string, input: UpdateChecklistItemInput): Promise<ChecklistItem> {
-      const existing = db.prepare(
-        'SELECT * FROM task_checklists WHERE id = ? AND deleted_at IS NULL'
-      ).get(id) as RawChecklistRow | undefined;
+      const existing = await db.getOptional<RawChecklistRow>(
+        'SELECT * FROM task_checklists WHERE id = ? AND deleted_at IS NULL',
+        [id]
+      );
 
       if (!existing) {
         throw new Error('Checklist item not found');
@@ -75,9 +79,10 @@ export function createChecklistService(ctx: DbContext): ChecklistService {
       const is_done = input.is_done !== undefined ? (input.is_done ? 1 : 0) : existing.is_done;
       const sort_order = input.sort_order ?? existing.sort_order;
 
-      db.prepare(`
-        UPDATE task_checklists SET title = ?, is_done = ?, sort_order = ?, updated_at = ? WHERE id = ?
-      `).run(title, is_done, sort_order, now, id);
+      await db.execute(
+        'UPDATE task_checklists SET title = ?, is_done = ?, sort_order = ?, updated_at = ? WHERE id = ?',
+        [title, is_done, sort_order, now, id]
+      );
 
       return toChecklistItem({
         ...existing,
@@ -89,31 +94,33 @@ export function createChecklistService(ctx: DbContext): ChecklistService {
     },
 
     async delete(id: string): Promise<void> {
-      const existing = db.prepare(
-        'SELECT * FROM task_checklists WHERE id = ? AND deleted_at IS NULL'
-      ).get(id) as RawChecklistRow | undefined;
+      const existing = await db.getOptional<RawChecklistRow>(
+        'SELECT * FROM task_checklists WHERE id = ? AND deleted_at IS NULL',
+        [id]
+      );
 
       if (!existing) {
         throw new Error('Checklist item not found');
       }
 
       const now = new Date().toISOString();
-      db.prepare(
-        'UPDATE task_checklists SET deleted_at = ?, updated_at = ? WHERE id = ?'
-      ).run(now, now, id);
+      await db.execute(
+        'UPDATE task_checklists SET deleted_at = ?, updated_at = ? WHERE id = ?',
+        [now, now, id]
+      );
     },
 
     async reorder(taskId: string, itemIds: string[]): Promise<void> {
-      const stmt = db.prepare(
-        'UPDATE task_checklists SET sort_order = ?, updated_at = ? WHERE id = ? AND task_id = ?'
-      );
       const now = new Date().toISOString();
 
-      db.transaction(() => {
+      await db.writeTransaction(async (tx) => {
         for (let i = 0; i < itemIds.length; i++) {
-          stmt.run(i, now, itemIds[i], taskId);
+          await tx.execute(
+            'UPDATE task_checklists SET sort_order = ?, updated_at = ? WHERE id = ? AND task_id = ?',
+            [i, now, itemIds[i], taskId]
+          );
         }
-      })();
+      });
     },
   };
 }

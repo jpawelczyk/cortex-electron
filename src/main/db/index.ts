@@ -1,79 +1,88 @@
-import Database from 'better-sqlite3';
+import { PowerSyncDatabase } from '@powersync/node';
 import { app } from 'electron';
-import path from 'path';
-import fs from 'fs';
+import { AppSchema } from '../sync/schema.js';
+import type { AsyncDatabase, QueryResult } from './types.js';
 
-let db: Database.Database | null = null;
+let powerSyncDb: PowerSyncDatabase | null = null;
 
-export function getDb(): Database.Database {
-  if (!db) {
+/**
+ * Wrap a PowerSync database (or transaction context) in our AsyncDatabase interface.
+ */
+function createPowerSyncAdapter(
+  psDb: Pick<PowerSyncDatabase, 'execute' | 'getAll' | 'getOptional' | 'writeTransaction'>
+): AsyncDatabase {
+  return {
+    async execute(sql: string, params: any[] = []): Promise<QueryResult> {
+      const result = await psDb.execute(sql, params);
+      return { rowsAffected: result.rowsAffected };
+    },
+    async getAll<T>(sql: string, params: any[] = []): Promise<T[]> {
+      return await psDb.getAll<T>(sql, params);
+    },
+    async getOptional<T>(sql: string, params: any[] = []): Promise<T | null> {
+      return await psDb.getOptional<T>(sql, params);
+    },
+    async writeTransaction<T>(fn: (tx: AsyncDatabase) => Promise<T>): Promise<T> {
+      return await psDb.writeTransaction(async (psTx) => {
+        const txAdapter: AsyncDatabase = {
+          async execute(sql: string, params: any[] = []): Promise<QueryResult> {
+            const result = await psTx.execute(sql, params);
+            return { rowsAffected: result.rowsAffected };
+          },
+          async getAll<T>(sql: string, params: any[] = []): Promise<T[]> {
+            return await psTx.getAll<T>(sql, params);
+          },
+          async getOptional<T>(sql: string, params: any[] = []): Promise<T | null> {
+            return await psTx.getOptional<T>(sql, params);
+          },
+          writeTransaction(): Promise<never> {
+            throw new Error('Nested transactions not supported');
+          },
+        };
+        return await fn(txAdapter);
+      });
+    },
+  };
+}
+
+/**
+ * Initialize the PowerSync database.
+ * PowerSync manages the local SQLite file and provides sync capabilities.
+ * Returns an AsyncDatabase adapter for the service layer.
+ */
+export async function initDatabase(): Promise<AsyncDatabase> {
+  const psDb = new PowerSyncDatabase({
+    schema: AppSchema,
+    database: {
+      dbFilename: 'cortex.db',
+      dbLocation: app.getPath('userData'),
+    },
+  });
+
+  await psDb.init();
+  powerSyncDb = psDb;
+
+  return createPowerSyncAdapter(psDb);
+}
+
+/**
+ * Get the raw PowerSync database instance (for sync connection).
+ */
+export function getPowerSyncDatabase(): PowerSyncDatabase {
+  if (!powerSyncDb) {
     throw new Error('Database not initialized. Call initDatabase() first.');
   }
-  return db;
+  return powerSyncDb;
 }
 
-export function initDatabase(): Database.Database {
-  const dbPath = path.join(app.getPath('userData'), 'cortex.db');
-  db = new Database(dbPath);
-
-  // Performance and integrity pragmas
-  db.pragma('journal_mode = WAL');
-  db.pragma('foreign_keys = ON');
-
-  runMigrations(db);
-  return db;
-}
-
-export function closeDatabase(): void {
-  if (db) {
-    db.close();
-    db = null;
+/**
+ * Close the database and release resources.
+ */
+export async function closeDatabase(): Promise<void> {
+  if (powerSyncDb) {
+    await powerSyncDb.close();
+    powerSyncDb = null;
   }
 }
 
-function runMigrations(database: Database.Database): void {
-  // Create migrations tracking table
-  database.exec(`
-    CREATE TABLE IF NOT EXISTS _migrations (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL UNIQUE,
-      applied_at TEXT NOT NULL
-    )
-  `);
-
-  // Resolve migrations directory
-  const migrationsDir = app.isPackaged
-    ? path.join(process.resourcesPath, 'migrations')
-    : path.join(app.getAppPath(), 'migrations');
-
-  if (!fs.existsSync(migrationsDir)) {
-    console.warn('Migrations directory not found:', migrationsDir);
-    return;
-  }
-
-  // Read and sort migration files
-  const files = fs.readdirSync(migrationsDir)
-    .filter(f => f.endsWith('.sql'))
-    .sort();
-
-  const applied = new Set(
-    (database.prepare('SELECT name FROM _migrations').all() as { name: string }[])
-      .map(r => r.name)
-  );
-
-  for (const file of files) {
-    const name = path.basename(file, '.sql');
-    if (applied.has(name)) continue;
-
-    const sql = fs.readFileSync(path.join(migrationsDir, file), 'utf-8');
-
-    database.transaction(() => {
-      database.exec(sql);
-      database.prepare(
-        'INSERT INTO _migrations (name, applied_at) VALUES (?, ?)'
-      ).run(name, new Date().toISOString());
-    })();
-
-    console.warn(`Migration applied: ${name}`);
-  }
-}
+export { createPowerSyncAdapter };
