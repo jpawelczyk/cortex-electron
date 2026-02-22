@@ -106,9 +106,14 @@ useEffect(() => {
 
 ## Recommendation
 
-**Start with Option 3** (global sync listener) — quickest to implement, refreshes stores when tables change.
+**Use Option 1** (PowerSync React hooks) — the proper solution:
 
-Then migrate to **Option 1** (PowerSync hooks) for components that need real-time updates without full store refreshes.
+- True reactive queries at component level
+- Only affected components re-render (efficient)
+- Built into PowerSync, battle-tested
+- No manual refresh logic needed
+
+This requires refactoring components to use `useQuery` instead of fetching from Zustand stores, but it's the right architecture for a local-first app.
 
 ## PowerSync React Setup
 
@@ -135,9 +140,39 @@ function App() {
 }
 ```
 
+## Migration Strategy
+
+1. **Add PowerSync React provider** to App.tsx
+2. **Start with high-traffic views:** TaskList, Today view, Inbox
+3. **Replace store fetches with `useQuery`** in components
+4. **Keep Zustand for UI state** (selected task, filters, etc.) — just not for data
+5. **Test sync scenarios:** create from app, create from AI, update, delete
+
+Example migration:
+
+```typescript
+// Before: Zustand store
+function TodayView() {
+  const { tasks, fetchTasks } = useTasksStore();
+  useEffect(() => { fetchTasks('today'); }, []);
+  return <TaskList tasks={tasks} />;
+}
+
+// After: PowerSync hook
+function TodayView() {
+  const { data: tasks } = useQuery(
+    `SELECT * FROM tasks 
+     WHERE status = 'today' AND deleted_at IS NULL 
+     ORDER BY sort_order`
+  );
+  return <TaskList tasks={tasks} />;
+}
+```
+
 ## Success Criteria
 
 1. Create task in Cortex → appears immediately
 2. AI creates task via daemon → appears without reload
 3. Delete task → disappears immediately
 4. Status changes sync live
+5. No Cmd+R needed ever
