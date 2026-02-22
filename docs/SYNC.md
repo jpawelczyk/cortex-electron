@@ -118,6 +118,18 @@ db.currentStatus.subscribe(status => {
 });
 ```
 
+## Adding a New Table — Checklist
+
+Adding a table to `AppSchema` alone is **not enough**. PowerSync reconciles local state against the server's sync rules on every sync cycle. Tables missing from sync rules will have their local data **deleted** after the upload queue is flushed.
+
+Every new table requires all three:
+
+1. **`src/main/sync/schema.ts`** — Add to `AppSchema` (creates local table)
+2. **`sync-rules.yaml`** — Add sync rule (enables server → client download)
+3. **Postgres publication** — `ALTER PUBLICATION powersync ADD TABLE public.<table>` (enables change streaming)
+
+Missing any one of these causes data loss: the local write succeeds, the upload may succeed, but the next sync cycle sees zero server-side rows for that table and wipes the local copy.
+
 ## Schema Considerations
 
 PowerSync requires certain patterns:

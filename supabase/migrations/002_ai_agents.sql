@@ -15,6 +15,9 @@ CREATE POLICY ai_agents_policy ON public.ai_agents FOR ALL USING (auth.uid() = u
 
 CREATE INDEX idx_ai_agents_key_hash ON public.ai_agents(api_key_hash) WHERE revoked_at IS NULL;
 
+-- Add ai_agents to PowerSync publication so it syncs back to clients
+ALTER PUBLICATION powersync ADD TABLE public.ai_agents;
+
 -- Add source and agent_id columns to all data tables
 ALTER TABLE public.contexts ADD COLUMN source TEXT DEFAULT 'user' CHECK (source IN ('user', 'ai', 'import', 'api'));
 ALTER TABLE public.contexts ADD COLUMN agent_id TEXT REFERENCES public.ai_agents(id);
