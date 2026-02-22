@@ -179,12 +179,12 @@ export function createTaskService(ctx: DbContext): TaskService {
         UPDATE tasks SET
           title = ?, notes = ?, status = ?, when_date = ?, deadline = ?,
           project_id = ?, heading_id = ?, context_id = ?, priority = ?,
-          sort_order = ?, updated_at = ?, completed_at = ?, stale_at = ?
+          sort_order = ?, updated_at = ?, completed_at = ?, stale_at = ?, assignee_id = ?
         WHERE id = ?
       `, [
         updated.title, updated.notes, updated.status, updated.when_date, updated.deadline,
         updated.project_id, updated.heading_id, updated.context_id, updated.priority,
-        updated.sort_order, updated.updated_at, updated.completed_at, updated.stale_at,
+        updated.sort_order, updated.updated_at, updated.completed_at, updated.stale_at, updated.assignee_id,
         id,
       ]);
 
