@@ -1,4 +1,4 @@
-import { initDatabase, closeDatabase, getDatabase } from './db.js';
+import { initDatabase, closeDatabase } from './db.js';
 import crypto from 'crypto';
 
 async function createTestData() {
