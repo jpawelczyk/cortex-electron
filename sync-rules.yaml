@@ -15,7 +15,7 @@ bucket_definitions:
       - SELECT * FROM task_checklists WHERE user_id = bucket.user_id
       - SELECT * FROM stakeholders WHERE user_id = bucket.user_id
       - SELECT * FROM meetings WHERE user_id = bucket.user_id
-      - SELECT * FROM meeting_attendees WHERE user_id = bucket.user_id
+      - SELECT meeting_id || '_' || stakeholder_id AS id, meeting_id, stakeholder_id, user_id FROM meeting_attendees WHERE user_id = bucket.user_id
       - SELECT * FROM notes WHERE user_id = bucket.user_id
-      - SELECT * FROM note_stakeholders WHERE user_id = bucket.user_id
+      - SELECT note_id || '_' || stakeholder_id AS id, note_id, stakeholder_id, user_id FROM note_stakeholders WHERE user_id = bucket.user_id
       - SELECT * FROM daily_notes WHERE user_id = bucket.user_id
