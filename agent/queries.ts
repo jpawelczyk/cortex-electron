@@ -76,6 +76,8 @@ export async function getUpcomingMeetings(days: number): Promise<Meeting[]> {
   );
 }
 
+const AGENT_ID = process.env.CORTEX_AGENT_ID;
+
 export async function createTask(
   title: string,
   options: { status?: string; priority?: string; project_id?: string; when_date?: string; deadline?: string } = {},
@@ -86,9 +88,9 @@ export async function createTask(
   const status = options.status ?? 'inbox';
 
   await db.execute(
-    `INSERT INTO tasks (id, title, status, priority, project_id, when_date, deadline, sort_order, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
-    [id, title, status, options.priority ?? null, options.project_id ?? null, options.when_date ?? null, options.deadline ?? null, now, now],
+    `INSERT INTO tasks (id, title, status, priority, project_id, when_date, deadline, sort_order, created_at, updated_at, source, agent_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?, 'ai', ?)`,
+    [id, title, status, options.priority ?? null, options.project_id ?? null, options.when_date ?? null, options.deadline ?? null, now, now, AGENT_ID ?? null],
   );
 
   const task = await db.getOptional<Task>(
