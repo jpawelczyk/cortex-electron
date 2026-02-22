@@ -1,0 +1,22 @@
+{
+  "name": "cortex-agent",
+  "version": "0.1.0",
+  "description": "Headless Cortex sync client for AI assistants",
+  "type": "module",
+  "scripts": {
+    "start": "tsx index.ts",
+    "cli": "tsx cli.ts"
+  },
+  "dependencies": {
+    "@powersync/common": "^1.47.0",
+    "@powersync/node": "^0.17.1",
+    "@supabase/supabase-js": "^2.97.0",
+    "commander": "^13.1.0",
+    "dotenv": "^17.3.1"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "@types/node": "^22.12.0",
+    "typescript": "^5.7.0"
+  }
+}
