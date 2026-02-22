@@ -19,6 +19,9 @@ function requireEnv(name: string): string {
 class AgentConnector implements PowerSyncBackendConnector {
   private supabase: SupabaseClient;
   private powersyncUrl: string;
+  private apiKey: string;
+  private token: string | null = null;
+  private tokenExpiresAt: number = 0;
 
   constructor() {
     this.supabase = createClient(
@@ -26,45 +29,58 @@ class AgentConnector implements PowerSyncBackendConnector {
       requireEnv('SUPABASE_ANON_KEY'),
     );
     this.powersyncUrl = requireEnv('POWERSYNC_URL');
-  }
-
-  async signIn(): Promise<void> {
-    const { error } = await this.supabase.auth.signInWithPassword({
-      email: requireEnv('AI_USER_EMAIL'),
-      password: requireEnv('AI_USER_PASSWORD'),
-    });
-    if (error) {
-      throw new Error(`Auth failed: ${error.message}`);
-    }
+    this.apiKey = requireEnv('CORTEX_API_KEY');
   }
 
   async fetchCredentials(): Promise<PowerSyncCredentials | null> {
-    const {
-      data: { session },
-    } = await this.supabase.auth.getSession();
+    // Refresh token if expired or expiring soon (5 min buffer)
+    const now = Math.floor(Date.now() / 1000);
+    if (!this.token || this.tokenExpiresAt - now < 300) {
+      await this.refreshToken();
+    }
 
-    if (!session) return null;
+    if (!this.token) return null;
 
     return {
       endpoint: this.powersyncUrl,
-      token: session.access_token,
-      ...(session.expires_at !== undefined && {
-        expiresAt: new Date(session.expires_at * 1000),
-      }),
+      token: this.token,
+      expiresAt: new Date(this.tokenExpiresAt * 1000),
     };
   }
 
+  private async refreshToken(): Promise<void> {
+    const res = await fetch(
+      `${requireEnv('SUPABASE_URL')}/functions/v1/get-sync-token`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+      },
+    );
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(`Token exchange failed: ${err.error}`);
+    }
+
+    const data = await res.json();
+    this.token = data.token;
+    this.tokenExpiresAt = data.expires_at;
+  }
+
   async uploadData(database: AbstractPowerSyncDatabase): Promise<void> {
+    // Ensure fresh token
+    await this.fetchCredentials();
+
     const batch = await database.getCrudBatch(100);
     if (!batch) return;
 
-    const {
-      data: { session },
-    } = await this.supabase.auth.getSession();
-    const userId = session?.user?.id;
-    if (!userId) {
-      throw new Error('No authenticated user for sync upload');
-    }
+    // Decode user_id and agent_id from token
+    const payload = JSON.parse(atob(this.token!.split('.')[1]));
+    const userId = payload.sub;
+    const agentId = payload.agent_id;
 
     for (const entry of batch.crud) {
       const table = entry.table;
@@ -73,19 +89,28 @@ class AgentConnector implements PowerSyncBackendConnector {
       if (entry.op === 'PUT') {
         const { error } = await this.supabase
           .from(table)
-          .upsert({ ...entry.opData, id, user_id: userId });
+          .upsert({
+            ...entry.opData,
+            id,
+            user_id: userId,
+            source: 'ai',
+            agent_id: agentId,
+          });
         if (error) throw error;
       } else if (entry.op === 'PATCH') {
         const { error } = await this.supabase
           .from(table)
-          .update(entry.opData)
+          .update({
+            ...entry.opData,
+            source: 'ai',
+            agent_id: agentId,
+          })
           .eq('id', id);
         if (error) throw error;
       } else if (entry.op === 'DELETE') {
-        const now = new Date().toISOString();
         const { error } = await this.supabase
           .from(table)
-          .update({ deleted_at: now })
+          .update({ deleted_at: new Date().toISOString() })
           .eq('id', id);
         if (error) throw error;
       }
@@ -106,7 +131,6 @@ export async function initDatabase(): Promise<PowerSyncDatabase> {
   if (db) return db;
 
   connector = new AgentConnector();
-  await connector.signIn();
 
   db = new PowerSyncDatabase({
     schema: AppSchema,
