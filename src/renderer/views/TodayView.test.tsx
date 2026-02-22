@@ -10,17 +10,11 @@ let mockActiveContextIds: string[] = [];
 const mockUpdateTask = vi.fn();
 const mockSelectTask = vi.fn();
 
-vi.mock('../hooks/useLiveQuery', () => ({
-  useLiveQuery: (_queryFn: unknown, tables: string[]) => {
-    if (tables.includes('tasks')) return { data: mockTasks, isLoading: false, error: null };
-    if (tables.includes('projects')) return { data: mockProjects, isLoading: false, error: null };
-    return { data: [], isLoading: false, error: null };
-  },
-}));
-
 vi.mock('../stores', () => ({
   useStore: (selector: (state: Record<string, unknown>) => unknown) => {
     const state = {
+      tasks: mockTasks,
+      projects: mockProjects,
       updateTask: mockUpdateTask,
       selectTask: mockSelectTask,
       selectedTaskId: null,
@@ -31,7 +25,6 @@ vi.mock('../stores', () => ({
       createChecklistItem: vi.fn(),
       deleteChecklistItem: vi.fn(),
       updateChecklistItem: vi.fn(),
-      projects: mockProjects,
       contexts: [],
       fetchProjects: vi.fn(),
       agents: [],

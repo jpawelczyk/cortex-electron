@@ -4,7 +4,6 @@ import type { Task } from '@shared/types';
 import { useStore } from '../stores';
 import { TaskList } from '../components/TaskList';
 import { InlineTaskCard } from '../components/InlineTaskCard';
-import { useLiveQuery } from '../hooks/useLiveQuery';
 
 function getToday(): string {
   return new Date().toISOString().slice(0, 10);
@@ -24,7 +23,7 @@ function isCompletedToday(task: Task): boolean {
 }
 
 export function InboxView() {
-  const { data: tasks } = useLiveQuery(() => window.cortex.tasks.list(), ['tasks']);
+  const tasks = useStore((s) => s.tasks);
   const updateTask = useStore((s) => s.updateTask);
   const selectTask = useStore((s) => s.selectTask);
   const selectedTaskId = useStore((s) => s.selectedTaskId);

@@ -11,16 +11,10 @@ const mockUpdateTask = vi.fn();
 const mockCreateTask = vi.fn();
 const mockCancelInlineCreate = vi.fn();
 
-vi.mock('../hooks/useLiveQuery', () => ({
-  useLiveQuery: (_queryFn: unknown, tables: string[]) => {
-    if (tables.includes('tasks')) return { data: mockTasks, isLoading: false, error: null };
-    return { data: [], isLoading: false, error: null };
-  },
-}));
-
 vi.mock('../stores', () => ({
   useStore: (selector: (state: Record<string, unknown>) => unknown) => {
     const state = {
+      tasks: mockTasks,
       updateTask: mockUpdateTask,
       createTask: mockCreateTask,
       isInlineCreating: mockIsInlineCreating,
