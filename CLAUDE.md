@@ -67,14 +67,22 @@ Tasks, Projects, Notes, Meetings, Stakeholders, Daily Notes. Full schema in [SCH
 - **Styling:** Tailwind + shadcn/ui
 - **Rich text:** Stored as Markdown
 
-## Testing
+## Testing (TDD)
+
+**Test-driven, not "with tests".** Write tests FIRST, then implementation.
+
+```
+1. Write failing test (what behavior do I need?)
+2. Write minimal code to pass
+3. Refactor (tests still pass)
+```
 
 - Vitest for unit/integration
 - Playwright for E2E
-- Test before commit
 
 ## Hard Rules
 
+- ❌ NO code before tests
 - ❌ NO loading spinners for data operations
 - ❌ NO telemetry without explicit opt-in
 - ❌ NO hard deletes
@@ -148,4 +156,4 @@ Things-inspired: `inbox` → `today` | `upcoming` | `anytime` | `someday` → `l
 | [SYNC](docs/SYNC.md) | PowerSync setup, conflict handling |
 | [AI](docs/AI.md) | AI integration patterns |
 | [DESIGN_SYSTEM](docs/DESIGN_SYSTEM.md) | Visual language |
-| [TESTING](docs/TESTING.md) | Testing patterns |
+| [TESTING](docs/TESTING.md) | TDD philosophy, patterns |
