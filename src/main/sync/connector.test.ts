@@ -132,6 +132,18 @@ describe('SupabaseConnector', () => {
   });
 
   describe('uploadData', () => {
+    beforeEach(() => {
+      // Provide an authenticated session for upload tests
+      mockGetSession.mockResolvedValue({
+        data: {
+          session: {
+            access_token: 'test-token',
+            user: { id: 'user-123' },
+          },
+        },
+      });
+    });
+
     it('handles empty batch (no pending changes)', async () => {
       const db = createMockDatabase(null);
 
@@ -160,6 +172,7 @@ describe('SupabaseConnector', () => {
         id: 'task-id-123',
         title: 'Test task',
         status: 'inbox',
+        user_id: 'user-123',
       });
     });
 
