@@ -20,3 +20,14 @@ export const UpdateNoteSchema = z.object({
 });
 
 export const NoteIdSchema = uuid;
+
+// Auth
+export const SignInSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1),
+});
+
+export const SignUpSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6),
+});

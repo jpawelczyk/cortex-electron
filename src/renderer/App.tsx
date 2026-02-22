@@ -20,9 +20,42 @@ import { NotesOverviewView } from './views/NotesOverviewView';
 import { NoteDetailView } from './views/NoteDetailView';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
+import { SignIn } from './views/auth/sign-in';
+import { SignUp } from './views/auth/sign-up';
 import type { Task } from '@shared/types';
 
 export default function App() {
+  const authSession = useStore((s) => s.authSession);
+  const authLoading = useStore((s) => s.authLoading);
+  const checkSession = useStore((s) => s.checkSession);
+  const [authView, setAuthView] = useState<'sign-in' | 'sign-up'>('sign-in');
+
+  // Check for existing session on mount
+  useEffect(() => {
+    checkSession();
+  }, [checkSession]);
+
+  // Show loading screen while checking auth
+  if (authLoading && !authSession) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
+
+  // Show auth screens if no session
+  if (!authSession) {
+    if (authView === 'sign-up') {
+      return <SignUp onSwitchToSignIn={() => setAuthView('sign-in')} />;
+    }
+    return <SignIn onSwitchToSignUp={() => setAuthView('sign-up')} />;
+  }
+
+  return <AuthenticatedApp />;
+}
+
+function AuthenticatedApp() {
   const [activeView, setActiveView] = useState<SidebarView>('inbox');
   const [contextSettingsOpen, setContextSettingsOpen] = useState(false);
   const tasks = useStore((s) => s.tasks);

@@ -67,6 +67,16 @@ declare global {
       };
       onFocusTaskInput(callback: () => void): () => void;
       onStaleCheckComplete(callback: () => void): () => void;
+      auth: {
+        signIn(credentials: { email: string; password: string }): Promise<unknown>;
+        signUp(credentials: { email: string; password: string }): Promise<unknown>;
+        signOut(): Promise<unknown>;
+        getSession(): Promise<unknown>;
+      };
+      sync: {
+        connect(): Promise<unknown>;
+        disconnect(): Promise<unknown>;
+      };
       system: {
         exportData(): Promise<unknown>;
         importData(filePath: string): Promise<void>;

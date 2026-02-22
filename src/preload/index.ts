@@ -78,6 +78,20 @@ const api = {
     return () => { ipcRenderer.removeListener('tasks:stale-check-complete', listener); };
   },
 
+  auth: {
+    signIn: (credentials: { email: string; password: string }): Promise<unknown> =>
+      ipcRenderer.invoke('auth:sign-in', credentials),
+    signUp: (credentials: { email: string; password: string }): Promise<unknown> =>
+      ipcRenderer.invoke('auth:sign-up', credentials),
+    signOut: (): Promise<unknown> => ipcRenderer.invoke('auth:sign-out'),
+    getSession: (): Promise<unknown> => ipcRenderer.invoke('auth:get-session'),
+  },
+
+  sync: {
+    connect: (): Promise<unknown> => ipcRenderer.invoke('sync:connect'),
+    disconnect: (): Promise<unknown> => ipcRenderer.invoke('sync:disconnect'),
+  },
+
   system: {
     exportData: (): Promise<unknown> => ipcRenderer.invoke('system:export'),
     importData: (filePath: string): Promise<void> => ipcRenderer.invoke('system:import', filePath),

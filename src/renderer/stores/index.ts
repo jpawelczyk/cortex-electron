@@ -7,8 +7,9 @@ import { createStakeholderSlice, StakeholderSlice } from './stakeholders';
 import { createChecklistSlice, ChecklistSlice } from './checklists';
 import { createUISlice, UISlice } from './ui';
 import { createNoteSlice, NoteSlice } from './notes';
+import { createAuthSlice, AuthSlice } from './auth';
 
-export type StoreState = TaskSlice & ProjectSlice & ContextSlice & StakeholderSlice & ChecklistSlice & UISlice & NoteSlice;
+export type StoreState = TaskSlice & ProjectSlice & ContextSlice & StakeholderSlice & ChecklistSlice & UISlice & NoteSlice & AuthSlice;
 
 export const useStore = create<StoreState>()(
   devtools(
@@ -21,6 +22,7 @@ export const useStore = create<StoreState>()(
         ...createChecklistSlice(...a),
         ...createUISlice(...a),
         ...createNoteSlice(...a),
+        ...createAuthSlice(...a),
       }),
       {
         name: 'cortex-store',

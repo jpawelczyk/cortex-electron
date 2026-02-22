@@ -1,8 +1,9 @@
 import { app, BrowserWindow, nativeImage } from 'electron';
 import { fileURLToPath } from 'url';
 import path from 'path';
-import { initDatabase, closeDatabase, getPowerSyncDatabase } from './db/index.js';
+import { initDatabase, closeDatabase } from './db/index.js';
 import { registerHandlers } from './ipc/handlers.js';
+import { registerAuthHandlers } from './ipc/auth.js';
 import { registerGlobalShortcuts, unregisterGlobalShortcuts } from './shortcuts.js';
 import { createTaskService } from './services/task.service.js';
 import { seedDefaultContexts } from './services/context.service.js';
@@ -110,14 +111,12 @@ app.whenReady().then(async () => {
     }).catch(() => {});
   });
 
-  // Connect to PowerSync sync service if configured
+  // Register auth handlers if sync is configured
+  // Sync connection is now driven by the renderer after successful auth
   const syncConfig = getSyncConfig();
   if (syncConfig) {
     const connector = new SupabaseConnector(syncConfig);
-    const psDb = getPowerSyncDatabase();
-    psDb.connect(connector).catch((err) => {
-      console.warn('PowerSync sync connection failed (will retry):', err.message);
-    });
+    registerAuthHandlers(connector);
   }
 
   app.on('activate', () => {
