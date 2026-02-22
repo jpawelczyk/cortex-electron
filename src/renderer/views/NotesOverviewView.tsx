@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { FileText, Pin, Plus } from 'lucide-react';
 import { useStore } from '../stores';
-import { InlineNoteCard } from '../components/InlineNoteCard';
 import type { Note, Context } from '../../shared/types';
 
 type NoteSort = 'updated' | 'created' | 'title';
@@ -65,14 +64,10 @@ export function NotesOverviewView() {
   const contexts = useStore(s => s.contexts) as Context[];
   const activeContextIds = useStore(s => s.activeContextIds);
   const fetchNotes = useStore(s => s.fetchNotes);
+  const createNote = useStore(s => s.createNote);
   const selectNote = useStore(s => s.selectNote);
-  const isInlineNoteCreating = useStore(s => s.isInlineNoteCreating);
-  const cancelInlineNoteCreate = useStore(s => s.cancelInlineNoteCreate);
 
   const [sort, setSort] = useState<NoteSort>('updated');
-  const [isLocalCreating, setIsLocalCreating] = useState(false);
-
-  const isCreating = isLocalCreating || isInlineNoteCreating;
 
   useEffect(() => {
     fetchNotes();
@@ -118,20 +113,18 @@ export function NotesOverviewView() {
           </select>
         </div>
 
-        {/* Inline creation */}
-        {isCreating ? (
-          <InlineNoteCard onClose={() => { setIsLocalCreating(false); cancelInlineNoteCreate(); }} />
-        ) : (
-          <button
-            type="button"
-            data-testid="new-note-trigger"
-            onClick={() => setIsLocalCreating(true)}
-            className="flex items-center gap-3 w-full px-4 py-3 mb-4 rounded-lg border border-dashed border-border/60 bg-card/20 text-muted-foreground/60 hover:text-muted-foreground hover:bg-accent/30 hover:border-border transition-colors cursor-pointer"
-          >
-            <Plus className="size-4" strokeWidth={1.5} />
-            <span className="text-[13px] font-medium">New Note</span>
-          </button>
-        )}
+        <button
+          type="button"
+          data-testid="new-note-trigger"
+          onClick={async () => {
+            const note = await createNote({ title: 'Untitled' });
+            selectNote(note.id);
+          }}
+          className="flex items-center gap-3 w-full px-4 py-3 mb-4 rounded-lg border border-dashed border-border/60 bg-card/20 text-muted-foreground/60 hover:text-muted-foreground hover:bg-accent/30 hover:border-border transition-colors cursor-pointer"
+        >
+          <Plus className="size-4" strokeWidth={1.5} />
+          <span className="text-[13px] font-medium">New Note</span>
+        </button>
 
         {/* Notes list */}
         {filteredNotes.map(note => (
@@ -139,7 +132,7 @@ export function NotesOverviewView() {
         ))}
 
         {/* Empty state */}
-        {!isCreating && filteredNotes.length === 0 && (
+        {filteredNotes.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground" data-testid="notes-empty">
             <FileText className="size-10 mb-3 opacity-30" strokeWidth={1.25} />
             <p className="text-sm">No notes yet</p>

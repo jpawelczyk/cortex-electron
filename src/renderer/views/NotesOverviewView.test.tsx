@@ -7,10 +7,9 @@ import { NotesOverviewView } from './NotesOverviewView';
 let mockNotes: Record<string, unknown>[] = [];
 let mockActiveContextIds: string[] = [];
 let mockContexts: Record<string, unknown>[] = [];
-let mockIsInlineNoteCreating = false;
 const mockFetchNotes = vi.fn();
+const mockCreateNote = vi.fn().mockResolvedValue({ id: 'new-note-id', title: 'Untitled' });
 const mockSelectNote = vi.fn();
-const mockCancelInlineNoteCreate = vi.fn();
 
 vi.mock('../stores', () => ({
   useStore: (selector: (state: Record<string, unknown>) => unknown) => {
@@ -20,9 +19,8 @@ vi.mock('../stores', () => ({
       contexts: mockContexts,
       activeContextIds: mockActiveContextIds,
       fetchNotes: mockFetchNotes,
+      createNote: mockCreateNote,
       selectNote: mockSelectNote,
-      isInlineNoteCreating: mockIsInlineNoteCreating,
-      cancelInlineNoteCreate: mockCancelInlineNoteCreate,
     };
     return selector(state);
   },
@@ -59,7 +57,6 @@ describe('NotesOverviewView', () => {
     mockNotes = [];
     mockActiveContextIds = [];
     mockContexts = [];
-    mockIsInlineNoteCreating = false;
   });
 
   it('renders "Notes" heading', () => {
@@ -231,43 +228,20 @@ describe('NotesOverviewView', () => {
     expect(screen.queryByText('Deleted Note')).not.toBeInTheDocument();
   });
 
-  describe('inline note creation', () => {
+  describe('note creation', () => {
     it('shows a "New Note" trigger button', () => {
       render(<NotesOverviewView />);
       expect(screen.getByTestId('new-note-trigger')).toBeInTheDocument();
     });
 
-    it('opens InlineNoteCard when trigger is clicked', () => {
+    it('creates note and navigates to detail view when clicked', async () => {
       render(<NotesOverviewView />);
       fireEvent.click(screen.getByTestId('new-note-trigger'));
 
-      expect(screen.getByTestId('inline-note-card')).toBeInTheDocument();
-    });
-
-    it('hides trigger button while InlineNoteCard is open', () => {
-      render(<NotesOverviewView />);
-      fireEvent.click(screen.getByTestId('new-note-trigger'));
-
-      expect(screen.queryByTestId('new-note-trigger')).not.toBeInTheDocument();
-    });
-
-    it('restores trigger button after InlineNoteCard is dismissed', () => {
-      render(<NotesOverviewView />);
-      fireEvent.click(screen.getByTestId('new-note-trigger'));
-
-      // Dismiss via Escape
-      fireEvent.keyDown(document, { key: 'Escape' });
-
-      expect(screen.getByTestId('new-note-trigger')).toBeInTheDocument();
-      expect(screen.queryByTestId('inline-note-card')).not.toBeInTheDocument();
-    });
-
-    it('opens InlineNoteCard when isInlineNoteCreating store flag is true', () => {
-      mockIsInlineNoteCreating = true;
-      render(<NotesOverviewView />);
-
-      expect(screen.getByTestId('inline-note-card')).toBeInTheDocument();
-      expect(screen.queryByTestId('new-note-trigger')).not.toBeInTheDocument();
+      await vi.waitFor(() => {
+        expect(mockCreateNote).toHaveBeenCalledWith({ title: 'Untitled' });
+        expect(mockSelectNote).toHaveBeenCalledWith('new-note-id');
+      });
     });
   });
 });
