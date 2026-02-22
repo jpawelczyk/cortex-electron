@@ -35,3 +35,6 @@ coverage/
 
 # Electron
 .electron/
+
+# Supabase
+supabase/.temp/
