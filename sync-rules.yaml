@@ -1,19 +1,21 @@
 # PowerSync Sync Rules for Cortex
-# Deploy to PowerSync Cloud or self-hosted instance
-# See: https://docs.powersync.com/usage/sync-rules
+# See https://docs.powersync.com/usage/sync-rules
+
+config:
+  edition: 2
 
 bucket_definitions:
   user_data:
     parameters: SELECT request.user_id() AS user_id
     data:
-      - SELECT * FROM public.contexts WHERE user_id = bucket.user_id
-      - SELECT * FROM public.projects WHERE user_id = bucket.user_id
-      - SELECT * FROM public.project_headings WHERE user_id = bucket.user_id
-      - SELECT * FROM public.tasks WHERE user_id = bucket.user_id
-      - SELECT * FROM public.task_checklists WHERE user_id = bucket.user_id
-      - SELECT * FROM public.stakeholders WHERE user_id = bucket.user_id
-      - SELECT * FROM public.meetings WHERE user_id = bucket.user_id
-      - SELECT * FROM public.meeting_attendees WHERE user_id = bucket.user_id
-      - SELECT * FROM public.notes WHERE user_id = bucket.user_id
-      - SELECT * FROM public.note_stakeholders WHERE user_id = bucket.user_id
-      - SELECT * FROM public.daily_notes WHERE user_id = bucket.user_id
+      - SELECT * FROM contexts WHERE user_id = bucket.user_id
+      - SELECT * FROM projects WHERE user_id = bucket.user_id
+      - SELECT * FROM project_headings WHERE user_id = bucket.user_id
+      - SELECT * FROM tasks WHERE user_id = bucket.user_id
+      - SELECT * FROM task_checklists WHERE user_id = bucket.user_id
+      - SELECT * FROM stakeholders WHERE user_id = bucket.user_id
+      - SELECT * FROM meetings WHERE user_id = bucket.user_id
+      - SELECT * FROM meeting_attendees WHERE user_id = bucket.user_id
+      - SELECT * FROM notes WHERE user_id = bucket.user_id
+      - SELECT * FROM note_stakeholders WHERE user_id = bucket.user_id
+      - SELECT * FROM daily_notes WHERE user_id = bucket.user_id
