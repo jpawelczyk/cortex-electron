@@ -82,12 +82,19 @@ class AgentConnector implements PowerSyncBackendConnector {
     const userId = payload.sub;
     const agentId = payload.agent_id;
 
+    // Create authenticated client with our JWT (required for RLS)
+    const authClient = createClient(
+      requireEnv('SUPABASE_URL'),
+      requireEnv('SUPABASE_ANON_KEY'),
+      { global: { headers: { Authorization: `Bearer ${this.token}` } } }
+    );
+
     for (const entry of batch.crud) {
       const table = entry.table;
       const id = entry.id;
 
       if (entry.op === 'PUT') {
-        const { error } = await this.supabase
+        const { error } = await authClient
           .from(table)
           .upsert({
             ...entry.opData,
@@ -98,7 +105,7 @@ class AgentConnector implements PowerSyncBackendConnector {
           });
         if (error) throw error;
       } else if (entry.op === 'PATCH') {
-        const { error } = await this.supabase
+        const { error } = await authClient
           .from(table)
           .update({
             ...entry.opData,
@@ -108,7 +115,7 @@ class AgentConnector implements PowerSyncBackendConnector {
           .eq('id', id);
         if (error) throw error;
       } else if (entry.op === 'DELETE') {
-        const { error } = await this.supabase
+        const { error } = await authClient
           .from(table)
           .update({ deleted_at: new Date().toISOString() })
           .eq('id', id);
