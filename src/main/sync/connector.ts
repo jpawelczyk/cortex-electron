@@ -30,12 +30,19 @@ export class SupabaseConnector implements PowerSyncBackendConnector {
     const batch = await database.getCrudBatch(100);
     if (!batch) return;
 
+    // Get current user ID for RLS
+    const { data: { session } } = await this.supabase.auth.getSession();
+    const userId = session?.user?.id;
+    if (!userId) {
+      throw new Error('No authenticated user for sync upload');
+    }
+
     for (const entry of batch.crud) {
       const table = entry.table;
       const id = entry.id;
 
       if (entry.op === 'PUT') {
-        const { error } = await this.supabase.from(table).upsert({ ...entry.opData, id });
+        const { error } = await this.supabase.from(table).upsert({ ...entry.opData, id, user_id: userId });
         if (error) throw error;
       } else if (entry.op === 'PATCH') {
         const { error } = await this.supabase.from(table).update(entry.opData).eq('id', id);
