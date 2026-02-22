@@ -28,6 +28,9 @@ vi.mock('../stores', () => ({
       contexts: [],
       activeContextIds: [],
       fetchProjects: vi.fn(),
+      agents: [],
+      fetchAgents: vi.fn(),
+      authUser: null,
     };
     return selector(state);
   },

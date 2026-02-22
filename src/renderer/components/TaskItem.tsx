@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Circle, CheckCircle2, Calendar, Flag, Trash2, Check, X, Cloud, Layers } from 'lucide-react';
+import { Circle, CheckCircle2, Calendar, Flag, Trash2, Check, X, Cloud, Layers, User } from 'lucide-react';
 import type { Task } from '@shared/types';
 import { useStore } from '../stores';
 import { useDebouncedCallback } from '../hooks/useDebouncedCallback';
@@ -45,10 +45,14 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, i
   const projects = useStore((s) => s.projects);
   const contexts = useStore((s) => s.contexts);
   const fetchProjects = useStore((s) => s.fetchProjects);
+  const agents = useStore((s) => s.agents);
+  const fetchAgents = useStore((s) => s.fetchAgents);
+  const authUser = useStore((s) => s.authUser) as { id: string } | null;
 
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [projectOpen, setProjectOpen] = useState(false);
   const [contextOpen, setContextOpen] = useState(false);
+  const [assigneeOpen, setAssigneeOpen] = useState(false);
   const isCompleted = isCompletedProp ?? (task.status === 'logbook');
   const cardRef = useRef<HTMLDivElement>(null);
   const notesRef = useRef<HTMLTextAreaElement>(null);
@@ -203,6 +207,13 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, i
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps -- intentionally only on mount
 
+  // Fetch agents on mount if not loaded
+  useEffect(() => {
+    if (agents.length === 0) {
+      fetchAgents();
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- intentionally only on mount
+
   const activeProjects = useMemo(
     () => projects.filter((p) => p.status !== 'completed' && p.status !== 'archived'),
     [projects],
@@ -233,6 +244,23 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, i
   const handleContextChange = (contextId: string | null) => {
     updateTask(task.id, { context_id: contextId });
     setContextOpen(false);
+  };
+
+  const activeAgents = useMemo(
+    () => agents.filter((a) => !a.revoked_at),
+    [agents],
+  );
+
+  const assigneeLabel = useMemo(() => {
+    if (!task.assignee_id) return 'Unassigned';
+    if (authUser && task.assignee_id === authUser.id) return 'Me';
+    const agent = agents.find((a) => a.id === task.assignee_id);
+    return agent ? agent.name : 'Unassigned';
+  }, [task.assignee_id, authUser, agents]);
+
+  const handleAssigneeChange = (assigneeId: string | null) => {
+    updateTask(task.id, { assignee_id: assigneeId });
+    setAssigneeOpen(false);
   };
 
   const handleRowClick = () => {
@@ -454,6 +482,54 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, i
                   </PopoverContent>
                 </Popover>
               )}
+              <Popover open={assigneeOpen} onOpenChange={setAssigneeOpen}>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label="Assignee"
+                    tabIndex={isExpanded ? 0 : -1}
+                    className="inline-flex items-center gap-1.5 px-1.5 py-1 text-xs text-muted-foreground hover:bg-accent/60 rounded-md transition-colors cursor-pointer"
+                  >
+                    <User className="size-3" />
+                    <span>{assigneeLabel}</span>
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-48 p-1" align="start">
+                  <button
+                    role="option"
+                    aria-label="Unassigned"
+                    type="button"
+                    onClick={() => handleAssigneeChange(null)}
+                    className="flex items-center w-full px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent rounded-md cursor-pointer"
+                  >
+                    Unassigned
+                  </button>
+                  {authUser && (
+                    <button
+                      role="option"
+                      aria-label="Me"
+                      type="button"
+                      onClick={() => handleAssigneeChange(authUser.id)}
+                      className="flex items-center w-full px-2 py-1.5 text-sm text-foreground hover:bg-accent rounded-md cursor-pointer"
+                    >
+                      Me
+                    </button>
+                  )}
+                  {activeAgents.map((agent) => (
+                    <button
+                      key={agent.id}
+                      role="option"
+                      aria-label={agent.name}
+                      type="button"
+                      onClick={() => handleAssigneeChange(agent.id)}
+                      className="flex items-center gap-2 w-full px-2 py-1.5 text-sm text-foreground hover:bg-accent rounded-md cursor-pointer"
+                    >
+                      <span>{agent.name}</span>
+                      <span className="text-[10px] text-muted-foreground">AI</span>
+                    </button>
+                  ))}
+                </PopoverContent>
+              </Popover>
               </div>
               {confirmingDelete ? (
                 <div className="flex items-center gap-1.5 rounded-lg bg-accent px-2.5 py-1">

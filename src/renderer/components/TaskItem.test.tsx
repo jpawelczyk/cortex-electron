@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { TaskItem } from './TaskItem';
-import type { Task, Project, Context } from '@shared/types';
+import type { Task, Project, Context, AIAgent } from '@shared/types';
 
 const mockUpdateTask = vi.fn();
 const mockDeselectTask = vi.fn();
@@ -15,9 +15,12 @@ const mockDeleteChecklistItem = vi.fn();
 const mockUpdateChecklistItem = vi.fn();
 
 const mockFetchProjects = vi.fn();
+const mockFetchAgents = vi.fn();
 
 let mockProjects: Project[] = [];
 let mockContexts: Context[] = [];
+let mockAgents: AIAgent[] = [];
+let mockAuthUser: { id: string } | null = null;
 
 vi.mock('../stores', () => ({
   useStore: (selector: (state: Record<string, unknown>) => unknown) => {
@@ -34,6 +37,9 @@ vi.mock('../stores', () => ({
       projects: mockProjects,
       contexts: mockContexts,
       fetchProjects: mockFetchProjects,
+      agents: mockAgents,
+      fetchAgents: mockFetchAgents,
+      authUser: mockAuthUser,
     };
     return selector(state);
   },
@@ -822,5 +828,139 @@ describe('TaskItem context picker (expanded)', () => {
       <TaskItem task={fakeTask({ project_id: 'proj-1', context_id: null })} onComplete={vi.fn()} isExpanded />
     );
     expect(screen.getByRole('button', { name: /context/i })).toBeInTheDocument();
+  });
+});
+
+describe('TaskItem assignee picker (expanded)', () => {
+  function makeAgent(overrides?: Partial<AIAgent>): AIAgent {
+    return {
+      id: 'agent-1',
+      name: 'Cortex Agent',
+      permissions: { read: true, write: true },
+      last_used_at: null,
+      created_at: '2026-01-01T00:00:00.000Z',
+      revoked_at: null,
+      ...overrides,
+    };
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+    mockProjects = [];
+    mockContexts = [];
+    mockAgents = [];
+    mockAuthUser = null;
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    mockAgents = [];
+    mockAuthUser = null;
+  });
+
+  it('shows "Unassigned" when task.assignee_id is null', () => {
+    render(
+      <TaskItem task={fakeTask({ assignee_id: null })} onComplete={vi.fn()} isExpanded />
+    );
+    const btn = screen.getByRole('button', { name: /assignee/i });
+    expect(btn.textContent).toContain('Unassigned');
+  });
+
+  it('shows "Me" when task.assignee_id matches current user', () => {
+    mockAuthUser = { id: 'user-1' };
+    render(
+      <TaskItem task={fakeTask({ assignee_id: 'user-1' })} onComplete={vi.fn()} isExpanded />
+    );
+    const btn = screen.getByRole('button', { name: /assignee/i });
+    expect(btn.textContent).toContain('Me');
+  });
+
+  it('shows agent name when task is assigned to an AI agent', () => {
+    mockAgents = [makeAgent({ id: 'agent-1', name: 'Cortex Agent' })];
+    render(
+      <TaskItem task={fakeTask({ assignee_id: 'agent-1' })} onComplete={vi.fn()} isExpanded />
+    );
+    const btn = screen.getByRole('button', { name: /assignee/i });
+    expect(btn.textContent).toContain('Cortex Agent');
+  });
+
+  it('shows dropdown with Unassigned, Me, and AI agents', () => {
+    mockAuthUser = { id: 'user-1' };
+    mockAgents = [
+      makeAgent({ id: 'agent-1', name: 'Cortex Agent' }),
+      makeAgent({ id: 'agent-2', name: 'Research Bot' }),
+    ];
+    render(
+      <TaskItem task={fakeTask({ assignee_id: null })} onComplete={vi.fn()} isExpanded />
+    );
+    fireEvent.click(screen.getByRole('button', { name: /assignee/i }));
+    expect(screen.getByRole('option', { name: /unassigned/i })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: /^me$/i })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: /cortex agent/i })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: /research bot/i })).toBeInTheDocument();
+  });
+
+  it('does not show revoked agents in dropdown', () => {
+    mockAuthUser = { id: 'user-1' };
+    mockAgents = [
+      makeAgent({ id: 'agent-1', name: 'Active Agent', revoked_at: null }),
+      makeAgent({ id: 'agent-2', name: 'Revoked Agent', revoked_at: '2026-02-01T00:00:00.000Z' }),
+    ];
+    render(
+      <TaskItem task={fakeTask({ assignee_id: null })} onComplete={vi.fn()} isExpanded />
+    );
+    fireEvent.click(screen.getByRole('button', { name: /assignee/i }));
+    expect(screen.getByRole('option', { name: /active agent/i })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: /revoked agent/i })).not.toBeInTheDocument();
+  });
+
+  it('calls updateTask with agent id when selecting an agent', () => {
+    mockAgents = [makeAgent({ id: 'agent-1', name: 'Cortex Agent' })];
+    render(
+      <TaskItem task={fakeTask({ assignee_id: null })} onComplete={vi.fn()} isExpanded />
+    );
+    fireEvent.click(screen.getByRole('button', { name: /assignee/i }));
+    fireEvent.click(screen.getByRole('option', { name: /cortex agent/i }));
+    expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { assignee_id: 'agent-1' });
+  });
+
+  it('calls updateTask with user id when selecting "Me"', () => {
+    mockAuthUser = { id: 'user-1' };
+    render(
+      <TaskItem task={fakeTask({ assignee_id: null })} onComplete={vi.fn()} isExpanded />
+    );
+    fireEvent.click(screen.getByRole('button', { name: /assignee/i }));
+    fireEvent.click(screen.getByRole('option', { name: /^me$/i }));
+    expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { assignee_id: 'user-1' });
+  });
+
+  it('calls updateTask with null when selecting "Unassigned"', () => {
+    mockAuthUser = { id: 'user-1' };
+    render(
+      <TaskItem task={fakeTask({ assignee_id: 'user-1' })} onComplete={vi.fn()} isExpanded />
+    );
+    fireEvent.click(screen.getByRole('button', { name: /assignee/i }));
+    fireEvent.click(screen.getByRole('option', { name: /unassigned/i }));
+    expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { assignee_id: null });
+  });
+
+  it('does not show "Me" option when authUser is null', () => {
+    mockAuthUser = null;
+    mockAgents = [makeAgent({ id: 'agent-1', name: 'Cortex Agent' })];
+    render(
+      <TaskItem task={fakeTask({ assignee_id: null })} onComplete={vi.fn()} isExpanded />
+    );
+    fireEvent.click(screen.getByRole('button', { name: /assignee/i }));
+    expect(screen.queryByRole('option', { name: /^me$/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('option', { name: /unassigned/i })).toBeInTheDocument();
+  });
+
+  it('fetches agents on mount when agents list is empty', () => {
+    mockAgents = [];
+    render(
+      <TaskItem task={fakeTask()} onComplete={vi.fn()} isExpanded />
+    );
+    expect(mockFetchAgents).toHaveBeenCalled();
   });
 });
