@@ -49,7 +49,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
     ],
     content: value,
     onUpdate: ({ editor }) => {
-      const md = (editor.storage as TipTapMarkdownStorage).markdown.getMarkdown();
+      const md = (editor.storage as unknown as TipTapMarkdownStorage).markdown.getMarkdown();
       valueRef.current = md;
       onChange(md);
     },
