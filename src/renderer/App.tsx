@@ -85,7 +85,6 @@ function AuthenticatedApp() {
   const deselectNote = useStore((s) => s.deselectNote);
   const selectedStakeholderId = useStore((s) => s.selectedStakeholderId);
   const deselectStakeholder = useStore((s) => s.deselectStakeholder);
-  const selectStakeholder = useStore((s) => s.selectStakeholder);
   const selectTask = useStore((s) => s.selectTask);
   const selectProject = useStore((s) => s.selectProject);
   const selectNote = useStore((s) => s.selectNote);
