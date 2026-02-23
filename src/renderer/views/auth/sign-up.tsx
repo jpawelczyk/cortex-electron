@@ -10,6 +10,8 @@ interface SignUpProps {
 }
 
 export function SignUp({ onSwitchToSignIn }: SignUpProps) {
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -32,7 +34,7 @@ export function SignUp({ onSwitchToSignIn }: SignUpProps) {
       return;
     }
 
-    await signUp(email, password);
+    await signUp(email, password, firstName.trim() || undefined, lastName.trim() || undefined);
   };
 
   const error = localError || authError;
@@ -40,6 +42,27 @@ export function SignUp({ onSwitchToSignIn }: SignUpProps) {
   return (
     <AuthLayout>
       <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <Label htmlFor="first-name">First name</Label>
+            <Input
+              id="first-name"
+              placeholder="First name"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              autoFocus
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="last-name">Last name</Label>
+            <Input
+              id="last-name"
+              placeholder="Last name"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+            />
+          </div>
+        </div>
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
           <Input
@@ -49,7 +72,6 @@ export function SignUp({ onSwitchToSignIn }: SignUpProps) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            autoFocus
           />
         </div>
         <div className="space-y-2">

@@ -158,4 +158,11 @@ export const SignInSchema = z.object({
 export const SignUpSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
+  first_name: z.string().optional(),
+  last_name: z.string().optional(),
+});
+
+export const UpdateUserMetadataSchema = z.object({
+  first_name: z.string().optional(),
+  last_name: z.string().optional(),
 });

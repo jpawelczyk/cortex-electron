@@ -1,6 +1,6 @@
 import { ipcMain } from 'electron';
 import { getPowerSyncDatabase } from '../db/index';
-import { SignInSchema, SignUpSchema } from '../../shared/validation';
+import { SignInSchema, SignUpSchema, UpdateUserMetadataSchema } from '../../shared/validation';
 import type { SupabaseConnector } from '../sync/connector';
 
 export function registerAuthHandlers(connector: SupabaseConnector): void {
@@ -23,7 +23,28 @@ export function registerAuthHandlers(connector: SupabaseConnector): void {
       return { success: false, error: parsed.error.issues[0].message };
     }
 
-    const { data, error } = await client.auth.signUp(parsed.data);
+    const { email, password, first_name, last_name } = parsed.data;
+    const { data, error } = await client.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          ...(first_name !== undefined && { first_name }),
+          ...(last_name !== undefined && { last_name }),
+        },
+      },
+    });
+    if (error) return { success: false, error: error.message };
+    return { success: true, data };
+  });
+
+  ipcMain.handle('auth:update-user', async (_, metadata) => {
+    const parsed = UpdateUserMetadataSchema.safeParse(metadata);
+    if (!parsed.success) {
+      return { success: false, error: parsed.error.issues[0].message };
+    }
+
+    const { data, error } = await client.auth.updateUser({ data: parsed.data });
     if (error) return { success: false, error: error.message };
     return { success: true, data };
   });

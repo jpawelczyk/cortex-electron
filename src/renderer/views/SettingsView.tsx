@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { format, parseISO } from 'date-fns';
-import { Bot, Plus, KeyRound } from 'lucide-react';
+import { Bot, Plus, KeyRound, User, CloudSun } from 'lucide-react';
 import { useStore } from '../stores';
 import { Button } from '@renderer/components/ui/button';
+import { Input } from '@renderer/components/ui/input';
+import { Label } from '@renderer/components/ui/label';
 import { CreateAgentDialog } from '@renderer/components/settings/CreateAgentDialog';
 
 export function SettingsView() {
@@ -12,6 +14,19 @@ export function SettingsView() {
   const revokeAgent = useStore((s) => s.revokeAgent);
   const [dialogOpen, setDialogOpen] = useState(false);
 
+  // Profile settings
+  const userFirstName = useStore((s) => s.userFirstName);
+  const userLastName = useStore((s) => s.userLastName);
+  const setUserProfile = useStore((s) => s.setUserProfile);
+  const authConfigured = useStore((s) => s.authConfigured);
+  const [firstName, setFirstName] = useState(userFirstName);
+  const [lastName, setLastName] = useState(userLastName);
+
+  // Weather settings
+  const weatherCity = useStore((s) => s.weatherCity);
+  const setWeatherCity = useStore((s) => s.setWeatherCity);
+  const [city, setCity] = useState(weatherCity);
+
   useEffect(() => {
     fetchAgents();
   }, [fetchAgents]);
@@ -19,10 +34,89 @@ export function SettingsView() {
   const activeAgents = agents.filter((a) => !a.revoked_at);
   const revokedAgents = agents.filter((a) => a.revoked_at);
 
+  const profileDirty = firstName !== userFirstName || lastName !== userLastName;
+  const cityDirty = city !== weatherCity;
+
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-2xl mx-auto px-6 py-8">
         <h1 className="text-xl font-semibold mb-6">Settings</h1>
+
+        {/* Profile Section */}
+        <section className="mb-8">
+          <div className="flex items-center gap-2 mb-4">
+            <User className="size-4 text-muted-foreground" />
+            <h2 className="text-sm font-medium">Profile</h2>
+          </div>
+          <div className="rounded-lg border border-border p-4 space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="firstName" className="text-xs text-muted-foreground">First name</Label>
+                <Input
+                  id="firstName"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  placeholder="First name"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="lastName" className="text-xs text-muted-foreground">Last name</Label>
+                <Input
+                  id="lastName"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  placeholder="Last name"
+                />
+              </div>
+            </div>
+            {profileDirty && (
+              <div className="flex justify-end">
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    const fn = firstName.trim();
+                    const ln = lastName.trim();
+                    setUserProfile(fn, ln);
+                    if (authConfigured) {
+                      window.cortex.auth.updateUser({ first_name: fn, last_name: ln });
+                    }
+                  }}
+                >
+                  Save
+                </Button>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* Weather Section */}
+        <section className="mb-8">
+          <div className="flex items-center gap-2 mb-4">
+            <CloudSun className="size-4 text-muted-foreground" />
+            <h2 className="text-sm font-medium">Weather</h2>
+          </div>
+          <div className="rounded-lg border border-border p-4 space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="weatherCity" className="text-xs text-muted-foreground">City</Label>
+              <Input
+                id="weatherCity"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                placeholder="City"
+              />
+            </div>
+            {cityDirty && (
+              <div className="flex justify-end">
+                <Button
+                  size="sm"
+                  onClick={() => setWeatherCity(city.trim())}
+                >
+                  Save
+                </Button>
+              </div>
+            )}
+          </div>
+        </section>
 
         {/* AI Agents Section */}
         <section>

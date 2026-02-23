@@ -88,7 +88,8 @@ declare global {
       auth: {
         isConfigured(): Promise<boolean>;
         signIn(credentials: { email: string; password: string }): Promise<unknown>;
-        signUp(credentials: { email: string; password: string }): Promise<unknown>;
+        signUp(credentials: { email: string; password: string; first_name?: string; last_name?: string }): Promise<unknown>;
+        updateUser(data: { first_name?: string; last_name?: string }): Promise<unknown>;
         signOut(): Promise<unknown>;
         getSession(): Promise<unknown>;
       };

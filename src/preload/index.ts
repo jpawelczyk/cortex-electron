@@ -117,8 +117,10 @@ const api = {
     isConfigured: (): Promise<boolean> => ipcRenderer.invoke('auth:is-configured'),
     signIn: (credentials: { email: string; password: string }): Promise<unknown> =>
       ipcRenderer.invoke('auth:sign-in', credentials),
-    signUp: (credentials: { email: string; password: string }): Promise<unknown> =>
+    signUp: (credentials: { email: string; password: string; first_name?: string; last_name?: string }): Promise<unknown> =>
       ipcRenderer.invoke('auth:sign-up', credentials),
+    updateUser: (data: { first_name?: string; last_name?: string }): Promise<unknown> =>
+      ipcRenderer.invoke('auth:update-user', data),
     signOut: (): Promise<unknown> => ipcRenderer.invoke('auth:sign-out'),
     getSession: (): Promise<unknown> => ipcRenderer.invoke('auth:get-session'),
   },
