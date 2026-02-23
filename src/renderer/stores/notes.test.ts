@@ -98,12 +98,14 @@ describe('NoteSlice', () => {
     });
 
     it('sets error on failure', async () => {
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
       mockCortex.notes.list.mockRejectedValue(new Error('fail'));
 
       const store = createStore();
       await store.fetchNotes();
 
       expect(mockCortex.notes.list).toHaveBeenCalledOnce();
+      spy.mockRestore();
     });
   });
 

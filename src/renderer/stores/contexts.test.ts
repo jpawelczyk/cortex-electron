@@ -84,12 +84,14 @@ describe('ContextSlice', () => {
     });
 
     it('sets error on failure', async () => {
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
       mockCortex.contexts.list.mockRejectedValue(new Error('fail'));
 
       const store = createStore();
       await store.fetchContexts();
 
       expect(mockCortex.contexts.list).toHaveBeenCalledOnce();
+      spy.mockRestore();
     });
   });
 

@@ -5,6 +5,29 @@ import '@testing-library/jest-dom/vitest';
 import { TaskList } from './TaskList';
 import type { Task } from '@shared/types';
 
+vi.mock('../stores', () => ({
+  useStore: (selector: (state: Record<string, unknown>) => unknown) => {
+    const state = {
+      updateTask: vi.fn(),
+      deselectTask: vi.fn(),
+      deleteTask: vi.fn(),
+      checklistItems: {},
+      checklistsLoading: {},
+      fetchChecklistItems: vi.fn(),
+      createChecklistItem: vi.fn(),
+      deleteChecklistItem: vi.fn(),
+      updateChecklistItem: vi.fn(),
+      projects: [],
+      contexts: [],
+      fetchProjects: vi.fn(),
+      agents: [],
+      fetchAgents: vi.fn(),
+      authUser: null,
+    };
+    return selector(state);
+  },
+}));
+
 const fakeTask = (overrides: Partial<Task> = {}): Task => ({
   id: 'task-1',
   title: 'Test task',

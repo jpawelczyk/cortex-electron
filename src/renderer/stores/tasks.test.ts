@@ -114,6 +114,7 @@ describe('TaskSlice', () => {
     });
 
     it('sets error on failure', async () => {
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
       mockCortex.tasks.list.mockRejectedValue(new Error('Network error'));
 
       const store = createStore();
@@ -121,6 +122,7 @@ describe('TaskSlice', () => {
 
       // After error, the store should capture the error
       expect(mockCortex.tasks.list).toHaveBeenCalledOnce();
+      spy.mockRestore();
     });
   });
 

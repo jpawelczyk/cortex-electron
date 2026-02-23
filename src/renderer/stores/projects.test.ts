@@ -89,12 +89,14 @@ describe('ProjectSlice', () => {
     });
 
     it('sets error on failure', async () => {
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
       mockCortex.projects.list.mockRejectedValue(new Error('fail'));
 
       const store = createStore();
       await store.fetchProjects();
 
       expect(mockCortex.projects.list).toHaveBeenCalledOnce();
+      spy.mockRestore();
     });
   });
 
