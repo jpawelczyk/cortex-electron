@@ -11,14 +11,10 @@ describe('Sidebar', () => {
     taskCounts: { inbox: 3, today: 1, upcoming: 5, anytime: 2, someday: 0, stale: 0, logbook: 10, trash: 4 },
   };
 
-  it('renders navigation items', () => {
+  it('renders all navigation items', () => {
     render(<Sidebar {...defaultProps} />);
-    expect(screen.getByText('Inbox')).toBeInTheDocument();
-    expect(screen.getByText('Today')).toBeInTheDocument();
-    expect(screen.getByText('Upcoming')).toBeInTheDocument();
-    expect(screen.getByText('Anytime')).toBeInTheDocument();
-    expect(screen.getByText('Someday')).toBeInTheDocument();
-    expect(screen.getByText('Logbook')).toBeInTheDocument();
+    const items = ['Home', 'Daily', 'Projects', 'Inbox', 'Today', 'Upcoming', 'Anytime', 'Someday', 'Stale', 'Logbook', 'Meetings', 'Notes', 'People', 'Trash'];
+    items.forEach((label) => expect(screen.getByText(label)).toBeInTheDocument());
   });
 
   it('highlights the active view', () => {
@@ -34,11 +30,31 @@ describe('Sidebar', () => {
     expect(onViewChange).toHaveBeenCalledWith('today');
   });
 
-  it('shows task counts for each status', () => {
-    render(<Sidebar {...defaultProps} />);
+  it('calls onViewChange for all top-level items', () => {
+    const onViewChange = vi.fn();
+    render(<Sidebar {...defaultProps} onViewChange={onViewChange} />);
+    fireEvent.click(screen.getByText('Home'));
+    expect(onViewChange).toHaveBeenCalledWith('home');
+    fireEvent.click(screen.getByText('Daily'));
+    expect(onViewChange).toHaveBeenCalledWith('daily');
+    fireEvent.click(screen.getByText('Projects'));
+    expect(onViewChange).toHaveBeenCalledWith('projects');
+    fireEvent.click(screen.getByText('Meetings'));
+    expect(onViewChange).toHaveBeenCalledWith('meetings');
+    fireEvent.click(screen.getByText('Notes'));
+    expect(onViewChange).toHaveBeenCalledWith('notes');
+    fireEvent.click(screen.getByText('People'));
+    expect(onViewChange).toHaveBeenCalledWith('stakeholders');
+    fireEvent.click(screen.getByText('Trash'));
+    expect(onViewChange).toHaveBeenCalledWith('trash');
+  });
+
+  it('shows counts for inbox, today, upcoming, stale', () => {
+    render(<Sidebar {...defaultProps} taskCounts={{ ...defaultProps.taskCounts, stale: 7 }} />);
     expect(screen.getByText('3')).toBeInTheDocument(); // inbox
     expect(screen.getByText('1')).toBeInTheDocument(); // today
     expect(screen.getByText('5')).toBeInTheDocument(); // upcoming
+    expect(screen.getByText('7')).toBeInTheDocument(); // stale
   });
 
   it('does not show count for anytime', () => {
@@ -53,58 +69,16 @@ describe('Sidebar', () => {
     expect(somedayItem).not.toHaveTextContent('8');
   });
 
-  it('renders Stale nav item', () => {
-    render(<Sidebar {...defaultProps} />);
-    expect(screen.getByText('Stale')).toBeInTheDocument();
-  });
-
-  it('calls onViewChange with stale when Stale clicked', () => {
-    const onViewChange = vi.fn();
-    render(<Sidebar {...defaultProps} onViewChange={onViewChange} />);
-    fireEvent.click(screen.getByText('Stale'));
-    expect(onViewChange).toHaveBeenCalledWith('stale');
-  });
-
-  it('shows stale count when > 0', () => {
-    render(<Sidebar {...defaultProps} taskCounts={{ ...defaultProps.taskCounts, stale: 7 }} />);
-    expect(screen.getByText('7')).toBeInTheDocument();
-  });
-
-  it('renders Trash nav item', () => {
-    render(<Sidebar {...defaultProps} />);
-    expect(screen.getByText('Trash')).toBeInTheDocument();
-  });
-
-  it('calls onViewChange with trash when Trash clicked', () => {
-    const onViewChange = vi.fn();
-    render(<Sidebar {...defaultProps} onViewChange={onViewChange} />);
-    fireEvent.click(screen.getByText('Trash'));
-    expect(onViewChange).toHaveBeenCalledWith('trash');
-  });
-
   it('does not show trash count badge', () => {
     render(<Sidebar {...defaultProps} />);
     const trashItem = screen.getByText('Trash').closest('button');
     expect(trashItem).not.toHaveTextContent('4');
   });
 
-  it('renders Projects nav item', () => {
+  it('renders Trash after People in DOM order', () => {
     render(<Sidebar {...defaultProps} />);
-    expect(screen.getByText('Projects')).toBeInTheDocument();
-  });
-
-  it('calls onViewChange with projects when Projects clicked', () => {
-    const onViewChange = vi.fn();
-    render(<Sidebar {...defaultProps} onViewChange={onViewChange} />);
-    fireEvent.click(screen.getByText('Projects'));
-    expect(onViewChange).toHaveBeenCalledWith('projects');
-  });
-
-  it('renders Projects after task views and before settings', () => {
-    render(<Sidebar {...defaultProps} />);
+    const people = screen.getByText('People');
     const trash = screen.getByText('Trash');
-    const projects = screen.getByText('Projects');
-    // Projects appears after Trash in DOM
-    expect(trash.compareDocumentPosition(projects)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(people.compareDocumentPosition(trash)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 });

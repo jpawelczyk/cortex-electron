@@ -253,6 +253,8 @@ function AuthenticatedApp() {
           </button>
         </header>
 
+        {activeView === 'home' && <PlaceholderView title="Home" />}
+        {activeView === 'daily' && <PlaceholderView title="Daily" />}
         {activeView === 'inbox' && <InboxView />}
         {activeView === 'today' && <TodayView />}
         {activeView === 'upcoming' && <UpcomingView />}
@@ -263,6 +265,7 @@ function AuthenticatedApp() {
         {activeView === 'trash' && <TrashView />}
         {activeView === 'projects' && !selectedProjectId && <ProjectsOverviewView />}
         {activeView === 'projects' && selectedProjectId && <ProjectDetailView projectId={selectedProjectId} />}
+        {activeView === 'meetings' && <PlaceholderView title="Meetings" />}
         {activeView === 'notes' && (
           selectedNoteId
             ? <NoteDetailView noteId={selectedNoteId} />
@@ -314,6 +317,14 @@ function AuthenticatedApp() {
           startInlineNoteCreate();
         }}
       />
+    </div>
+  );
+}
+
+function PlaceholderView({ title }: { title: string }) {
+  return (
+    <div className="flex-1 flex items-center justify-center">
+      <p className="text-muted-foreground text-sm">{title}</p>
     </div>
   );
 }
