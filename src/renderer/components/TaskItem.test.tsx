@@ -210,13 +210,29 @@ describe('TaskItem (collapsed)', () => {
     expect(whenDate.querySelector('.lucide-calendar')).toBeInTheDocument();
   });
 
-  it('shows N/A label for when_date when null', () => {
+  it('shows icon only for when_date when status is anytime', () => {
     render(
-      <TaskItem task={fakeTask({ when_date: null })} onComplete={vi.fn()} />
+      <TaskItem task={fakeTask({ status: 'anytime', when_date: null })} onComplete={vi.fn()} />
     );
-    const badge = screen.getByTestId('when-date');
-    expect(badge).toBeInTheDocument();
-    const button = within(badge).getByRole('button');
+    const button = within(screen.getByTestId('when-date')).getByRole('button');
+    expect(button).not.toHaveTextContent('N/A');
+    expect(button).toHaveAttribute('title', 'Anytime');
+  });
+
+  it('shows icon only for when_date when status is someday', () => {
+    render(
+      <TaskItem task={fakeTask({ status: 'someday', when_date: null })} onComplete={vi.fn()} />
+    );
+    const button = within(screen.getByTestId('when-date')).getByRole('button');
+    expect(button).not.toHaveTextContent('N/A');
+    expect(button).toHaveAttribute('title', 'Someday');
+  });
+
+  it('shows N/A label for when_date when null and status is not anytime/someday', () => {
+    render(
+      <TaskItem task={fakeTask({ status: 'inbox', when_date: null })} onComplete={vi.fn()} />
+    );
+    const button = within(screen.getByTestId('when-date')).getByRole('button');
     expect(button).toHaveTextContent('N/A');
   });
 

@@ -352,6 +352,7 @@ function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, isComple
               onChange={handleWhenDateChange}
               icon={task.status === 'anytime' ? <Layers className="size-3.5" /> : task.status === 'someday' ? <Cloud className="size-3.5" /> : <Calendar className="size-3.5" />}
               label="When date"
+              placeholder={task.status === 'anytime' ? 'Anytime' : task.status === 'someday' ? 'Someday' : undefined}
               actions={whenDateActions}
             />
           </span>

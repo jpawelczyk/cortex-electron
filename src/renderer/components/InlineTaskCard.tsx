@@ -325,6 +325,7 @@ export function InlineTaskCard({ projectId }: InlineTaskCardProps = {}) {
               onChange={setWhenDate}
               icon={whenIcon}
               label="When date"
+              placeholder={status === 'anytime' ? 'Anytime' : status === 'someday' ? 'Someday' : undefined}
               actions={whenDateActions}
             />
             <DatePickerButton

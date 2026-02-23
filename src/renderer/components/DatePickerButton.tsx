@@ -17,13 +17,15 @@ interface DatePickerButtonProps {
   onChange: (date: string | null) => void;
   icon: ReactNode;
   label: string;
+  placeholder?: string;
   className?: string;
   actions?: DatePickerAction[];
 }
 
-export function DatePickerButton({ value, onChange, icon, label, className, actions }: DatePickerButtonProps) {
+export function DatePickerButton({ value, onChange, icon, label, placeholder, className, actions }: DatePickerButtonProps) {
   const [open, setOpen] = useState(false);
 
+  const iconOnly = !value && !!placeholder;
   const selected = value ? parseISO(value) : undefined;
 
   const handleSelect = (day: Date | undefined) => {
@@ -47,10 +49,11 @@ export function DatePickerButton({ value, onChange, icon, label, className, acti
           <button
             type="button"
             aria-label={label}
-            className="inline-flex items-center gap-1 px-1.5 py-1 cursor-pointer w-[4.5rem]"
+            title={placeholder}
+            className={cn("inline-flex items-center gap-1 px-1.5 py-1 cursor-pointer", iconOnly ? "w-auto" : "w-[4.5rem]")}
           >
             {icon}
-            <span>{value ? format(parseISO(value), 'MMM d') : 'N/A'}</span>
+            {(value || !placeholder) && <span>{value ? format(parseISO(value), 'MMM d') : 'N/A'}</span>}
           </button>
         </PopoverTrigger>
       </div>
