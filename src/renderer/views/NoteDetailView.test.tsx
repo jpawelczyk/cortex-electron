@@ -28,6 +28,11 @@ vi.mock('../stores', () => ({
       deselectNote: mockDeselectNote,
       contexts: mockContexts,
       projects: mockProjects,
+      stakeholders: [],
+      noteStakeholderLinks: [],
+      fetchNoteStakeholders: vi.fn(),
+      linkStakeholderToNote: vi.fn(),
+      unlinkStakeholderFromNote: vi.fn(),
     };
     return selector(state as unknown as Record<string, unknown>);
   },
@@ -76,6 +81,8 @@ function makeProject(overrides?: Partial<Project>): Project {
     updated_at: '2026-02-18T00:00:00.000Z',
     completed_at: null,
     deleted_at: null,
+    owner_type: 'user',
+    owner_stakeholder_id: null,
     ...overrides,
   };
 }

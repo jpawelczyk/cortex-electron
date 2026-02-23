@@ -83,6 +83,8 @@ const mockProjects: Project[] = [
     created_at: '2024-01-01T00:00:00.000Z',
     updated_at: '2024-01-01T00:00:00.000Z',
     completed_at: null,
+    owner_type: 'user' as const,
+    owner_stakeholder_id: null,
   },
   {
     id: 'p2',
@@ -95,6 +97,8 @@ const mockProjects: Project[] = [
     created_at: '2024-01-01T00:00:00.000Z',
     updated_at: '2024-01-01T00:00:00.000Z',
     completed_at: null,
+    owner_type: 'user' as const,
+    owner_stakeholder_id: null,
   },
 ];
 

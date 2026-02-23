@@ -3,9 +3,9 @@ import { AppSchema } from './schema';
 import { Column, ColumnType } from '@powersync/common';
 
 describe('AppSchema', () => {
-  it('has exactly 12 tables', () => {
+  it('has exactly 13 tables', () => {
     const tableNames = Object.keys(AppSchema.props);
-    expect(tableNames).toHaveLength(12);
+    expect(tableNames).toHaveLength(13);
   });
 
   it('includes all expected table names', () => {
@@ -20,6 +20,7 @@ describe('AppSchema', () => {
     expect(tableNames).toContain('meeting_attendees');
     expect(tableNames).toContain('notes');
     expect(tableNames).toContain('note_stakeholders');
+    expect(tableNames).toContain('project_stakeholders');
     expect(tableNames).toContain('daily_notes');
     expect(tableNames).toContain('ai_agents');
   });
@@ -50,7 +51,7 @@ describe('AppSchema', () => {
   describe('projects table', () => {
     it('has the correct number of columns', () => {
       const cols: Column[] = AppSchema.props.projects.columns;
-      expect(cols).toHaveLength(13);
+      expect(cols).toHaveLength(15);
     });
 
     it('has TEXT columns for title, description, status, context_id, created_at, updated_at, completed_at, deleted_at', () => {

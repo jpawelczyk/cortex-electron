@@ -18,5 +18,6 @@ bucket_definitions:
       - SELECT meeting_id || '_' || stakeholder_id AS id, meeting_id, stakeholder_id, user_id FROM meeting_attendees WHERE user_id = bucket.user_id
       - SELECT * FROM notes WHERE user_id = bucket.user_id
       - SELECT note_id || '_' || stakeholder_id AS id, note_id, stakeholder_id, user_id FROM note_stakeholders WHERE user_id = bucket.user_id
+      - SELECT project_id || '_' || stakeholder_id AS id, project_id, stakeholder_id, user_id FROM project_stakeholders WHERE user_id = bucket.user_id
       - SELECT * FROM daily_notes WHERE user_id = bucket.user_id
       - SELECT id, user_id, name, permissions, last_used_at, created_at, revoked_at FROM ai_agents WHERE user_id = bucket.user_id

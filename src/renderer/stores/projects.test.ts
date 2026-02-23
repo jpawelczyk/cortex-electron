@@ -50,6 +50,8 @@ const fakeProject = (overrides = {}) => ({
   updated_at: '2026-02-17T00:00:00.000Z',
   completed_at: null,
   deleted_at: null,
+  owner_type: 'user' as const,
+  owner_stakeholder_id: null,
   ...overrides,
 });
 

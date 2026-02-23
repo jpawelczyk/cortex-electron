@@ -51,6 +51,8 @@ export const UpdateProjectSchema = z.object({
   status: projectStatusSchema.optional(),
   context_id: uuidOrNull,
   sort_order: z.number().optional(),
+  owner_type: z.enum(['user', 'stakeholder']).optional(),
+  owner_stakeholder_id: uuidOrNull,
 });
 
 export const ProjectIdSchema = uuid;
@@ -93,6 +95,16 @@ export const UpdateStakeholderSchema = z.object({
 });
 
 export const StakeholderIdSchema = uuid;
+
+export const LinkProjectStakeholderSchema = z.object({
+  project_id: z.string().uuid(),
+  stakeholder_id: z.string().uuid(),
+});
+
+export const LinkNoteStakeholderSchema = z.object({
+  note_id: z.string().uuid(),
+  stakeholder_id: z.string().uuid(),
+});
 
 // Checklists
 export const CreateChecklistItemSchema = z.object({

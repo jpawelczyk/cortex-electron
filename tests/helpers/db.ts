@@ -163,6 +163,8 @@ export function createTestDb(): TestDb {
       updated_at TEXT NOT NULL,
       completed_at TEXT,
       deleted_at TEXT,
+      owner_type TEXT DEFAULT 'user' CHECK (owner_type IN ('user', 'stakeholder')),
+      owner_stakeholder_id TEXT REFERENCES stakeholders(id),
       source TEXT DEFAULT 'user',
       agent_id TEXT REFERENCES ai_agents(id)
     );
@@ -233,6 +235,19 @@ export function createTestDb(): TestDb {
       deleted_at TEXT,
       source TEXT DEFAULT 'user',
       agent_id TEXT REFERENCES ai_agents(id)
+    );
+
+    CREATE TABLE note_stakeholders (
+      note_id TEXT NOT NULL REFERENCES notes(id),
+      stakeholder_id TEXT NOT NULL REFERENCES stakeholders(id),
+      PRIMARY KEY (note_id, stakeholder_id)
+    );
+
+    CREATE TABLE project_stakeholders (
+      project_id TEXT NOT NULL REFERENCES projects(id),
+      stakeholder_id TEXT NOT NULL REFERENCES stakeholders(id),
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      PRIMARY KEY (project_id, stakeholder_id)
     );
   `);
 

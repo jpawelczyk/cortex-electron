@@ -85,6 +85,8 @@ export interface Project {
   updated_at: string;
   completed_at: string | null;
   deleted_at: string | null;
+  owner_type: 'user' | 'stakeholder';
+  owner_stakeholder_id: string | null;
 }
 
 export type ProjectStatus = 'planned' | 'active' | 'on_hold' | 'blocked' | 'completed' | 'archived';
@@ -102,6 +104,8 @@ export interface UpdateProjectInput {
   status?: ProjectStatus;
   context_id?: string | null;
   sort_order?: number;
+  owner_type?: 'user' | 'stakeholder';
+  owner_stakeholder_id?: string | null;
 }
 
 export interface Context {
@@ -188,6 +192,17 @@ export interface UpdateNoteInput {
   context_id?: string | null;
   project_id?: string | null;
   is_pinned?: boolean;
+}
+
+export interface ProjectStakeholder {
+  project_id: string;
+  stakeholder_id: string;
+  created_at: string;
+}
+
+export interface NoteStakeholder {
+  note_id: string;
+  stakeholder_id: string;
 }
 
 export interface ChecklistItem {

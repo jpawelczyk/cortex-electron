@@ -1,6 +1,8 @@
 import { ipcMain } from 'electron';
 import { createTaskService } from '../services/task.service';
 import { createProjectService } from '../services/project.service';
+import { createProjectStakeholderService } from '../services/project-stakeholder.service';
+import { createNoteStakeholderService } from '../services/note-stakeholder.service';
 import { createContextService } from '../services/context.service';
 import { createStakeholderService } from '../services/stakeholder.service';
 import { createChecklistService } from '../services/checklist.service';
@@ -16,6 +18,7 @@ import {
   CreateContextSchema, UpdateContextSchema, ContextIdSchema,
   CreateStakeholderSchema, UpdateStakeholderSchema, StakeholderIdSchema,
   CreateChecklistItemSchema, UpdateChecklistItemSchema, ChecklistItemIdSchema,
+  LinkProjectStakeholderSchema, LinkNoteStakeholderSchema,
 } from '@shared/validation';
 
 export type NotifyChangeFn = (tables: string[]) => void;
@@ -39,6 +42,8 @@ export function registerHandlers(db: AsyncDatabase, notify: NotifyChangeFn): voi
 
   const taskService = createTaskService(ctx);
   const projectService = createProjectService(ctx);
+  const projectStakeholderService = createProjectStakeholderService(ctx);
+  const noteStakeholderService = createNoteStakeholderService(ctx);
   const contextService = createContextService(ctx);
   const stakeholderService = createStakeholderService(ctx);
   const checklistService = createChecklistService(ctx);
@@ -84,6 +89,22 @@ export function registerHandlers(db: AsyncDatabase, notify: NotifyChangeFn): voi
   handleWrite('stakeholders:create', ['stakeholders'], (input) => stakeholderService.create(CreateStakeholderSchema.parse(input)), notify);
   handleWrite('stakeholders:update', ['stakeholders'], (id, input) => stakeholderService.update(StakeholderIdSchema.parse(id as string), UpdateStakeholderSchema.parse(input)), notify);
   handleWrite('stakeholders:delete', ['stakeholders'], (id) => stakeholderService.delete(StakeholderIdSchema.parse(id as string)), notify);
+
+  // Project Stakeholders — reads
+  ipcMain.handle('projectStakeholders:list', async (_, projectId: string) => { try { return await projectStakeholderService.listByProject(ProjectIdSchema.parse(projectId)); } catch (err) { console.error('[IPC projectStakeholders:list]', err); throw err; } });
+  ipcMain.handle('projectStakeholders:listByStakeholder', async (_, stakeholderId: string) => { try { return await projectStakeholderService.listByStakeholder(StakeholderIdSchema.parse(stakeholderId)); } catch (err) { console.error('[IPC projectStakeholders:listByStakeholder]', err); throw err; } });
+
+  // Project Stakeholders — writes
+  handleWrite('projectStakeholders:link', ['project_stakeholders'], (input) => { const parsed = LinkProjectStakeholderSchema.parse(input); return projectStakeholderService.link(parsed.project_id, parsed.stakeholder_id); }, notify);
+  handleWrite('projectStakeholders:unlink', ['project_stakeholders'], (input) => { const parsed = LinkProjectStakeholderSchema.parse(input); return projectStakeholderService.unlink(parsed.project_id, parsed.stakeholder_id); }, notify);
+
+  // Note Stakeholders — reads
+  ipcMain.handle('noteStakeholders:list', async (_, noteId: string) => { try { return await noteStakeholderService.listByNote(NoteIdSchema.parse(noteId)); } catch (err) { console.error('[IPC noteStakeholders:list]', err); throw err; } });
+  ipcMain.handle('noteStakeholders:listByStakeholder', async (_, stakeholderId: string) => { try { return await noteStakeholderService.listByStakeholder(StakeholderIdSchema.parse(stakeholderId)); } catch (err) { console.error('[IPC noteStakeholders:listByStakeholder]', err); throw err; } });
+
+  // Note Stakeholders — writes
+  handleWrite('noteStakeholders:link', ['note_stakeholders'], (input) => { const parsed = LinkNoteStakeholderSchema.parse(input); return noteStakeholderService.link(parsed.note_id, parsed.stakeholder_id); }, notify);
+  handleWrite('noteStakeholders:unlink', ['note_stakeholders'], (input) => { const parsed = LinkNoteStakeholderSchema.parse(input); return noteStakeholderService.unlink(parsed.note_id, parsed.stakeholder_id); }, notify);
 
   // Checklists — reads
   ipcMain.handle('checklists:list', async (_, taskId: string) => { try { return await checklistService.listByTask(TaskIdSchema.parse(taskId)); } catch (err) { console.error('[IPC checklists:list]', err); throw err; } });

@@ -1,6 +1,6 @@
-import { Inbox, Sun, Calendar, Layers, Cloud, Clock, BookOpen, Trash2, FolderKanban, FileText, Settings } from 'lucide-react';
+import { Inbox, Sun, Calendar, Layers, Cloud, Clock, BookOpen, Trash2, FolderKanban, FileText, Users, Settings } from 'lucide-react';
 
-export type SidebarView = 'inbox' | 'today' | 'upcoming' | 'anytime' | 'someday' | 'stale' | 'logbook' | 'trash' | 'projects' | 'notes' | 'settings';
+export type SidebarView = 'inbox' | 'today' | 'upcoming' | 'anytime' | 'someday' | 'stale' | 'logbook' | 'trash' | 'projects' | 'notes' | 'stakeholders' | 'settings';
 
 interface TaskCounts {
   inbox: number;
@@ -92,6 +92,19 @@ export function Sidebar({ activeView, onViewChange, taskCounts }: SidebarProps) 
         >
           <FileText className="size-4 shrink-0" strokeWidth={1.75} />
           <span className="flex-1">Notes</span>
+        </button>
+
+        {/* Stakeholders */}
+        <button
+          onClick={() => onViewChange('stakeholders')}
+          className={`flex items-center gap-3 rounded-md px-3 py-1.5 text-[13px] font-medium transition-all duration-150 w-full text-left cursor-default ${
+            activeView === 'stakeholders'
+              ? 'bg-primary/10 text-primary'
+              : 'text-muted-foreground hover:bg-accent/40 hover:text-foreground'
+          }`}
+        >
+          <Users className="size-4 shrink-0" strokeWidth={1.75} />
+          <span className="flex-1">Stakeholders</span>
         </button>
       </div>
 

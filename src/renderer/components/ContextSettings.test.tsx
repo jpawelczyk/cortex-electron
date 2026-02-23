@@ -72,6 +72,8 @@ const fakeProject = (overrides: Partial<Project> = {}): Project => ({
   updated_at: '2026-01-01T00:00:00.000Z',
   completed_at: null,
   deleted_at: null,
+  owner_type: 'user' as const,
+  owner_stakeholder_id: null,
   ...overrides,
 });
 

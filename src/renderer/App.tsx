@@ -19,6 +19,8 @@ import { ProjectsOverviewView } from './views/ProjectsOverviewView';
 import { ProjectDetailView } from './views/ProjectDetailView';
 import { NotesOverviewView } from './views/NotesOverviewView';
 import { NoteDetailView } from './views/NoteDetailView';
+import { StakeholdersOverviewView } from './views/StakeholdersOverviewView';
+import { StakeholderDetailView } from './views/StakeholderDetailView';
 import { SettingsView } from './views/SettingsView';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
@@ -69,6 +71,7 @@ function AuthenticatedApp() {
   const fetchProjects = useStore((s) => s.fetchProjects);
   const fetchContexts = useStore((s) => s.fetchContexts);
   const fetchNotes = useStore((s) => s.fetchNotes);
+  const fetchStakeholders = useStore((s) => s.fetchStakeholders);
   const deselectTask = useStore((s) => s.deselectTask);
   const startInlineCreate = useStore((s) => s.startInlineCreate);
   const startInlineProjectCreate = useStore((s) => s.startInlineProjectCreate);
@@ -77,6 +80,10 @@ function AuthenticatedApp() {
   const deselectProject = useStore((s) => s.deselectProject);
   const selectedNoteId = useStore((s) => s.selectedNoteId);
   const deselectNote = useStore((s) => s.deselectNote);
+  const selectedStakeholderId = useStore((s) => s.selectedStakeholderId);
+  const deselectStakeholder = useStore((s) => s.deselectStakeholder);
+  const selectStakeholder = useStore((s) => s.selectStakeholder);
+  const openModal = useStore((s) => s.openModal);
   const selectTask = useStore((s) => s.selectTask);
   const selectProject = useStore((s) => s.selectProject);
   const selectNote = useStore((s) => s.selectNote);
@@ -90,8 +97,11 @@ function AuthenticatedApp() {
     if (selectedNoteId) {
       deselectNote();
     }
+    if (selectedStakeholderId) {
+      deselectStakeholder();
+    }
     setActiveView(view);
-  }, [deselectProject, deselectNote, setActiveView, selectedProjectId, selectedNoteId]);
+  }, [deselectProject, deselectNote, deselectStakeholder, setActiveView, selectedProjectId, selectedNoteId, selectedStakeholderId]);
 
   const fetchTasksRef = useRef(fetchTasks);
   fetchTasksRef.current = fetchTasks;
@@ -103,6 +113,8 @@ function AuthenticatedApp() {
   fetchContextsRef.current = fetchContexts;
   const fetchNotesRef = useRef(fetchNotes);
   fetchNotesRef.current = fetchNotes;
+  const fetchStakeholdersRef = useRef(fetchStakeholders);
+  fetchStakeholdersRef.current = fetchStakeholders;
   const isFetchingRef = useRef(false);
 
   useKeyboardShortcuts({ setActiveView: handleViewChange, deselectTask, startInlineCreate, startInlineProjectCreate, startInlineNoteCreate, toggleCommandPalette, activeView, selectedProjectId });
@@ -118,6 +130,7 @@ function AuthenticatedApp() {
     fetchProjectsRef.current();
     fetchContextsRef.current();
     fetchNotesRef.current();
+    fetchStakeholdersRef.current();
     isFetchingRef.current = false;
   }, []);
 
@@ -136,6 +149,11 @@ function AuthenticatedApp() {
         if (pendingTables.has('projects')) fetchProjectsRef.current();
         if (pendingTables.has('contexts')) fetchContextsRef.current();
         if (pendingTables.has('notes')) fetchNotesRef.current();
+        if (pendingTables.has('stakeholders')) fetchStakeholdersRef.current();
+        if (pendingTables.has('project_stakeholders') || pendingTables.has('note_stakeholders')) {
+          // Clear cached junction links so open detail views re-fetch
+          useStore.setState({ projectStakeholderLinks: [], noteStakeholderLinks: [] });
+        }
         pendingTables.clear();
       }, 100);
     });
@@ -223,6 +241,8 @@ function AuthenticatedApp() {
                 startInlineProjectCreate();
               } else if (activeView === 'notes') {
                 startInlineNoteCreate();
+              } else if (activeView === 'stakeholders') {
+                openModal('createStakeholder');
               } else {
                 setActiveView('inbox');
                 startInlineCreate();
@@ -248,6 +268,11 @@ function AuthenticatedApp() {
           selectedNoteId
             ? <NoteDetailView noteId={selectedNoteId} />
             : <NotesOverviewView />
+        )}
+        {activeView === 'stakeholders' && (
+          selectedStakeholderId
+            ? <StakeholderDetailView stakeholderId={selectedStakeholderId} />
+            : <StakeholdersOverviewView />
         )}
         {activeView === 'settings' && <SettingsView />}
       </main>

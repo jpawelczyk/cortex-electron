@@ -41,6 +41,8 @@ const PROJECTS: Project[] = [
     updated_at: '2026-01-01T00:00:00.000Z',
     completed_at: null,
     deleted_at: null,
+    owner_type: 'user' as const,
+    owner_stakeholder_id: null,
   },
   {
     id: 'proj-2',
@@ -53,6 +55,8 @@ const PROJECTS: Project[] = [
     updated_at: '2026-01-01T00:00:00.000Z',
     completed_at: null,
     deleted_at: null,
+    owner_type: 'user' as const,
+    owner_stakeholder_id: null,
   },
 ]
 

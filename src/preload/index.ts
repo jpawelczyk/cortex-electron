@@ -7,6 +7,7 @@ import type {
   ChecklistItem, CreateChecklistItemInput, UpdateChecklistItemInput,
   Stakeholder, CreateStakeholderInput, UpdateStakeholderInput,
   AIAgent, CreateAIAgentInput,
+  ProjectStakeholder, NoteStakeholder,
 } from '../shared/types';
 
 interface DailyNote {
@@ -73,6 +74,20 @@ const api = {
     create: (input: CreateStakeholderInput): Promise<Stakeholder> => ipcRenderer.invoke('stakeholders:create', input),
     update: (id: string, input: UpdateStakeholderInput): Promise<Stakeholder> => ipcRenderer.invoke('stakeholders:update', id, input),
     delete: (id: string): Promise<void> => ipcRenderer.invoke('stakeholders:delete', id),
+  },
+
+  projectStakeholders: {
+    list: (projectId: string): Promise<ProjectStakeholder[]> => ipcRenderer.invoke('projectStakeholders:list', projectId),
+    listByStakeholder: (stakeholderId: string): Promise<ProjectStakeholder[]> => ipcRenderer.invoke('projectStakeholders:listByStakeholder', stakeholderId),
+    link: (input: { project_id: string; stakeholder_id: string }): Promise<ProjectStakeholder> => ipcRenderer.invoke('projectStakeholders:link', input),
+    unlink: (input: { project_id: string; stakeholder_id: string }): Promise<void> => ipcRenderer.invoke('projectStakeholders:unlink', input),
+  },
+
+  noteStakeholders: {
+    list: (noteId: string): Promise<NoteStakeholder[]> => ipcRenderer.invoke('noteStakeholders:list', noteId),
+    listByStakeholder: (stakeholderId: string): Promise<NoteStakeholder[]> => ipcRenderer.invoke('noteStakeholders:listByStakeholder', stakeholderId),
+    link: (input: { note_id: string; stakeholder_id: string }): Promise<NoteStakeholder> => ipcRenderer.invoke('noteStakeholders:link', input),
+    unlink: (input: { note_id: string; stakeholder_id: string }): Promise<void> => ipcRenderer.invoke('noteStakeholders:unlink', input),
   },
 
   agents: {

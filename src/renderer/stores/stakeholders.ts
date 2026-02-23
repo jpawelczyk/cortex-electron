@@ -10,12 +10,20 @@ export interface StakeholderSlice {
   createStakeholder: (input: CreateStakeholderInput) => Promise<Stakeholder>;
   updateStakeholder: (id: string, input: UpdateStakeholderInput) => Promise<Stakeholder>;
   deleteStakeholder: (id: string) => Promise<void>;
+
+  selectedStakeholderId: string | null;
+  selectStakeholder: (id: string) => void;
+  deselectStakeholder: () => void;
 }
 
 export const createStakeholderSlice: StateCreator<StakeholderSlice> = (set) => ({
   stakeholders: [],
   stakeholdersLoading: false,
   stakeholdersError: null,
+
+  selectedStakeholderId: null,
+  selectStakeholder: (id) => set({ selectedStakeholderId: id }),
+  deselectStakeholder: () => set({ selectedStakeholderId: null }),
 
   fetchStakeholders: async () => {
     set({ stakeholdersLoading: true, stakeholdersError: null });

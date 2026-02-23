@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { ArrowLeft, Pin, Trash2, Check, X } from 'lucide-react';
 import { useStore } from '../stores';
 import { MarkdownEditor, type MarkdownEditorHandle } from '../components/MarkdownEditor';
 import { useDebouncedCallback } from '../hooks/useDebouncedCallback';
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
+import { StakeholderPicker } from '../components/StakeholderPicker';
 
 interface NoteDetailViewProps {
   noteId: string;
@@ -18,6 +19,10 @@ export function NoteDetailView({ noteId }: NoteDetailViewProps) {
   const projects = useStore((s) => s.projects);
   const autoFocusNoteTitle = useStore((s) => s.autoFocusNoteTitle);
   const setAutoFocusNoteTitle = useStore((s) => s.setAutoFocusNoteTitle);
+  const noteStakeholderLinks = useStore((s) => s.noteStakeholderLinks);
+  const fetchNoteStakeholders = useStore((s) => s.fetchNoteStakeholders);
+  const linkStakeholderToNote = useStore((s) => s.linkStakeholderToNote);
+  const unlinkStakeholderFromNote = useStore((s) => s.unlinkStakeholderFromNote);
 
   const note = notes.find((n) => n.id === noteId);
 
@@ -44,6 +49,15 @@ export function NoteDetailView({ noteId }: NoteDetailViewProps) {
       setAutoFocusNoteTitle(false);
     }
   }, [autoFocusNoteTitle, setAutoFocusNoteTitle]);
+
+  useEffect(() => {
+    fetchNoteStakeholders(noteId);
+  }, [noteId, fetchNoteStakeholders]);
+
+  const noteStakeholderIds = useMemo(
+    () => noteStakeholderLinks.filter(l => l.note_id === noteId).map(l => l.stakeholder_id),
+    [noteStakeholderLinks, noteId]
+  );
 
   const { debouncedFn: debouncedSaveTitle } = useDebouncedCallback(
     (newTitle: string) => updateNote(noteId, { title: newTitle }),
@@ -227,6 +241,13 @@ export function NoteDetailView({ noteId }: NoteDetailViewProps) {
               ))}
             </PopoverContent>
           </Popover>
+
+          {/* Stakeholders */}
+          <StakeholderPicker
+            selectedIds={noteStakeholderIds}
+            onLink={(stakeholderId) => linkStakeholderToNote(noteId, stakeholderId)}
+            onUnlink={(stakeholderId) => unlinkStakeholderFromNote(noteId, stakeholderId)}
+          />
         </div>
 
         {/* Editor */}

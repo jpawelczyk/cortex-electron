@@ -54,6 +54,11 @@ vi.mock('../stores', () => ({
       fetchChecklistItems: vi.fn(),
       deleteChecklistItem: vi.fn(),
       updateChecklistItem: vi.fn(),
+      stakeholders: [],
+      projectStakeholderLinks: [],
+      fetchProjectStakeholders: vi.fn(),
+      linkStakeholderToProject: vi.fn(),
+      unlinkStakeholderFromProject: vi.fn(),
     };
     return selector(state);
   },
@@ -71,6 +76,8 @@ function makeProject(overrides?: Partial<Project>): Project {
     updated_at: '2026-02-18T00:00:00.000Z',
     completed_at: null,
     deleted_at: null,
+    owner_type: 'user',
+    owner_stakeholder_id: null,
     ...overrides,
   };
 }

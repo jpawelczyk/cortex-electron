@@ -31,16 +31,20 @@ export function createProjectService(ctx: DbContext): ProjectService {
         updated_at: now,
         completed_at: null,
         deleted_at: null,
+        owner_type: 'user',
+        owner_stakeholder_id: null,
       };
 
       await db.execute(`
         INSERT INTO projects (
           id, title, description, status, context_id,
-          sort_order, created_at, updated_at, completed_at, deleted_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          sort_order, created_at, updated_at, completed_at, deleted_at,
+          owner_type, owner_stakeholder_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
         project.id, project.title, project.description, project.status, project.context_id,
         project.sort_order, project.created_at, project.updated_at, project.completed_at, project.deleted_at,
+        project.owner_type, project.owner_stakeholder_id,
       ]);
 
       return project;
@@ -87,11 +91,13 @@ export function createProjectService(ctx: DbContext): ProjectService {
       await db.execute(`
         UPDATE projects SET
           title = ?, description = ?, status = ?, context_id = ?,
-          sort_order = ?, updated_at = ?, completed_at = ?
+          sort_order = ?, updated_at = ?, completed_at = ?,
+          owner_type = ?, owner_stakeholder_id = ?
         WHERE id = ?
       `, [
         updated.title, updated.description, updated.status, updated.context_id,
         updated.sort_order, updated.updated_at, updated.completed_at,
+        updated.owner_type, updated.owner_stakeholder_id,
         id,
       ]);
 

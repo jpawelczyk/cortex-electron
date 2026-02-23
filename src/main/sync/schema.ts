@@ -34,6 +34,8 @@ const projects = new Table({
   updated_at: column.text,
   completed_at: column.text,
   deleted_at: column.text,
+  owner_type: column.text,
+  owner_stakeholder_id: column.text,
   source: column.text,
   agent_id: column.text,
   updated_by_source: column.text,
@@ -145,6 +147,14 @@ const note_stakeholders = new Table({
   agent_id: column.text,
 });
 
+const project_stakeholders = new Table({
+  project_id: column.text,
+  stakeholder_id: column.text,
+  created_at: column.text,
+  source: column.text,
+  agent_id: column.text,
+});
+
 const daily_notes = new Table({
   date: column.text,
   content: column.text,
@@ -176,6 +186,7 @@ export const AppSchema = new Schema({
   meeting_attendees,
   notes,
   note_stakeholders,
+  project_stakeholders,
   daily_notes,
   ai_agents,
 });

@@ -7,6 +7,7 @@ import { useDebouncedCallback } from '../hooks/useDebouncedCallback';
 import { TaskList } from '../components/TaskList';
 import { InlineTaskCard } from '../components/InlineTaskCard';
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
+import { StakeholderPicker } from '../components/StakeholderPicker';
 
 const ICON_MAP: Record<string, LucideIcon> = {
   Briefcase,
@@ -51,6 +52,11 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
   const selectedTaskId = useStore((s) => s.selectedTaskId);
   const isInlineCreating = useStore((s) => s.isInlineCreating);
   const startInlineCreate = useStore((s) => s.startInlineCreate);
+  const stakeholders = useStore((s) => s.stakeholders);
+  const projectStakeholderLinks = useStore((s) => s.projectStakeholderLinks);
+  const fetchProjectStakeholders = useStore((s) => s.fetchProjectStakeholders);
+  const linkStakeholderToProject = useStore((s) => s.linkStakeholderToProject);
+  const unlinkStakeholderFromProject = useStore((s) => s.unlinkStakeholderFromProject);
 
   const project = useMemo(
     () => projects.find((p) => p.id === projectId) ?? null,
@@ -61,6 +67,7 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
   const [description, setDescription] = useState(project?.description ?? '');
   const [statusOpen, setStatusOpen] = useState(false);
   const [contextOpen, setContextOpen] = useState(false);
+  const [ownerOpen, setOwnerOpen] = useState(false);
   const [completionWarning, setCompletionWarning] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
@@ -97,6 +104,15 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
     () => projectTasks.some((t) => t.status !== 'logbook' && t.status !== 'cancelled'),
     [projectTasks],
   );
+
+  const projectStakeholderIds = useMemo(
+    () => projectStakeholderLinks.filter(l => l.project_id === projectId).map(l => l.stakeholder_id),
+    [projectStakeholderLinks, projectId]
+  );
+
+  useEffect(() => {
+    fetchProjectStakeholders(projectId);
+  }, [projectId, fetchProjectStakeholders]);
 
   // --- Debounced saves ---
 
@@ -388,7 +404,72 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
               </PopoverContent>
             </Popover>
 
+            {/* Owner selector */}
+            <Popover open={ownerOpen} onOpenChange={setOwnerOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  data-testid="owner-selector"
+                  className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium cursor-default transition-all ${
+                    project.owner_type === 'stakeholder' && project.owner_stakeholder_id
+                      ? 'bg-accent/50 text-foreground hover:bg-accent'
+                      : 'bg-transparent text-muted-foreground hover:bg-accent/50'
+                  }`}
+                >
+                  {(() => {
+                    if (project.owner_type === 'stakeholder' && project.owner_stakeholder_id) {
+                      const owner = stakeholders.find(s => s.id === project.owner_stakeholder_id);
+                      return owner ? owner.name : 'Unknown';
+                    }
+                    return 'Me (owner)';
+                  })()}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-48 p-1" align="start">
+                <button
+                  role="option"
+                  aria-label="Me"
+                  type="button"
+                  onClick={() => {
+                    updateProject(projectId, { owner_type: 'user', owner_stakeholder_id: null });
+                    setOwnerOpen(false);
+                  }}
+                  className="flex items-center gap-2 w-full px-2 py-1.5 text-sm text-foreground hover:bg-accent rounded-md cursor-pointer"
+                >
+                  Me
+                </button>
+                {stakeholders.filter(s => !s.deleted_at).map(s => (
+                  <button
+                    key={s.id}
+                    role="option"
+                    aria-label={s.name}
+                    type="button"
+                    onClick={() => {
+                      updateProject(projectId, { owner_type: 'stakeholder', owner_stakeholder_id: s.id });
+                      setOwnerOpen(false);
+                    }}
+                    className="flex items-center gap-2 w-full px-2 py-1.5 text-sm text-foreground hover:bg-accent rounded-md cursor-pointer"
+                  >
+                    {s.name}
+                  </button>
+                ))}
+                {stakeholders.filter(s => !s.deleted_at).length === 0 && (
+                  <p className="text-xs text-muted-foreground px-2 py-1.5">No stakeholders yet</p>
+                )}
+              </PopoverContent>
+            </Popover>
+
           </div>
+        </div>
+
+        {/* Stakeholders */}
+        <div className="mb-6">
+          <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Stakeholders</h3>
+          <StakeholderPicker
+            selectedIds={projectStakeholderIds}
+            onLink={(stakeholderId) => linkStakeholderToProject(projectId, stakeholderId)}
+            onUnlink={(stakeholderId) => unlinkStakeholderFromProject(projectId, stakeholderId)}
+          />
         </div>
 
         {/* Completion warning */}

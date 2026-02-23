@@ -67,6 +67,18 @@ declare global {
         update(id: string, input: unknown): Promise<unknown>;
         delete(id: string): Promise<void>;
       };
+      projectStakeholders: {
+        list: (projectId: string) => Promise<{ project_id: string; stakeholder_id: string; created_at: string }[]>;
+        listByStakeholder: (stakeholderId: string) => Promise<{ project_id: string; stakeholder_id: string; created_at: string }[]>;
+        link: (input: { project_id: string; stakeholder_id: string }) => Promise<{ project_id: string; stakeholder_id: string; created_at: string }>;
+        unlink: (input: { project_id: string; stakeholder_id: string }) => Promise<void>;
+      };
+      noteStakeholders: {
+        list: (noteId: string) => Promise<{ note_id: string; stakeholder_id: string }[]>;
+        listByStakeholder: (stakeholderId: string) => Promise<{ note_id: string; stakeholder_id: string }[]>;
+        link: (input: { note_id: string; stakeholder_id: string }) => Promise<{ note_id: string; stakeholder_id: string }>;
+        unlink: (input: { note_id: string; stakeholder_id: string }) => Promise<void>;
+      };
       dailyNotes: {
         get(date: string): Promise<unknown>;
         upsert(date: string, content: string): Promise<unknown>;
