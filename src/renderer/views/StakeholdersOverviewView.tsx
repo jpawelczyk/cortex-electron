@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Users, Plus, Search } from 'lucide-react';
 import { useStore } from '../stores';
-import { StakeholderModal } from '../components/StakeholderModal';
+import { InlineStakeholderCard } from '../components/InlineStakeholderCard';
 import type { Stakeholder } from '../../shared/types';
 
 type StakeholderSort = 'name' | 'updated' | 'organization';
@@ -42,12 +42,10 @@ export function StakeholdersOverviewView() {
   const stakeholders = useStore(s => s.stakeholders);
   const fetchStakeholders = useStore(s => s.fetchStakeholders);
   const selectStakeholder = useStore(s => s.selectStakeholder);
-  const activeModal = useStore(s => s.activeModal);
-  const openModal = useStore(s => s.openModal);
-  const closeModal = useStore(s => s.closeModal);
 
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<StakeholderSort>('name');
+  const [isCreating, setIsCreating] = useState(false);
 
   useEffect(() => {
     fetchStakeholders();
@@ -108,15 +106,21 @@ export function StakeholdersOverviewView() {
           </div>
         </div>
 
-        <button
-          type="button"
-          data-testid="new-stakeholder-trigger"
-          onClick={() => openModal('createStakeholder')}
-          className="flex items-center gap-3 w-full px-4 py-3 mb-4 rounded-lg border border-dashed border-border/60 bg-card/20 text-muted-foreground/60 hover:text-muted-foreground hover:bg-accent/30 hover:border-border transition-colors cursor-pointer"
-        >
-          <Plus className="size-4" strokeWidth={1.5} />
-          <span className="text-[13px] font-medium">Add Stakeholder</span>
-        </button>
+        {isCreating ? (
+          <div className="mb-4">
+            <InlineStakeholderCard onClose={() => setIsCreating(false)} />
+          </div>
+        ) : (
+          <button
+            type="button"
+            data-testid="new-stakeholder-trigger"
+            onClick={() => setIsCreating(true)}
+            className="flex items-center gap-3 w-full px-4 py-3 mb-4 rounded-lg border border-dashed border-border/60 bg-card/20 text-muted-foreground/60 hover:text-muted-foreground hover:bg-accent/30 hover:border-border transition-colors cursor-pointer"
+          >
+            <Plus className="size-4" strokeWidth={1.5} />
+            <span className="text-[13px] font-medium">Add Stakeholder</span>
+          </button>
+        )}
 
         {filteredStakeholders.map(stakeholder => (
           <StakeholderRow
@@ -133,11 +137,6 @@ export function StakeholdersOverviewView() {
           </div>
         )}
       </div>
-
-      <StakeholderModal
-        open={activeModal === 'createStakeholder'}
-        onOpenChange={(open) => { if (!open) closeModal(); }}
-      />
     </div>
   );
 }

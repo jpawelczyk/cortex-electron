@@ -83,7 +83,6 @@ function AuthenticatedApp() {
   const selectedStakeholderId = useStore((s) => s.selectedStakeholderId);
   const deselectStakeholder = useStore((s) => s.deselectStakeholder);
   const selectStakeholder = useStore((s) => s.selectStakeholder);
-  const openModal = useStore((s) => s.openModal);
   const selectTask = useStore((s) => s.selectTask);
   const selectProject = useStore((s) => s.selectProject);
   const selectNote = useStore((s) => s.selectNote);
@@ -241,8 +240,6 @@ function AuthenticatedApp() {
                 startInlineProjectCreate();
               } else if (activeView === 'notes') {
                 startInlineNoteCreate();
-              } else if (activeView === 'stakeholders') {
-                openModal('createStakeholder');
               } else {
                 setActiveView('inbox');
                 startInlineCreate();
