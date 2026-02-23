@@ -27,8 +27,6 @@ export function getCreateAction(input: CreateActionInput): CreateAction {
       return { type: 'task' };
     case 'today':
       return { type: 'task', defaults: { when_date: today } };
-    case 'upcoming':
-      return { type: 'task', defaults: { status: 'upcoming' } };
     case 'anytime':
       return { type: 'task', defaults: { status: 'anytime' } };
     case 'someday':

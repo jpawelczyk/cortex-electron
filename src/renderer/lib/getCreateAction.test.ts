@@ -16,10 +16,10 @@ describe('getCreateAction', () => {
     ).toEqual({ type: 'task', defaults: { when_date: TODAY } });
   });
 
-  it('returns task with status upcoming for upcoming view', () => {
+  it('returns none for upcoming view (falls through to inbox)', () => {
     expect(
       getCreateAction({ activeView: 'upcoming', selectedProjectId: null, today: TODAY }),
-    ).toEqual({ type: 'task', defaults: { status: 'upcoming' } });
+    ).toEqual({ type: 'none' });
   });
 
   it('returns task with status anytime for anytime view', () => {

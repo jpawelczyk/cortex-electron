@@ -3,7 +3,6 @@ import { Calendar } from 'lucide-react';
 import { format, differenceInCalendarDays, parseISO } from 'date-fns';
 import { useStore } from '../stores';
 import { TaskList } from '../components/TaskList';
-import { InlineTaskCard } from '../components/InlineTaskCard';
 import { filterTasksByContext } from '../lib/contextFilter';
 import type { Task } from '@shared/types';
 
@@ -46,7 +45,6 @@ export function UpcomingView() {
   const updateTask = useStore((s) => s.updateTask);
   const selectTask = useStore((s) => s.selectTask);
   const selectedTaskId = useStore((s) => s.selectedTaskId);
-  const isInlineCreating = useStore((s) => s.isInlineCreating);
 
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
@@ -150,9 +148,7 @@ export function UpcomingView() {
           <h2 className="text-xl font-semibold text-foreground">Upcoming</h2>
         </div>
 
-        {isInlineCreating && <InlineTaskCard />}
-
-        {groupedTasks.length === 0 && !isInlineCreating ? (
+        {groupedTasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
             <Calendar className="size-10 mb-3 opacity-30" strokeWidth={1.25} />
             <p className="text-sm">Nothing upcoming</p>
