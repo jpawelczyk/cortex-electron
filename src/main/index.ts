@@ -14,11 +14,11 @@ import { getSyncConfig } from '../shared/config.js';
 import type { DbContext } from './db/types.js';
 
 process.on('uncaughtException', (err) => {
-  console.error('[uncaughtException]', err);
+  console.error('[uncaughtException]', err instanceof Error ? err.message : String(err));
 });
 
 process.on('unhandledRejection', (reason) => {
-  console.error('[unhandledRejection]', reason);
+  console.error('[unhandledRejection]', reason instanceof Error ? reason.message : String(reason));
 });
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
