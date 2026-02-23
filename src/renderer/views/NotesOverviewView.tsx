@@ -68,12 +68,24 @@ export function NotesOverviewView() {
   const createNote = useStore(s => s.createNote);
   const selectNote = useStore(s => s.selectNote);
   const setAutoFocusNoteTitle = useStore(s => s.setAutoFocusNoteTitle);
+  const isInlineNoteCreating = useStore(s => s.isInlineNoteCreating);
+  const cancelInlineNoteCreate = useStore(s => s.cancelInlineNoteCreate);
 
   const [sort, setSort] = useState<NoteSort>('updated');
 
   useEffect(() => {
     fetchNotes();
   }, [fetchNotes]);
+
+  // When Cmd+N triggers note creation, create immediately and open it
+  useEffect(() => {
+    if (!isInlineNoteCreating) return;
+    cancelInlineNoteCreate();
+    createNote({ title: 'Untitled' }).then((note) => {
+      setAutoFocusNoteTitle(true);
+      selectNote(note.id);
+    });
+  }, [isInlineNoteCreating, cancelInlineNoteCreate, createNote, selectNote, setAutoFocusNoteTitle]);
 
   const filteredNotes = useMemo(() => {
     let result = notes.filter(n => !n.deleted_at);
