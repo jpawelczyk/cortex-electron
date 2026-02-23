@@ -68,6 +68,8 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
   const [settledIds, setSettledIds] = useState<string[]>([]);
   const everCompletedIds = useRef(new Set<string>());
   const sortTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  const completedIdsRef = useRef(completedIds);
+  completedIdsRef.current = completedIds;
 
   useEffect(() => {
     const timers = sortTimers.current;
@@ -85,7 +87,7 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
     const visible = tasks.filter((t) =>
       t.project_id === projectId &&
       !t.deleted_at &&
-      (t.status !== 'logbook' || everCompletedIds.current.has(t.id) || true),
+      (t.status !== 'logbook' || everCompletedIds.current.has(t.id)),
     );
     return visible.sort((a, b) => {
       const aIdx = settledIds.indexOf(a.id);
@@ -179,7 +181,7 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
 
   const handleComplete = useCallback(
     (id: string) => {
-      if (completedIds.has(id)) {
+      if (completedIdsRef.current.has(id)) {
         // Uncomplete
         updateTask(id, { status: 'inbox' });
         setCompletedIds((prev) => {
@@ -205,7 +207,7 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
         sortTimers.current.set(id, timer);
       }
     },
-    [completedIds, updateTask],
+    [updateTask],
   );
 
   // --- Not found ---

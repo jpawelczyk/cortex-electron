@@ -13,6 +13,14 @@ import { FileAuthStorage } from './sync/auth-storage.js';
 import { getSyncConfig } from '../shared/config.js';
 import type { DbContext } from './db/types.js';
 
+process.on('uncaughtException', (err) => {
+  console.error('[uncaughtException]', err);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[unhandledRejection]', reason);
+});
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Ensure consistent userData path across dev and packaged builds
@@ -124,7 +132,11 @@ app.whenReady().then(async () => {
   );
 
   // Re-check stale tasks on window focus (handles long-running sessions)
+  let lastStaleCheck = 0;
   mainWindow!.on('focus', () => {
+    const now = Date.now();
+    if (now - lastStaleCheck < 60_000) return;
+    lastStaleCheck = now;
     taskService.markStaleTasks(5).then((count) => {
       if (count > 0) {
         mainWindow?.webContents.send('tasks:stale-check-complete');

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Circle, CheckCircle2, Calendar, Flag, Trash2, Check, X, Cloud, Layers, User } from 'lucide-react';
 import type { Task } from '@shared/types';
 import { useStore } from '../stores';
@@ -38,7 +38,7 @@ interface TaskItemProps {
   isCompleted?: boolean;
 }
 
-export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, isCompleted: isCompletedProp }: TaskItemProps) {
+function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, isCompleted: isCompletedProp }: TaskItemProps) {
   const updateTask = useStore((s) => s.updateTask);
   const deleteTask = useStore((s) => s.deleteTask);
   const deselectTask = useStore((s) => s.deselectTask);
@@ -576,3 +576,7 @@ export function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, i
     </div>
   );
 }
+
+const MemoTaskItem = React.memo(TaskItem);
+export { MemoTaskItem as TaskItem };
+export default MemoTaskItem;

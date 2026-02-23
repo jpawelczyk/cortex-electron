@@ -382,14 +382,14 @@ describe('ProjectDetailView', () => {
     expect(mockStartInlineCreate).toHaveBeenCalled();
   });
 
-  it('includes logbook tasks in the project task list', () => {
+  it('hides pre-existing logbook tasks and shows active tasks in the project task list', () => {
     mockTasks = [
       makeTask({ id: 't1', title: 'Done task', project_id: 'proj-1', status: 'logbook' }),
       makeTask({ id: 't2', title: 'Active task', project_id: 'proj-1', status: 'inbox' }),
     ];
     render(<ProjectDetailView projectId="proj-1" />);
 
-    expect(screen.getByText('Done task')).toBeInTheDocument();
+    expect(screen.queryByText('Done task')).not.toBeInTheDocument();
     expect(screen.getByText('Active task')).toBeInTheDocument();
   });
 

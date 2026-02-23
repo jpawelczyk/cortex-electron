@@ -170,13 +170,11 @@ describe('TaskSlice', () => {
     it('fetchTrashedTasks populates trashedTasks from IPC', async () => {
       const trashed = [fakeTask({ id: 'del-1', deleted_at: '2026-02-17T00:00:00.000Z' })];
       mockCortex.tasks.listTrashed.mockResolvedValue(trashed);
-      mockCortex.tasks.purgeExpiredTrash.mockResolvedValue(undefined);
 
       const store = createStore();
       await store.fetchTrashedTasks();
 
       expect(mockCortex.tasks.listTrashed).toHaveBeenCalledOnce();
-      expect(mockCortex.tasks.purgeExpiredTrash).toHaveBeenCalledWith(30);
     });
 
     it('restoreTask calls IPC and moves task from trashedTasks to tasks', async () => {

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { Plus, Search, Settings } from 'lucide-react';
 import { ContextSelector } from './components/ContextSelector';
 import { ContextSettings } from './components/ContextSettings';
@@ -82,7 +82,7 @@ function AuthenticatedApp() {
   const toggleCommandPalette = useStore((s) => s.toggleCommandPalette);
   const openCommandPalette = useStore((s) => s.openCommandPalette);
 
-  const handleViewChange = (view: SidebarView) => {
+  const handleViewChange = useCallback((view: SidebarView) => {
     if (selectedProjectId) {
       deselectProject();
     }
@@ -90,36 +90,54 @@ function AuthenticatedApp() {
       deselectNote();
     }
     setActiveView(view);
-  };
+  }, [deselectProject, deselectNote, setActiveView, selectedProjectId, selectedNoteId]);
+
+  const fetchTasksRef = useRef(fetchTasks);
+  fetchTasksRef.current = fetchTasks;
+  const fetchTrashedTasksRef = useRef(fetchTrashedTasks);
+  fetchTrashedTasksRef.current = fetchTrashedTasks;
+  const fetchProjectsRef = useRef(fetchProjects);
+  fetchProjectsRef.current = fetchProjects;
+  const fetchContextsRef = useRef(fetchContexts);
+  fetchContextsRef.current = fetchContexts;
+  const fetchNotesRef = useRef(fetchNotes);
+  fetchNotesRef.current = fetchNotes;
 
   useKeyboardShortcuts({ setActiveView: handleViewChange, deselectTask, startInlineCreate, startInlineProjectCreate, startInlineNoteCreate, toggleCommandPalette, activeView, selectedProjectId });
   useGlobalShortcuts({ setActiveView: handleViewChange, startInlineCreate, startInlineProjectCreate, activeView, selectedProjectId });
 
   useEffect(() => {
-    fetchTrashedTasks();
-  }, [fetchTrashedTasks]);
+    fetchTrashedTasksRef.current();
+  }, []);
 
   // Auto-refresh stores when PowerSync detects table changes (sync or local writes)
   useEffect(() => {
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+    const pendingTables = new Set<string>();
     const cleanup = window.cortex.sync.onTablesUpdated((tables) => {
-      if (tables.includes('tasks')) {
-        fetchTasks();
-        fetchTrashedTasks();
-      }
-      if (tables.includes('projects')) fetchProjects();
-      if (tables.includes('contexts')) fetchContexts();
-      if (tables.includes('notes')) fetchNotes();
+      tables.forEach((t) => pendingTables.add(t));
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        if (pendingTables.has('tasks')) {
+          fetchTasksRef.current();
+          fetchTrashedTasksRef.current();
+        }
+        if (pendingTables.has('projects')) fetchProjectsRef.current();
+        if (pendingTables.has('contexts')) fetchContextsRef.current();
+        if (pendingTables.has('notes')) fetchNotesRef.current();
+        pendingTables.clear();
+      }, 100);
     });
-    return cleanup;
-  }, [fetchTasks, fetchTrashedTasks, fetchProjects, fetchContexts, fetchNotes]);
+    return () => { cleanup(); if (debounceTimer) clearTimeout(debounceTimer); };
+  }, []);
 
   // Also refresh tasks when stale check completes on window focus
   useEffect(() => {
     const cleanup = window.cortex.onStaleCheckComplete(() => {
-      fetchTasks();
+      fetchTasksRef.current();
     });
     return cleanup;
-  }, [fetchTasks]);
+  }, []);
 
   const today = useMemo(() => {
     const d = new Date();

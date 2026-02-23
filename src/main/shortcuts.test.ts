@@ -15,6 +15,7 @@ describe('Global shortcuts', () => {
   let mockWindow: {
     show: ReturnType<typeof vi.fn>;
     focus: ReturnType<typeof vi.fn>;
+    isDestroyed: ReturnType<typeof vi.fn>;
     webContents: { send: ReturnType<typeof vi.fn> };
   };
 
@@ -22,6 +23,7 @@ describe('Global shortcuts', () => {
     mockWindow = {
       show: vi.fn(),
       focus: vi.fn(),
+      isDestroyed: vi.fn().mockReturnValue(false),
       webContents: { send: vi.fn() },
     };
     vi.mocked(globalShortcut.register).mockClear();

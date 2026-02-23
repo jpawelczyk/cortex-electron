@@ -32,6 +32,8 @@ export function TodayView() {
   // hasn't updated to today yet).
   const everCompletedIds = useRef(new Set<string>());
   const sortTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  const completedIdsRef = useRef(completedIds);
+  completedIdsRef.current = completedIds;
 
   useEffect(() => {
     const timers = sortTimers.current;
@@ -60,7 +62,7 @@ export function TodayView() {
 
   const handleComplete = useCallback(
     (id: string) => {
-      if (completedIds.has(id)) {
+      if (completedIdsRef.current.has(id)) {
         // Uncomplete: restore to today
         updateTask(id, { status: 'today' });
         setCompletedIds((prev) => {
@@ -86,7 +88,7 @@ export function TodayView() {
         sortTimers.current.set(id, timer);
       }
     },
-    [completedIds, updateTask],
+    [updateTask],
   );
 
   return (

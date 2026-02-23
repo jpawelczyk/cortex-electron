@@ -19,6 +19,8 @@ export function StaleView() {
   const [settledIds, setSettledIds] = useState<string[]>([]);
   const everCompletedIds = useRef(new Set<string>());
   const sortTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  const completedIdsRef = useRef(completedIds);
+  completedIdsRef.current = completedIds;
 
   useEffect(() => {
     const timers = sortTimers.current;
@@ -49,7 +51,7 @@ export function StaleView() {
 
   const handleComplete = useCallback(
     (id: string) => {
-      if (completedIds.has(id)) {
+      if (completedIdsRef.current.has(id)) {
         // Uncomplete: restore to stale
         updateTask(id, { status: 'stale' });
         setCompletedIds((prev) => {
@@ -75,7 +77,7 @@ export function StaleView() {
         sortTimers.current.set(id, timer);
       }
     },
-    [completedIds, updateTask],
+    [updateTask],
   );
 
   return (

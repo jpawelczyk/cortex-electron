@@ -64,7 +64,6 @@ export const createTaskSlice: StateCreator<TaskSlice> = (set, get) => ({
   trashedTasks: [],
 
   fetchTrashedTasks: async () => {
-    window.cortex.tasks.purgeExpiredTrash(30).catch(() => {});
     const trashedTasks = await window.cortex.tasks.listTrashed() as Task[];
     set({ trashedTasks });
   },

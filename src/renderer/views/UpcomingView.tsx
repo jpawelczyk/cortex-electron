@@ -57,6 +57,8 @@ export function UpcomingView() {
   const [settledIds, setSettledIds] = useState<string[]>([]);
   const everCompletedIds = useRef(new Set<string>());
   const sortTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  const completedIdsRef = useRef(completedIds);
+  completedIdsRef.current = completedIds;
 
   useEffect(() => {
     const timers = sortTimers.current;
@@ -125,7 +127,7 @@ export function UpcomingView() {
 
   const handleComplete = useCallback(
     (id: string) => {
-      if (completedIds.has(id)) {
+      if (completedIdsRef.current.has(id)) {
         // Uncomplete: restore to upcoming
         updateTask(id, { status: 'upcoming' });
         setCompletedIds((prev) => {
@@ -151,7 +153,7 @@ export function UpcomingView() {
         sortTimers.current.set(id, timer);
       }
     },
-    [completedIds, updateTask],
+    [updateTask],
   );
 
   return (

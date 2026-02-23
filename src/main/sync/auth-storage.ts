@@ -38,6 +38,10 @@ export class FileAuthStorage {
   }
 
   private save(): void {
-    fs.writeFileSync(this.filePath, JSON.stringify(this.data), 'utf-8');
+    try {
+      fs.writeFileSync(this.filePath, JSON.stringify(this.data), 'utf-8');
+    } catch (err) {
+      console.error('[FileAuthStorage] Failed to persist auth storage:', err);
+    }
   }
 }

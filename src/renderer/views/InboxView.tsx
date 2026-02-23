@@ -44,6 +44,10 @@ export function InboxView() {
   // unchecked" (override store).
   const interactedIds = useRef(new Set<string>());
   const sortTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  const completedIdsRef = useRef(completedIds);
+  completedIdsRef.current = completedIds;
+  const tasksRef = useRef(tasks);
+  tasksRef.current = tasks;
 
   useEffect(() => {
     const timers = sortTimers.current;
@@ -100,8 +104,8 @@ export function InboxView() {
   const handleComplete = useCallback(
     (id: string) => {
       interactedIds.current.add(id);
-      const task = tasks.find((t) => t.id === id);
-      const isAlreadyDone = completedIds.has(id) || task?.status === 'logbook';
+      const task = tasksRef.current.find((t) => t.id === id);
+      const isAlreadyDone = completedIdsRef.current.has(id) || task?.status === 'logbook';
 
       if (isAlreadyDone) {
         // Uncomplete: restore to inbox
@@ -129,7 +133,7 @@ export function InboxView() {
         sortTimers.current.set(id, timer);
       }
     },
-    [tasks, completedIds, updateTask],
+    [updateTask],
   );
 
   return (

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import type { SidebarView } from '../components/Sidebar';
 
 interface GlobalShortcutDeps {
@@ -16,8 +16,12 @@ export function useGlobalShortcuts({
   activeView,
   selectedProjectId,
 }: GlobalShortcutDeps) {
+  const depsRef = useRef({ setActiveView, startInlineCreate, startInlineProjectCreate, activeView, selectedProjectId });
+  depsRef.current = { setActiveView, startInlineCreate, startInlineProjectCreate, activeView, selectedProjectId };
+
   useEffect(() => {
     const unsubscribe = window.cortex.onFocusTaskInput(() => {
+      const { setActiveView, startInlineCreate, startInlineProjectCreate, activeView, selectedProjectId } = depsRef.current;
       if (activeView === 'projects' && selectedProjectId) {
         startInlineCreate();
       } else if (activeView === 'projects') {
@@ -28,5 +32,5 @@ export function useGlobalShortcuts({
       }
     });
     return unsubscribe;
-  }, [setActiveView, startInlineCreate, startInlineProjectCreate, activeView, selectedProjectId]);
+  }, []); // register once
 }
