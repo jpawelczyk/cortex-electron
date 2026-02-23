@@ -57,6 +57,12 @@
   #root {
     height: 100%;
   }
+
+  /* Remove default browser focus outline globally — styled focus rings
+     are provided via Tailwind focus-visible:ring-* where needed */
+  *:focus-visible {
+    outline: none;
+  }
 }
 
 @keyframes card-enter {
