@@ -343,7 +343,7 @@ function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, isComple
           </span>
         )}
 
-        <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center shrink-0" onClick={(e) => e.stopPropagation()}>
           <span data-testid="when-date">
             <DatePickerButton
               value={task.when_date}
