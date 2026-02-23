@@ -79,7 +79,7 @@ class AgentConnector implements PowerSyncBackendConnector {
 
     // Decode user_id and agent_id from token
     const payload = JSON.parse(atob(this.token!.split('.')[1]));
-    const userId = payload.sub;
+    const userId = payload.user_id;
     const agentId = payload.agent_id;
 
     // Create authenticated client with our JWT (required for RLS)
