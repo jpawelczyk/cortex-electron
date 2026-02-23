@@ -326,19 +326,12 @@ function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, isComple
         {!isExpanded && !isCompleted && (
           <span
             data-testid="context-indicator"
-            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-accent/60 shrink-0"
-          >
-            <span
-              className={cn(
-                "size-1.5 rounded-full shrink-0",
-                !effectiveContext && "border border-muted-foreground/60",
-              )}
-              style={effectiveContext?.color ? { backgroundColor: effectiveContext.color } : undefined}
-            />
-            <span className="text-[10px] text-muted-foreground leading-none">
-              {effectiveContext?.name ?? 'N/A'}
-            </span>
-          </span>
+            className={cn(
+              "size-2 rounded-full shrink-0",
+              !effectiveContext && "border border-muted-foreground/60",
+            )}
+            style={effectiveContext?.color ? { backgroundColor: effectiveContext.color } : undefined}
+          />
         )}
 
         {!isExpanded && task.priority && !isCompleted && (
