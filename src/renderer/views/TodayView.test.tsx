@@ -35,8 +35,13 @@ vi.mock('../stores', () => ({
   },
 }));
 
-const TODAY = new Date().toISOString().slice(0, 10);
-const TOMORROW = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+function daysFromNow(n: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + n);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+const TODAY = daysFromNow(0);
+const TOMORROW = daysFromNow(1);
 
 const fakeTask = (overrides: Record<string, unknown> = {}) => ({
   id: 'task-1',
@@ -101,6 +106,14 @@ describe('TodayView', () => {
     ];
     render(<TodayView />);
     expect(screen.getByText('Scheduled today')).toBeInTheDocument();
+  });
+
+  it('shows upcoming tasks whose when_date has arrived', () => {
+    mockTasks = [
+      fakeTask({ id: '1', title: 'Upcoming due today', status: 'upcoming', when_date: TODAY }),
+    ];
+    render(<TodayView />);
+    expect(screen.getByText('Upcoming due today')).toBeInTheDocument();
   });
 
   it('excludes logbook tasks even if when_date=today', () => {

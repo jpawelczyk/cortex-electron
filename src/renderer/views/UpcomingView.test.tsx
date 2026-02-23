@@ -113,17 +113,16 @@ describe('UpcomingView', () => {
     expect(groups).toHaveLength(2);
   });
 
-  it('shows "Today" label for overdue tasks (past when_date)', () => {
+  it('excludes overdue tasks (past when_date) — they belong in Today view', () => {
     mockTasks = [fakeTask({ id: '1', title: 'Overdue', when_date: YESTERDAY })];
     render(<UpcomingView />);
-    expect(screen.getByText('Today')).toBeInTheDocument();
+    expect(screen.queryByText('Overdue')).not.toBeInTheDocument();
   });
 
-  it('shows "Today" label for tasks with when_date=today', () => {
+  it('excludes tasks with when_date=today — they belong in Today view', () => {
     mockTasks = [fakeTask({ id: '1', title: 'Due today', when_date: TODAY })];
     render(<UpcomingView />);
-    // "Upcoming" is the heading, "Today" is the group header
-    expect(screen.getByText('Today')).toBeInTheDocument();
+    expect(screen.queryByText('Due today')).not.toBeInTheDocument();
   });
 
   it('shows "Tomorrow" label for tomorrow tasks', () => {

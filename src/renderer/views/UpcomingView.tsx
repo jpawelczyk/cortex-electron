@@ -68,9 +68,14 @@ export function UpcomingView() {
   }, [fetchTasks]);
 
   const upcomingTasks = useMemo(() => {
+    const today = getToday();
     const visible = tasks.filter((t) => {
       if (t.status === 'logbook' && everCompletedIds.current.has(t.id)) return true;
-      if (t.status === 'upcoming') return true;
+      if (t.status === 'upcoming') {
+        // Tasks whose when_date has arrived belong in Today view
+        if (t.when_date && t.when_date <= today) return false;
+        return true;
+      }
       return false;
     });
     return filterTasksByContext(visible, activeContextIds, projects);

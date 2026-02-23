@@ -121,7 +121,10 @@ function AuthenticatedApp() {
     return cleanup;
   }, [fetchTasks]);
 
-  const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const today = useMemo(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }, []);
 
   const taskCounts = useMemo(() => {
     // Context-filtered tasks for counts that respect the active filter
@@ -148,7 +151,7 @@ function AuthenticatedApp() {
     return {
       inbox: inboxCount + overdueCount,
       today: todayCount,
-      upcoming: filtered.filter((t) => t.status === 'upcoming').length,
+      upcoming: filtered.filter((t) => t.status === 'upcoming' && !(t.when_date && t.when_date <= today)).length,
       anytime: filtered.filter((t) => t.status === 'anytime').length,
       someday: filtered.filter((t) => t.status === 'someday').length,
       stale: filtered.filter((t) => t.status === 'stale').length,
