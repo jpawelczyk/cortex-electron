@@ -99,7 +99,7 @@ Deno.serve(async (req) => {
   const expiresAt = now + 3600; // 1 hour
 
   const token = await new SignJWT({
-    sub: agent.id,
+    sub: agent.user_id,
     role: 'authenticated',
     aud: 'authenticated',
     agent_id: agent.id,
