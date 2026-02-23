@@ -47,7 +47,7 @@ export function DatePickerButton({ value, onChange, icon, label, className, acti
           <button
             type="button"
             aria-label={label}
-            className="inline-flex items-center gap-1 px-1.5 py-1 cursor-pointer w-[4.5rem] justify-center"
+            className="inline-flex items-center gap-1 px-1.5 py-1 cursor-pointer w-[4.5rem]"
           >
             {icon}
             <span>{value ? format(parseISO(value), 'MMM d') : 'N/A'}</span>
