@@ -31,8 +31,9 @@ export const createTaskSlice: StateCreator<TaskSlice> = (set, get) => ({
     try {
       const tasks = await window.cortex.tasks.list() as Task[];
       set({ tasks, tasksLoading: false });
-    } catch {
-      set({ tasksError: 'Failed to fetch tasks', tasksLoading: false });
+    } catch (err) {
+      console.error('[TaskSlice] fetchTasks failed:', err);
+      set({ tasksError: err instanceof Error ? err.message : 'Unknown error', tasksLoading: false });
     }
   },
 

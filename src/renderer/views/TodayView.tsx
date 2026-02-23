@@ -31,6 +31,9 @@ export function TodayView() {
   // after uncomplete (when completedIds no longer has the id but the store
   // hasn't updated to today yet).
   const everCompletedIds = useRef(new Set<string>());
+  // Tracks tasks the user has directly clicked so external updates don't
+  // override their local intent.
+  const interactedIds = useRef(new Set<string>());
   const sortTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
   const completedIdsRef = useRef(completedIds);
   completedIdsRef.current = completedIds;
@@ -39,6 +42,27 @@ export function TodayView() {
     const timers = sortTimers.current;
     return () => timers.forEach(clearTimeout);
   }, []);
+
+  // Reconcile completedIds with actual task statuses for tasks the user hasn't
+  // interacted with this session (handles external completions from sync/agents).
+  useEffect(() => {
+    setCompletedIds((prev) => {
+      let changed = false;
+      const next = new Set(prev);
+      for (const task of tasks) {
+        if (interactedIds.current.has(task.id)) continue;
+        if (task.status === 'logbook' && !next.has(task.id)) {
+          next.add(task.id);
+          everCompletedIds.current.add(task.id);
+          changed = true;
+        } else if (task.status !== 'logbook' && next.has(task.id)) {
+          next.delete(task.id);
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [tasks]);
 
   const todayTasks = useMemo(() => {
     const visible = tasks.filter((t) => {
@@ -62,6 +86,7 @@ export function TodayView() {
 
   const handleComplete = useCallback(
     (id: string) => {
+      interactedIds.current.add(id);
       if (completedIdsRef.current.has(id)) {
         // Uncomplete: restore to today
         updateTask(id, { status: 'today' });

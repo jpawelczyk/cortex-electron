@@ -48,7 +48,8 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set) => ({
 
       // Connect sync if we have a session
       await window.cortex.sync.connect();
-    } catch {
+    } catch (err) {
+      console.error('[AuthSlice] checkSession failed:', err);
       set({ authLoading: false, authSession: null, authUser: null });
     }
   },

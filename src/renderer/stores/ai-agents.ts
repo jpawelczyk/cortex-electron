@@ -21,8 +21,9 @@ export const createAIAgentSlice: StateCreator<AIAgentSlice> = (set) => ({
     try {
       const agents = await window.cortex.agents.list() as AIAgent[];
       set({ agents, agentsLoading: false });
-    } catch {
-      set({ agentsError: 'Failed to fetch agents', agentsLoading: false });
+    } catch (err) {
+      console.error('[AIAgentSlice] fetchAgents failed:', err);
+      set({ agentsError: err instanceof Error ? err.message : 'Unknown error', agentsLoading: false });
     }
   },
 

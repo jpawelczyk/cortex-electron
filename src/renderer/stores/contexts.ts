@@ -30,8 +30,9 @@ export const createContextSlice: StateCreator<ContextSlice> = (set, get) => ({
     try {
       const contexts = await window.cortex.contexts.list() as Context[];
       set({ contexts, contextsLoading: false });
-    } catch {
-      set({ contextsError: 'Failed to fetch contexts', contextsLoading: false });
+    } catch (err) {
+      console.error('[ContextSlice] fetchContexts failed:', err);
+      set({ contextsError: err instanceof Error ? err.message : 'Unknown error', contextsLoading: false });
     }
   },
 

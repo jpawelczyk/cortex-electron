@@ -22,8 +22,9 @@ export const createStakeholderSlice: StateCreator<StakeholderSlice> = (set) => (
     try {
       const stakeholders = await window.cortex.stakeholders.list() as Stakeholder[];
       set({ stakeholders, stakeholdersLoading: false });
-    } catch {
-      set({ stakeholdersError: 'Failed to fetch stakeholders', stakeholdersLoading: false });
+    } catch (err) {
+      console.error('[StakeholderSlice] fetchStakeholders failed:', err);
+      set({ stakeholdersError: err instanceof Error ? err.message : 'Unknown error', stakeholdersLoading: false });
     }
   },
 

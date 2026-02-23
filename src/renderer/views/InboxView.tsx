@@ -54,6 +54,26 @@ export function InboxView() {
     return () => timers.forEach(clearTimeout);
   }, []);
 
+  // Reconcile completedIds when tasks change externally (sync/agent completions).
+  // Only removes tasks from completedIds if they've been externally un-completed
+  // and the user hasn't interacted with them this session.
+  // Adding to completedIds is handled by effectiveCompletedIds for display and
+  // handleComplete for in-session completions.
+  useEffect(() => {
+    setCompletedIds((prev) => {
+      let changed = false;
+      const next = new Set(prev);
+      for (const task of tasks) {
+        if (interactedIds.current.has(task.id)) continue;
+        if (task.status !== 'logbook' && next.has(task.id)) {
+          next.delete(task.id);
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [tasks]);
+
   const today = getToday();
 
   const overdueTasks = useMemo(() => {

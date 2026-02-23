@@ -26,7 +26,8 @@ export const createChecklistSlice: StateCreator<ChecklistSlice> = (set, _get) =>
         checklistItems: { ...state.checklistItems, [taskId]: items },
         checklistsLoading: { ...state.checklistsLoading, [taskId]: false },
       }));
-    } catch {
+    } catch (err) {
+      console.error('[ChecklistSlice] fetchChecklistItems failed:', err);
       set((state) => ({
         checklistsLoading: { ...state.checklistsLoading, [taskId]: false },
       }));

@@ -30,8 +30,9 @@ export const createNoteSlice: StateCreator<NoteSlice> = (set) => ({
     try {
       const notes = await window.cortex.notes.list() as Note[];
       set({ notes, notesLoading: false });
-    } catch {
-      set({ notesError: 'Failed to fetch notes', notesLoading: false });
+    } catch (err) {
+      console.error('[NoteSlice] fetchNotes failed:', err);
+      set({ notesError: err instanceof Error ? err.message : 'Unknown error', notesLoading: false });
     }
   },
 

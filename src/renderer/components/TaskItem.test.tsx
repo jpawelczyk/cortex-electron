@@ -502,6 +502,28 @@ describe('TaskItem (expanded)', () => {
     expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { title: 'Edited' });
   });
 
+  it('does not save to wrong task when task switches before debounce fires', () => {
+    // Simulate race: user edits Task A, then task prop switches to Task B before debounce fires
+    const taskA = fakeTask({ id: 'task-a', title: 'Task A' });
+    const taskB = fakeTask({ id: 'task-b', title: 'Task B' });
+    const { rerender } = render(
+      <TaskItem task={taskA} onComplete={vi.fn()} isExpanded />
+    );
+    const input = screen.getByDisplayValue('Task A');
+    fireEvent.change(input, { target: { value: 'Task A edited' } });
+
+    // Switch to task-b before debounce fires
+    rerender(<TaskItem task={taskB} onComplete={vi.fn()} isExpanded />);
+
+    // Advance timers — the stale debounce for task-a should NOT fire for task-b's id
+    vi.advanceTimersByTime(500);
+
+    // The flush on task switch should have saved to task-a, not task-b
+    const calls = mockUpdateTask.mock.calls;
+    const titleSaveToB = calls.find(([id, patch]) => id === 'task-b' && 'title' in patch);
+    expect(titleSaveToB).toBeUndefined();
+  });
+
   it('updates when_date via calendar popover', () => {
     render(
       <TaskItem task={fakeTask()} onComplete={vi.fn()} isExpanded />

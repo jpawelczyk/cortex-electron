@@ -62,20 +62,24 @@ function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, isComple
   const [notes, setNotes] = useState(task.notes ?? '');
   const taskIdRef = useRef(task.id);
 
+  // Callbacks accept (id, value) captured at trigger time.
+  // Guard: skip if the task has since changed (prevents saving to wrong task).
   const saveTitle = useCallback(
-    (value: string) => {
+    (id: string, value: string) => {
+      if (id !== taskIdRef.current) return;
       if (value !== task.title) {
-        updateTask(taskIdRef.current, { title: value });
+        updateTask(id, { title: value });
       }
     },
     [task.title, updateTask],
   );
 
   const saveNotes = useCallback(
-    (value: string) => {
+    (id: string, value: string) => {
+      if (id !== taskIdRef.current) return;
       const oldNotes = task.notes ?? '';
       if (value !== oldNotes) {
-        updateTask(taskIdRef.current, { notes: value });
+        updateTask(id, { notes: value });
       }
     },
     [task.notes, updateTask],
@@ -169,12 +173,12 @@ function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, isComple
 
   const handleTitleChange = (value: string) => {
     setTitle(value);
-    debouncedSaveTitle(value);
+    debouncedSaveTitle(task.id, value);
   };
 
   const handleNotesChange = (value: string) => {
     setNotes(value);
-    debouncedSaveNotes(value);
+    debouncedSaveNotes(task.id, value);
   };
 
   const handleWhenDateChange = (value: string | null) => {

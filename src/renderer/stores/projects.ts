@@ -25,8 +25,9 @@ export const createProjectSlice: StateCreator<ProjectSlice> = (set, get) => ({
     try {
       const projects = await window.cortex.projects.list() as Project[];
       set({ projects, projectsLoading: false });
-    } catch {
-      set({ projectsError: 'Failed to fetch projects', projectsLoading: false });
+    } catch (err) {
+      console.error('[ProjectSlice] fetchProjects failed:', err);
+      set({ projectsError: err instanceof Error ? err.message : 'Unknown error', projectsLoading: false });
     }
   },
 
