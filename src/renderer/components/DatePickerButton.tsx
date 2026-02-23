@@ -47,10 +47,10 @@ export function DatePickerButton({ value, onChange, icon, label, className, acti
           <button
             type="button"
             aria-label={label}
-            className={cn("inline-flex items-center gap-1 px-1.5 py-1 cursor-pointer", value && "w-[4.5rem] justify-center")}
+            className="inline-flex items-center gap-1 px-1.5 py-1 cursor-pointer w-[4.5rem] justify-center"
           >
             {icon}
-            {value && <span>{format(parseISO(value), 'MMM d')}</span>}
+            <span>{value ? format(parseISO(value), 'MMM d') : 'N/A'}</span>
           </button>
         </PopoverTrigger>
       </div>

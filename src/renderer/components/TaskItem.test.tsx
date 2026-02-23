@@ -174,13 +174,13 @@ describe('TaskItem (collapsed)', () => {
     expect(screen.getByTestId('when-date')).toHaveTextContent('Mar 10');
   });
 
-  it('date picker buttons have fixed width only when value is set', () => {
+  it('date picker buttons always have fixed width', () => {
     render(
       <TaskItem task={fakeTask({ when_date: null, deadline: '2026-12-25' })} onComplete={vi.fn()} />
     );
     const whenButton = within(screen.getByTestId('when-date')).getByRole('button');
     const deadlineButton = within(screen.getByTestId('deadline-badge')).getByRole('button');
-    expect(whenButton).not.toHaveClass('w-[4.5rem]');
+    expect(whenButton).toHaveClass('w-[4.5rem]');
     expect(deadlineButton).toHaveClass('w-[4.5rem]');
   });
 
@@ -210,15 +210,14 @@ describe('TaskItem (collapsed)', () => {
     expect(whenDate.querySelector('.lucide-calendar')).toBeInTheDocument();
   });
 
-  it('shows when_date icon without text when null', () => {
+  it('shows N/A label for when_date when null', () => {
     render(
       <TaskItem task={fakeTask({ when_date: null })} onComplete={vi.fn()} />
     );
     const badge = screen.getByTestId('when-date');
     expect(badge).toBeInTheDocument();
-    // Button only contains the icon, no date text
     const button = within(badge).getByRole('button');
-    expect(button.querySelector('span')).toBeNull();
+    expect(button).toHaveTextContent('N/A');
   });
 
   it('does not expand when clicking date picker button', () => {
