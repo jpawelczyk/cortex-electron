@@ -76,20 +76,8 @@ function getTaskContext(task: Task, project: Project | null): string | null {
 
 ## Inbox Behavior
 
-- **Always visible** regardless of active context filter
-- **Context-free** — no context assigned
+- **Filtered by context** — respects active context filter like all other views
 - **Triage destination** — process to assign context + project
-
-```typescript
-function getVisibleTasks(tasks: Task[], activeContextId: string | null): Task[] {
-  const inbox = tasks.filter(t => t.status === 'inbox');
-  const rest = tasks.filter(t => t.status !== 'inbox');
-  const filtered = activeContextId 
-    ? rest.filter(t => t.context_id === activeContextId)
-    : rest;
-  return [...inbox, ...filtered]; // Inbox always first
-}
-```
 
 ## Checklists (Subtasks)
 

@@ -61,7 +61,7 @@ When context(s) are active:
 - **Projects:** Show only projects where `context_id` matches active contexts
 - **Notes:** Show only notes where `context_id` matches
 - **Meetings:** Show only meetings where `context_id` matches
-- **Inbox:** Always visible regardless of context filter (per TASK_SYSTEM.md)
+- **Inbox:** Filtered by active context (same as other views)
 
 **Null context items:** Items with `context_id = null` are shown when:
 - All contexts are active (no filter)

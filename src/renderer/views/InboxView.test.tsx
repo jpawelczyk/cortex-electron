@@ -10,6 +10,10 @@ let mockIsInlineCreating = false;
 const mockUpdateTask = vi.fn();
 const mockCreateTask = vi.fn();
 const mockCancelInlineCreate = vi.fn();
+const mockState: Record<string, unknown> = {
+  activeContextIds: [] as string[],
+  projects: [] as Record<string, unknown>[],
+};
 
 vi.mock('../stores', () => ({
   useStore: (selector: (state: Record<string, unknown>) => unknown) => {
@@ -27,12 +31,13 @@ vi.mock('../stores', () => ({
       createChecklistItem: vi.fn(),
       deleteChecklistItem: vi.fn(),
       updateChecklistItem: vi.fn(),
-      projects: [],
+      projects: mockState.projects,
       contexts: [],
       fetchProjects: vi.fn(),
       agents: [],
       fetchAgents: vi.fn(),
       authUser: null,
+      activeContextIds: mockState.activeContextIds,
     };
     return selector(state);
   },
@@ -62,6 +67,8 @@ describe('InboxView', () => {
     vi.clearAllMocks();
     mockTasks = [];
     mockIsInlineCreating = false;
+    mockState.activeContextIds = [];
+    mockState.projects = [];
   });
 
   it('renders the Inbox heading', () => {
@@ -126,6 +133,53 @@ describe('InboxView', () => {
     mockIsInlineCreating = true;
     render(<InboxView />);
     expect(screen.queryByText(/no tasks in your inbox/i)).not.toBeInTheDocument();
+  });
+
+  describe('context filtering', () => {
+    it('hides tasks outside active context', () => {
+      const workCtx = 'ctx-work';
+      const personalCtx = 'ctx-personal';
+      mockState.activeContextIds = [workCtx];
+      mockState.projects = [
+        { id: 'proj-work', context_id: workCtx },
+        { id: 'proj-personal', context_id: personalCtx },
+      ];
+      mockTasks = [
+        fakeTask({ id: '1', title: 'Work task', project_id: 'proj-work' }),
+        fakeTask({ id: '2', title: 'Personal task', project_id: 'proj-personal' }),
+      ];
+      render(<InboxView />);
+      expect(screen.getByText('Work task')).toBeInTheDocument();
+      expect(screen.queryByText('Personal task')).not.toBeInTheDocument();
+    });
+
+    it('shows all tasks when no context filter is active', () => {
+      mockState.activeContextIds = [];
+      mockTasks = [
+        fakeTask({ id: '1', title: 'Work task', context_id: 'ctx-work' }),
+        fakeTask({ id: '2', title: 'Personal task', context_id: 'ctx-personal' }),
+      ];
+      render(<InboxView />);
+      expect(screen.getByText('Work task')).toBeInTheDocument();
+      expect(screen.getByText('Personal task')).toBeInTheDocument();
+    });
+
+    it('filters overdue tasks by context too', () => {
+      const workCtx = 'ctx-work';
+      const personalCtx = 'ctx-personal';
+      mockState.activeContextIds = [workCtx];
+      mockState.projects = [
+        { id: 'proj-work', context_id: workCtx },
+        { id: 'proj-personal', context_id: personalCtx },
+      ];
+      mockTasks = [
+        fakeTask({ id: '1', title: 'Work overdue', status: 'today', deadline: '2025-01-01', project_id: 'proj-work' }),
+        fakeTask({ id: '2', title: 'Personal overdue', status: 'today', deadline: '2025-01-01', project_id: 'proj-personal' }),
+      ];
+      render(<InboxView />);
+      expect(screen.getByText('Work overdue')).toBeInTheDocument();
+      expect(screen.queryByText('Personal overdue')).not.toBeInTheDocument();
+    });
   });
 
   describe('overdue by deadline', () => {

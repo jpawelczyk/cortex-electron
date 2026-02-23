@@ -4,6 +4,7 @@ import { format } from 'date-fns';
 import { useStore } from '../stores';
 import { TaskList } from '../components/TaskList';
 import { InlineTaskCard } from '../components/InlineTaskCard';
+import { filterTasksByContext } from '../lib/contextFilter';
 
 function getToday(): string {
   return format(new Date(), 'yyyy-MM-dd');
@@ -13,6 +14,8 @@ const DISMISS_DELAY_MS = 2500;
 
 export function InboxView() {
   const tasks = useStore((s) => s.tasks);
+  const projects = useStore((s) => s.projects);
+  const activeContextIds = useStore((s) => s.activeContextIds);
   const updateTask = useStore((s) => s.updateTask);
   const selectTask = useStore((s) => s.selectTask);
   const selectedTaskId = useStore((s) => s.selectedTaskId);
@@ -67,7 +70,7 @@ export function InboxView() {
   const today = getToday();
 
   const overdueTasks = useMemo(() => {
-    return tasks.filter(
+    const overdue = tasks.filter(
       (t) =>
         t.deadline &&
         t.deadline < today &&
@@ -75,16 +78,18 @@ export function InboxView() {
         !t.deleted_at &&
         !t.completed_at,
     );
-  }, [tasks, today]);
+    return filterTasksByContext(overdue, activeContextIds, projects);
+  }, [tasks, today, activeContextIds, projects]);
 
   const inboxTasks = useMemo(() => {
-    return tasks.filter((t) => {
+    const visible = tasks.filter((t) => {
       if (dismissedIds.has(t.id)) return false;
       if (t.status === 'inbox' && !t.when_date) return true;
       if (t.status === 'logbook' && everCompletedIds.current.has(t.id)) return true;
       return false;
     });
-  }, [tasks, dismissedIds]);
+    return filterTasksByContext(visible, activeContextIds, projects);
+  }, [tasks, dismissedIds, activeContextIds, projects]);
 
   const handleComplete = useCallback(
     (id: string) => {
