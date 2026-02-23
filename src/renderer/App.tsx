@@ -24,6 +24,7 @@ import { NoteDetailView } from './views/NoteDetailView';
 import { StakeholdersOverviewView } from './views/StakeholdersOverviewView';
 import { StakeholderDetailView } from './views/StakeholderDetailView';
 import { SettingsView } from './views/SettingsView';
+import { HomeView } from './views/HomeView';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
 import { SignIn } from './views/auth/sign-in';
@@ -62,7 +63,7 @@ export default function App() {
 }
 
 function AuthenticatedApp() {
-  const [activeView, setActiveView] = useState<SidebarView>('inbox');
+  const [activeView, setActiveView] = useState<SidebarView>('home');
   const [contextSettingsOpen, setContextSettingsOpen] = useState(false);
   const tasks = useStore((s) => s.tasks);
   const projects = useStore((s) => s.projects);
@@ -253,7 +254,7 @@ function AuthenticatedApp() {
           </button>
         </header>
 
-        {activeView === 'home' && <PlaceholderView title="Home" />}
+        {activeView === 'home' && <HomeView />}
         {activeView === 'daily' && <PlaceholderView title="Daily" />}
         {activeView === 'inbox' && <InboxView />}
         {activeView === 'today' && <TodayView />}

@@ -11,8 +11,9 @@ import { createAuthSlice, AuthSlice } from './auth';
 import { createAIAgentSlice, AIAgentSlice } from './ai-agents';
 import { createProjectStakeholderSlice, ProjectStakeholderSlice } from './projectStakeholders';
 import { createNoteStakeholderSlice, NoteStakeholderSlice } from './noteStakeholders';
+import { createSettingsSlice, SettingsSlice } from './settings';
 
-export type StoreState = TaskSlice & ProjectSlice & ContextSlice & StakeholderSlice & ChecklistSlice & UISlice & NoteSlice & AuthSlice & AIAgentSlice & ProjectStakeholderSlice & NoteStakeholderSlice;
+export type StoreState = TaskSlice & ProjectSlice & ContextSlice & StakeholderSlice & ChecklistSlice & UISlice & NoteSlice & AuthSlice & AIAgentSlice & ProjectStakeholderSlice & NoteStakeholderSlice & SettingsSlice;
 
 export const useStore = create<StoreState>()(
   devtools(
@@ -29,12 +30,16 @@ export const useStore = create<StoreState>()(
         ...createAIAgentSlice(...a),
         ...createProjectStakeholderSlice(...a),
         ...createNoteStakeholderSlice(...a),
+        ...createSettingsSlice(...a),
       }),
       {
         name: 'cortex-store',
         partialize: (state) => ({
           activeContextIds: state.activeContextIds,
           sidebarCollapsed: state.sidebarCollapsed,
+          userFirstName: state.userFirstName,
+          userLastName: state.userLastName,
+          weatherCity: state.weatherCity,
         }),
       }
     )
