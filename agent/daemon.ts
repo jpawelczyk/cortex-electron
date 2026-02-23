@@ -39,7 +39,8 @@ const EVENTS_FILE = '/tmp/cortex-agent-events.jsonl';
 
 // --- Assignment watcher ---
 
-const seenAssignments = new Set<string>();
+// Track task id → updated_at so mutations (e.g. when_date changed to today) re-trigger
+const seenAssignments = new Map<string, string>();
 
 async function onTaskAssigned(task: { id: string; title: string; notes: string | null; priority: string | null; deadline: string | null }) {
   logger.info(`New task assigned: ${task.id}`);
@@ -119,8 +120,9 @@ async function pollAssignments() {
   try {
     const tasks = await queries.getAssignedTasks(AGENT_ID);
     for (const task of tasks) {
-      if (!seenAssignments.has(task.id)) {
-        seenAssignments.add(task.id);
+      const prev = seenAssignments.get(task.id);
+      if (prev === undefined || prev !== task.updated_at) {
+        seenAssignments.set(task.id, task.updated_at);
         await onTaskAssigned(task);
       }
     }
@@ -339,7 +341,7 @@ async function start() {
 
   // Start assignment watcher
   if (AGENT_ID) {
-    // Initial poll to seed seen set
+    // Poll immediately — fires onTaskAssigned for any pre-existing assignments
     await pollAssignments();
     setInterval(pollAssignments, 2000);
     logger.info(`Watching for tasks assigned to agent ${AGENT_ID}`);
