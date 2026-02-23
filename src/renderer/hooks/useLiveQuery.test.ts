@@ -38,13 +38,16 @@ describe('useLiveQuery', () => {
     vi.useRealTimers();
   });
 
-  it('returns loading state initially', () => {
+  it('returns loading state initially', async () => {
     const queryFn = vi.fn().mockResolvedValue([]);
     const { result } = renderHook(() => useLiveQuery(queryFn, ['tasks']));
 
     expect(result.current.isLoading).toBe(true);
     expect(result.current.data).toEqual([]);
     expect(result.current.error).toBeNull();
+
+    // Let the initial fetch settle to avoid act() warnings
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
   });
 
   it('fetches data on mount and clears loading', async () => {
@@ -62,12 +65,15 @@ describe('useLiveQuery', () => {
     expect(queryFn).toHaveBeenCalledTimes(1);
   });
 
-  it('subscribes to onTablesUpdated on mount', () => {
+  it('subscribes to onTablesUpdated on mount', async () => {
     const queryFn = vi.fn().mockResolvedValue([]);
-    renderHook(() => useLiveQuery(queryFn, ['tasks']));
+    const { result } = renderHook(() => useLiveQuery(queryFn, ['tasks']));
 
     expect(mockCortex.sync.onTablesUpdated).toHaveBeenCalledTimes(1);
     expect(listeners).toHaveLength(1);
+
+    // Let the initial fetch settle to avoid act() warnings
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
   });
 
   it('re-fetches when a matching table changes', async () => {
