@@ -37,24 +37,41 @@ export const createContextSlice: StateCreator<ContextSlice> = (set, get) => ({
   },
 
   createContext: async (input) => {
-    const context = await window.cortex.contexts.create(input) as Context;
-    set((state) => ({ contexts: [...state.contexts, context] }));
-    return context;
+    try {
+      const context = await window.cortex.contexts.create(input) as Context;
+      set((state) => ({ contexts: [...state.contexts, context] }));
+      return context;
+    } catch (err) {
+      console.error('[ContextSlice] createContext failed:', err);
+      set({ contextsError: err instanceof Error ? err.message : 'Unknown error' });
+      return null as unknown as Context;
+    }
   },
 
   updateContext: async (id, input) => {
-    const context = await window.cortex.contexts.update(id, input) as Context;
-    set((state) => ({
-      contexts: state.contexts.map((c) => (c.id === id ? context : c)),
-    }));
-    return context;
+    try {
+      const context = await window.cortex.contexts.update(id, input) as Context;
+      set((state) => ({
+        contexts: state.contexts.map((c) => (c.id === id ? context : c)),
+      }));
+      return context;
+    } catch (err) {
+      console.error('[ContextSlice] updateContext failed:', err);
+      set({ contextsError: err instanceof Error ? err.message : 'Unknown error' });
+      return null as unknown as Context;
+    }
   },
 
   deleteContext: async (id) => {
-    await window.cortex.contexts.delete(id);
-    set((state) => ({
-      contexts: state.contexts.filter((c) => c.id !== id),
-    }));
+    try {
+      await window.cortex.contexts.delete(id);
+      set((state) => ({
+        contexts: state.contexts.filter((c) => c.id !== id),
+      }));
+    } catch (err) {
+      console.error('[ContextSlice] deleteContext failed:', err);
+      set({ contextsError: err instanceof Error ? err.message : 'Unknown error' });
+    }
   },
 
   toggleContext: (id) => {

@@ -1,39 +1,53 @@
 import { contextBridge, ipcRenderer } from 'electron';
+import type {
+  Task, CreateTaskInput, UpdateTaskInput,
+  Project, CreateProjectInput, UpdateProjectInput,
+  Context, CreateContextInput, UpdateContextInput,
+  Note, CreateNoteInput, UpdateNoteInput,
+  ChecklistItem, CreateChecklistItemInput, UpdateChecklistItemInput,
+  Stakeholder, CreateStakeholderInput, UpdateStakeholderInput,
+  AIAgent, CreateAIAgentInput,
+} from '../shared/types';
+
+interface DailyNote {
+  date: string;
+  content: string | null;
+}
 
 const api = {
   tasks: {
-    list: (): Promise<unknown[]> => ipcRenderer.invoke('tasks:list'),
-    get: (id: string): Promise<unknown> => ipcRenderer.invoke('tasks:get', id),
-    create: (input: unknown): Promise<unknown> => ipcRenderer.invoke('tasks:create', input),
-    update: (id: string, input: unknown): Promise<unknown> => ipcRenderer.invoke('tasks:update', id, input),
+    list: (): Promise<Task[]> => ipcRenderer.invoke('tasks:list'),
+    get: (id: string): Promise<Task | null> => ipcRenderer.invoke('tasks:get', id),
+    create: (input: CreateTaskInput): Promise<Task> => ipcRenderer.invoke('tasks:create', input),
+    update: (id: string, input: UpdateTaskInput): Promise<Task> => ipcRenderer.invoke('tasks:update', id, input),
     delete: (id: string): Promise<void> => ipcRenderer.invoke('tasks:delete', id),
-    listTrashed: (): Promise<unknown[]> => ipcRenderer.invoke('tasks:listTrashed'),
-    restore: (id: string): Promise<unknown> => ipcRenderer.invoke('tasks:restore', id),
+    listTrashed: (): Promise<Task[]> => ipcRenderer.invoke('tasks:listTrashed'),
+    restore: (id: string): Promise<Task> => ipcRenderer.invoke('tasks:restore', id),
     emptyTrash: (): Promise<void> => ipcRenderer.invoke('tasks:emptyTrash'),
     purgeExpiredTrash: (days: number): Promise<void> => ipcRenderer.invoke('tasks:purgeExpiredTrash', days),
   },
 
   projects: {
-    list: (): Promise<unknown[]> => ipcRenderer.invoke('projects:list'),
-    get: (id: string): Promise<unknown> => ipcRenderer.invoke('projects:get', id),
-    create: (input: unknown): Promise<unknown> => ipcRenderer.invoke('projects:create', input),
-    update: (id: string, input: unknown): Promise<unknown> => ipcRenderer.invoke('projects:update', id, input),
+    list: (): Promise<Project[]> => ipcRenderer.invoke('projects:list'),
+    get: (id: string): Promise<Project | null> => ipcRenderer.invoke('projects:get', id),
+    create: (input: CreateProjectInput): Promise<Project> => ipcRenderer.invoke('projects:create', input),
+    update: (id: string, input: UpdateProjectInput): Promise<Project> => ipcRenderer.invoke('projects:update', id, input),
     delete: (id: string): Promise<void> => ipcRenderer.invoke('projects:delete', id),
   },
 
   contexts: {
-    list: (): Promise<unknown[]> => ipcRenderer.invoke('contexts:list'),
-    get: (id: string): Promise<unknown> => ipcRenderer.invoke('contexts:get', id),
-    create: (input: unknown): Promise<unknown> => ipcRenderer.invoke('contexts:create', input),
-    update: (id: string, input: unknown): Promise<unknown> => ipcRenderer.invoke('contexts:update', id, input),
+    list: (): Promise<Context[]> => ipcRenderer.invoke('contexts:list'),
+    get: (id: string): Promise<Context | null> => ipcRenderer.invoke('contexts:get', id),
+    create: (input: CreateContextInput): Promise<Context> => ipcRenderer.invoke('contexts:create', input),
+    update: (id: string, input: UpdateContextInput): Promise<Context> => ipcRenderer.invoke('contexts:update', id, input),
     delete: (id: string): Promise<void> => ipcRenderer.invoke('contexts:delete', id),
   },
 
   notes: {
-    list: (): Promise<unknown[]> => ipcRenderer.invoke('notes:list'),
-    get: (id: string): Promise<unknown> => ipcRenderer.invoke('notes:get', id),
-    create: (input: unknown): Promise<unknown> => ipcRenderer.invoke('notes:create', input),
-    update: (id: string, input: unknown): Promise<unknown> => ipcRenderer.invoke('notes:update', id, input),
+    list: (): Promise<Note[]> => ipcRenderer.invoke('notes:list'),
+    get: (id: string): Promise<Note | null> => ipcRenderer.invoke('notes:get', id),
+    create: (input: CreateNoteInput): Promise<Note> => ipcRenderer.invoke('notes:create', input),
+    update: (id: string, input: UpdateNoteInput): Promise<Note> => ipcRenderer.invoke('notes:update', id, input),
     delete: (id: string): Promise<void> => ipcRenderer.invoke('notes:delete', id),
   },
 
@@ -46,30 +60,30 @@ const api = {
   },
 
   checklists: {
-    list: (taskId: string): Promise<unknown[]> => ipcRenderer.invoke('checklists:list', taskId),
-    create: (input: unknown): Promise<unknown> => ipcRenderer.invoke('checklists:create', input),
-    update: (id: string, input: unknown): Promise<unknown> => ipcRenderer.invoke('checklists:update', id, input),
+    list: (taskId: string): Promise<ChecklistItem[]> => ipcRenderer.invoke('checklists:list', taskId),
+    create: (input: CreateChecklistItemInput): Promise<ChecklistItem> => ipcRenderer.invoke('checklists:create', input),
+    update: (id: string, input: UpdateChecklistItemInput): Promise<ChecklistItem> => ipcRenderer.invoke('checklists:update', id, input),
     delete: (id: string): Promise<void> => ipcRenderer.invoke('checklists:delete', id),
     reorder: (taskId: string, itemIds: string[]): Promise<void> => ipcRenderer.invoke('checklists:reorder', taskId, itemIds),
   },
 
   stakeholders: {
-    list: (): Promise<unknown[]> => ipcRenderer.invoke('stakeholders:list'),
-    get: (id: string): Promise<unknown> => ipcRenderer.invoke('stakeholders:get', id),
-    create: (input: unknown): Promise<unknown> => ipcRenderer.invoke('stakeholders:create', input),
-    update: (id: string, input: unknown): Promise<unknown> => ipcRenderer.invoke('stakeholders:update', id, input),
+    list: (): Promise<Stakeholder[]> => ipcRenderer.invoke('stakeholders:list'),
+    get: (id: string): Promise<Stakeholder | null> => ipcRenderer.invoke('stakeholders:get', id),
+    create: (input: CreateStakeholderInput): Promise<Stakeholder> => ipcRenderer.invoke('stakeholders:create', input),
+    update: (id: string, input: UpdateStakeholderInput): Promise<Stakeholder> => ipcRenderer.invoke('stakeholders:update', id, input),
     delete: (id: string): Promise<void> => ipcRenderer.invoke('stakeholders:delete', id),
   },
 
   agents: {
-    list: (): Promise<unknown[]> => ipcRenderer.invoke('agents:list'),
-    create: (input: unknown): Promise<unknown> => ipcRenderer.invoke('agents:create', input),
+    list: (): Promise<AIAgent[]> => ipcRenderer.invoke('agents:list'),
+    create: (input: CreateAIAgentInput): Promise<AIAgent> => ipcRenderer.invoke('agents:create', input),
     revoke: (id: string): Promise<void> => ipcRenderer.invoke('agents:revoke', id),
   },
 
   dailyNotes: {
-    get: (date: string): Promise<unknown> => ipcRenderer.invoke('dailyNotes:get', date),
-    upsert: (date: string, content: string): Promise<unknown> => ipcRenderer.invoke('dailyNotes:upsert', date, content),
+    get: (date: string): Promise<DailyNote | null> => ipcRenderer.invoke('dailyNotes:get', date),
+    upsert: (date: string, content: string): Promise<DailyNote> => ipcRenderer.invoke('dailyNotes:upsert', date, content),
   },
 
   onFocusTaskInput: (callback: () => void) => {

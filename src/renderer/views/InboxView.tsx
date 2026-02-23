@@ -1,25 +1,20 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Inbox, AlertTriangle } from 'lucide-react';
+import { format, isSameDay, parseISO } from 'date-fns';
 import type { Task } from '@shared/types';
 import { useStore } from '../stores';
 import { TaskList } from '../components/TaskList';
 import { InlineTaskCard } from '../components/InlineTaskCard';
 
 function getToday(): string {
-  return new Date().toISOString().slice(0, 10);
+  return format(new Date(), 'yyyy-MM-dd');
 }
 
 const SORT_DELAY_MS = 400;
 
 function isCompletedToday(task: Task): boolean {
   if (!task.completed_at) return false;
-  const completed = new Date(task.completed_at);
-  const now = new Date();
-  return (
-    completed.getFullYear() === now.getFullYear() &&
-    completed.getMonth() === now.getMonth() &&
-    completed.getDate() === now.getDate()
-  );
+  return isSameDay(parseISO(task.completed_at), new Date());
 }
 
 export function InboxView() {
@@ -51,7 +46,11 @@ export function InboxView() {
 
   useEffect(() => {
     const timers = sortTimers.current;
-    return () => timers.forEach(clearTimeout);
+    const everCompleted = everCompletedIds.current;
+    return () => {
+      timers.forEach(clearTimeout);
+      everCompleted.clear();
+    };
   }, []);
 
   // Reconcile completedIds when tasks change externally (sync/agent completions).
@@ -145,6 +144,10 @@ export function InboxView() {
         // Complete
         updateTask(id, { status: 'logbook' });
         setCompletedIds((prev) => new Set(prev).add(id));
+        if (everCompletedIds.current.size >= 200) {
+          const [oldest] = everCompletedIds.current;
+          everCompletedIds.current.delete(oldest);
+        }
         everCompletedIds.current.add(id);
         const timer = setTimeout(() => {
           setSettledIds((prev) => [id, ...prev]);

@@ -140,6 +140,50 @@ describe('IPC handlers', () => {
       const trashed = await handlers['tasks:listTrashed']({} as Electron.IpcMainInvokeEvent);
       expect(trashed).toHaveLength(0);
     });
+
+    it('tasks:create rejects missing title', async () => {
+      registerHandlers(testDb.db, vi.fn());
+      const handlers = Object.fromEntries(
+        vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
+      );
+
+      await expect(
+        handlers['tasks:create']({} as Electron.IpcMainInvokeEvent, {})
+      ).rejects.toThrow();
+    });
+
+    it('tasks:create rejects empty title', async () => {
+      registerHandlers(testDb.db, vi.fn());
+      const handlers = Object.fromEntries(
+        vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
+      );
+
+      await expect(
+        handlers['tasks:create']({} as Electron.IpcMainInvokeEvent, { title: '' })
+      ).rejects.toThrow();
+    });
+
+    it('tasks:create rejects invalid status', async () => {
+      registerHandlers(testDb.db, vi.fn());
+      const handlers = Object.fromEntries(
+        vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
+      );
+
+      await expect(
+        handlers['tasks:create']({} as Electron.IpcMainInvokeEvent, { title: 'T', status: 'invalid' })
+      ).rejects.toThrow();
+    });
+
+    it('tasks:update rejects invalid id', async () => {
+      registerHandlers(testDb.db, vi.fn());
+      const handlers = Object.fromEntries(
+        vi.mocked(ipcMain.handle).mock.calls.map(([ch, fn]) => [ch, fn])
+      );
+
+      await expect(
+        handlers['tasks:update']({} as Electron.IpcMainInvokeEvent, 'not-a-uuid', { title: 'New' })
+      ).rejects.toThrow();
+    });
   });
 
   describe('projects', () => {

@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { parseISO } from 'date-fns';
 import { FileText, Pin, Plus } from 'lucide-react';
 import { useStore } from '../stores';
 import type { Note, Context } from '../../shared/types';
@@ -16,7 +17,7 @@ function getPreview(content: string | null, maxLength = 100): string {
 }
 
 function formatRelativeTime(iso: string): string {
-  const date = new Date(iso);
+  const date = parseISO(iso);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffMins = Math.floor(diffMs / 60000);
@@ -88,9 +89,9 @@ export function NotesOverviewView() {
       if (a.is_pinned !== b.is_pinned) return a.is_pinned ? -1 : 1;
 
       switch (sort) {
-        case 'created': return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        case 'created': return parseISO(b.created_at).getTime() - parseISO(a.created_at).getTime();
         case 'title': return a.title.localeCompare(b.title);
-        default: return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+        default: return parseISO(b.updated_at).getTime() - parseISO(a.updated_at).getTime();
       }
     });
 

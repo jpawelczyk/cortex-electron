@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Circle, CheckCircle2, Calendar, Flag, Trash2, Check, X, Cloud, Layers, Bot, Lock } from 'lucide-react';
+import { differenceInCalendarDays, parseISO } from 'date-fns';
 import type { Task } from '@shared/types';
 import { useStore } from '../stores';
 import { useDebouncedCallback } from '../hooks/useDebouncedCallback';
@@ -12,10 +13,7 @@ const DEBOUNCE_MS = 500;
 
 function getDeadlineUrgency(deadline: string | null): string | undefined {
   if (!deadline) return undefined;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const deadlineDate = new Date(deadline + 'T00:00:00');
-  const diffDays = Math.round((deadlineDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  const diffDays = differenceInCalendarDays(parseISO(deadline), new Date());
   if (diffDays < 0) return 'text-red-500 border-red-500/30 hover:bg-red-500/10';
   if (diffDays === 0) return 'text-red-500 hover:bg-red-500/10';
   if (diffDays === 1) return 'text-orange-500';

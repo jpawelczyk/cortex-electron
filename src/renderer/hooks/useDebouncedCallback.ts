@@ -1,13 +1,12 @@
 import { useRef, useCallback, useEffect } from 'react';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function useDebouncedCallback<T extends (...args: any[]) => any>(
-  callback: T,
+export function useDebouncedCallback<Args extends unknown[]>(
+  callback: (...args: Args) => void,
   delay: number,
 ) {
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const callbackRef = useRef(callback);
-  const pendingArgsRef = useRef<Parameters<T> | null>(null);
+  const pendingArgsRef = useRef<Args | null>(null);
 
   callbackRef.current = callback;
 
@@ -32,7 +31,7 @@ export function useDebouncedCallback<T extends (...args: any[]) => any>(
   }, []);
 
   const debouncedFn = useCallback(
-    (...args: Parameters<T>) => {
+    (...args: Args) => {
       if (timeoutRef.current !== null) {
         clearTimeout(timeoutRef.current);
       }

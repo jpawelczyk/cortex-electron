@@ -120,6 +120,17 @@ describe('NoteSlice', () => {
       expect(mockCortex.notes.create).toHaveBeenCalledWith({ title: 'New' });
       expect(result).toEqual(newNote);
     });
+
+    it('sets notesError on failure', async () => {
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockCortex.notes.create.mockRejectedValue(new Error('create failed'));
+
+      const store = createStore();
+      await store.createNote({ title: 'New' });
+
+      expect(store.notesError).toBe('create failed');
+      spy.mockRestore();
+    });
   });
 
   describe('updateNote', () => {
@@ -133,6 +144,17 @@ describe('NoteSlice', () => {
       expect(mockCortex.notes.update).toHaveBeenCalledWith('note-1', { title: 'Updated' });
       expect(result).toEqual(updated);
     });
+
+    it('sets notesError on failure', async () => {
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockCortex.notes.update.mockRejectedValue(new Error('update failed'));
+
+      const store = createStore({ notes: [fakeNote()] });
+      await store.updateNote('note-1', { title: 'Updated' });
+
+      expect(store.notesError).toBe('update failed');
+      spy.mockRestore();
+    });
   });
 
   describe('deleteNote', () => {
@@ -144,6 +166,17 @@ describe('NoteSlice', () => {
 
       expect(mockCortex.notes.delete).toHaveBeenCalledWith('note-1');
       expect(store.notes).toEqual([]);
+    });
+
+    it('sets notesError on failure', async () => {
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockCortex.notes.delete.mockRejectedValue(new Error('delete failed'));
+
+      const store = createStore({ notes: [fakeNote()] });
+      await store.deleteNote('note-1');
+
+      expect(store.notesError).toBe('delete failed');
+      spy.mockRestore();
     });
   });
 

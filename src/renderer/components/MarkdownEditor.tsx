@@ -8,6 +8,12 @@ import { Markdown } from 'tiptap-markdown';
 import { useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
 import { EditorToolbar } from './EditorToolbar';
 
+interface TipTapMarkdownStorage {
+  markdown: {
+    getMarkdown: () => string;
+  };
+}
+
 export interface MarkdownEditorHandle {
   focus: () => void;
 }
@@ -43,8 +49,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
     ],
     content: value,
     onUpdate: ({ editor }) => {
-      const md = // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (editor.storage as any).markdown.getMarkdown();
+      const md = (editor.storage as TipTapMarkdownStorage).markdown.getMarkdown();
       valueRef.current = md;
       onChange(md);
     },

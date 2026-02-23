@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { parseISO } from 'date-fns';
 import { ArrowLeft, Clock, FolderKanban, Plus, Trash2, Check, X, Briefcase, Home, FlaskConical, type LucideIcon } from 'lucide-react';
 import type { ProjectStatus } from '@shared/types';
 import { useStore } from '../stores';
@@ -27,7 +28,7 @@ const STATUS_OPTIONS: { value: ProjectStatus; label: string; className: string }
 ];
 
 function isStale(updatedAt: string): boolean {
-  const updated = new Date(updatedAt);
+  const updated = parseISO(updatedAt);
   const now = new Date();
   const diffMs = now.getTime() - updated.getTime();
   const diffDays = diffMs / (1000 * 60 * 60 * 24);

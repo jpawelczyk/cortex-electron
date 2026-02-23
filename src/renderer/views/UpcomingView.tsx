@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Calendar } from 'lucide-react';
+import { format, differenceInCalendarDays, parseISO } from 'date-fns';
 import { useStore } from '../stores';
 import { TaskList } from '../components/TaskList';
 import { filterTasksByContext } from '../lib/contextFilter';
@@ -8,28 +9,20 @@ import type { Task } from '@shared/types';
 const SORT_DELAY_MS = 400;
 
 function getToday(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return format(new Date(), 'yyyy-MM-dd');
 }
 
 function formatUpcomingDate(dateStr: string): string {
   const today = new Date();
-  const target = new Date(dateStr + 'T00:00:00');
-
-  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  const targetStart = new Date(target.getFullYear(), target.getMonth(), target.getDate());
-  const diffDays = Math.round((targetStart.getTime() - todayStart.getTime()) / 86400000);
+  const target = parseISO(dateStr);
+  const diffDays = differenceInCalendarDays(target, today);
 
   if (diffDays <= 0) return 'Today';
   if (diffDays === 1) return 'Tomorrow';
   if (diffDays >= 2 && diffDays <= 6) {
-    return target.toLocaleDateString('en-US', { weekday: 'long' });
+    return format(target, 'EEEE');
   }
-  return target.toLocaleDateString('en-US', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  });
+  return format(target, 'MMMM d, yyyy');
 }
 
 function dateKeyForGrouping(whenDate: string): string {

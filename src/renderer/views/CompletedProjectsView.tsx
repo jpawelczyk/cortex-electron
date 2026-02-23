@@ -1,14 +1,11 @@
 import { useMemo } from 'react';
 import { RotateCcw } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
 import { useStore } from '../stores';
 import { filterProjectsByContext } from '../lib/contextFilter';
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
+  return format(parseISO(iso), 'MMM d, yyyy');
 }
 
 export function CompletedProjectsView() {
@@ -24,7 +21,7 @@ export function CompletedProjectsView() {
     return contextFiltered.sort((a, b) => {
       const dateA = a.completed_at || a.updated_at;
       const dateB = b.completed_at || b.updated_at;
-      return new Date(dateB).getTime() - new Date(dateA).getTime();
+      return parseISO(dateB).getTime() - parseISO(dateA).getTime();
     });
   }, [projects, activeContextIds]);
 

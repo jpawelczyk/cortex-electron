@@ -630,9 +630,9 @@ describe('TaskService', () => {
     });
 
     it('does NOT mark tasks within threshold', async () => {
-      // 3 days ago is within 5-day threshold
-      const threeDaysAgo = new Date();
-      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+      // 3 days ago is within 5-day threshold; use UTC to match service logic
+      const now = new Date();
+      const threeDaysAgo = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 3));
       const whenDate = threeDaysAgo.toISOString().split('T')[0];
       await taskService.create({ title: 'Recent', status: 'today', when_date: whenDate });
       const count = await taskService.markStaleTasks(5);

@@ -5,11 +5,11 @@ type SetFn = (partial: Partial<ChecklistSlice> | ((s: ChecklistSlice) => Partial
 type GetFn = () => ChecklistSlice;
 
 function createStore(overrides?: Partial<ChecklistSlice>): ChecklistSlice {
-  let state: ChecklistSlice;
+  const state = {} as ChecklistSlice;
 
   const set: SetFn = (partial) => {
     const update = typeof partial === 'function' ? partial(state) : partial;
-    state = { ...state, ...update };
+    Object.assign(state, update);
   };
 
   const get: GetFn = () => state;
@@ -19,10 +19,7 @@ function createStore(overrides?: Partial<ChecklistSlice>): ChecklistSlice {
     get: GetFn,
     api: Record<string, never>,
   ) => ChecklistSlice;
-  state = {
-    ...creator(set, get, {}),
-    ...overrides,
-  };
+  Object.assign(state, creator(set, get, {}), overrides);
 
   return state;
 }
@@ -66,6 +63,11 @@ describe('ChecklistSlice', () => {
       const store = createStore();
       expect(store.checklistsLoading).toEqual({});
     });
+
+    it('starts with checklistsError null', () => {
+      const store = createStore();
+      expect(store.checklistsError).toBeNull();
+    });
   });
 
   describe('fetchChecklistItems', () => {
@@ -88,6 +90,17 @@ describe('ChecklistSlice', () => {
 
       // Verify IPC was called correctly
       expect(mockCortex.checklists.list).toHaveBeenCalledOnce();
+    });
+
+    it('sets checklistsError on failure', async () => {
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockCortex.checklists.list.mockRejectedValue(new Error('fetch failed'));
+
+      const store = createStore();
+      await store.fetchChecklistItems('task-1');
+
+      expect(store.checklistsError).toBe('fetch failed');
+      spy.mockRestore();
     });
   });
 
@@ -123,6 +136,17 @@ describe('ChecklistSlice', () => {
 
       expect(mockCortex.checklists.create).toHaveBeenCalledOnce();
     });
+
+    it('sets checklistsError on failure', async () => {
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockCortex.checklists.create.mockRejectedValue(new Error('create failed'));
+
+      const store = createStore();
+      await store.createChecklistItem({ task_id: 'task-1', title: 'New item' });
+
+      expect(store.checklistsError).toBe('create failed');
+      spy.mockRestore();
+    });
   });
 
   describe('updateChecklistItem', () => {
@@ -137,6 +161,17 @@ describe('ChecklistSlice', () => {
       expect(mockCortex.checklists.update).toHaveBeenCalledWith('item-1', { title: 'Updated' });
       expect(result).toEqual(updated);
     });
+
+    it('sets checklistsError on failure', async () => {
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockCortex.checklists.update.mockRejectedValue(new Error('update failed'));
+
+      const store = createStore({ checklistItems: { 'task-1': [fakeItem()] } });
+      await store.updateChecklistItem('item-1', 'task-1', { title: 'x' });
+
+      expect(store.checklistsError).toBe('update failed');
+      spy.mockRestore();
+    });
   });
 
   describe('deleteChecklistItem', () => {
@@ -148,6 +183,17 @@ describe('ChecklistSlice', () => {
       await store.deleteChecklistItem('item-1', 'task-1');
 
       expect(mockCortex.checklists.delete).toHaveBeenCalledWith('item-1');
+    });
+
+    it('sets checklistsError on failure', async () => {
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockCortex.checklists.delete.mockRejectedValue(new Error('delete failed'));
+
+      const store = createStore({ checklistItems: { 'task-1': [fakeItem()] } });
+      await store.deleteChecklistItem('item-1', 'task-1');
+
+      expect(store.checklistsError).toBe('delete failed');
+      spy.mockRestore();
     });
   });
 
@@ -161,6 +207,17 @@ describe('ChecklistSlice', () => {
       await store.reorderChecklistItems('task-1', ['b', 'a']);
 
       expect(mockCortex.checklists.reorder).toHaveBeenCalledWith('task-1', ['b', 'a']);
+    });
+
+    it('sets checklistsError on failure', async () => {
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockCortex.checklists.reorder.mockRejectedValue(new Error('reorder failed'));
+
+      const store = createStore({ checklistItems: { 'task-1': [fakeItem()] } });
+      await store.reorderChecklistItems('task-1', ['item-1']);
+
+      expect(store.checklistsError).toBe('reorder failed');
+      spy.mockRestore();
     });
   });
 });

@@ -3,6 +3,111 @@ import { z } from 'zod';
 const uuid = z.string().uuid();
 const uuidOrNull = z.string().uuid().nullable().optional();
 
+// Tasks
+const taskStatusSchema = z.enum(['inbox', 'today', 'upcoming', 'anytime', 'someday', 'stale', 'logbook', 'cancelled']);
+const prioritySchema = z.enum(['P0', 'P1', 'P2', 'P3']);
+
+export const CreateTaskSchema = z.object({
+  title: z.string().min(1),
+  notes: z.string().optional(),
+  status: taskStatusSchema.optional(),
+  when_date: z.string().optional(),
+  deadline: z.string().optional(),
+  project_id: z.string().uuid().optional(),
+  heading_id: z.string().uuid().optional(),
+  context_id: z.string().uuid().optional(),
+  priority: prioritySchema.optional(),
+});
+
+export const UpdateTaskSchema = z.object({
+  title: z.string().min(1).optional(),
+  notes: z.string().nullable().optional(),
+  status: taskStatusSchema.optional(),
+  when_date: z.string().nullable().optional(),
+  deadline: z.string().nullable().optional(),
+  project_id: uuidOrNull,
+  heading_id: uuidOrNull,
+  context_id: uuidOrNull,
+  priority: prioritySchema.nullable().optional(),
+  sort_order: z.number().optional(),
+  assignee_id: uuidOrNull,
+});
+
+export const TaskIdSchema = uuid;
+
+// Projects
+const projectStatusSchema = z.enum(['planned', 'active', 'on_hold', 'blocked', 'completed', 'archived']);
+
+export const CreateProjectSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().optional(),
+  status: projectStatusSchema.optional(),
+  context_id: z.string().uuid().optional(),
+});
+
+export const UpdateProjectSchema = z.object({
+  title: z.string().min(1).optional(),
+  description: z.string().nullable().optional(),
+  status: projectStatusSchema.optional(),
+  context_id: uuidOrNull,
+  sort_order: z.number().optional(),
+});
+
+export const ProjectIdSchema = uuid;
+
+// Contexts
+export const CreateContextSchema = z.object({
+  name: z.string().min(1),
+  color: z.string().optional(),
+  icon: z.string().optional(),
+});
+
+export const UpdateContextSchema = z.object({
+  name: z.string().min(1).optional(),
+  color: z.string().nullable().optional(),
+  icon: z.string().nullable().optional(),
+  sort_order: z.number().optional(),
+});
+
+export const ContextIdSchema = uuid;
+
+// Stakeholders
+export const CreateStakeholderSchema = z.object({
+  name: z.string().min(1),
+  organization: z.string().optional(),
+  role: z.string().optional(),
+  email: z.string().email().optional(),
+  phone: z.string().optional(),
+  notes: z.string().optional(),
+  avatar_url: z.string().url().optional(),
+});
+
+export const UpdateStakeholderSchema = z.object({
+  name: z.string().min(1).optional(),
+  organization: z.string().nullable().optional(),
+  role: z.string().nullable().optional(),
+  email: z.string().email().nullable().optional(),
+  phone: z.string().nullable().optional(),
+  notes: z.string().nullable().optional(),
+  avatar_url: z.string().url().nullable().optional(),
+});
+
+export const StakeholderIdSchema = uuid;
+
+// Checklists
+export const CreateChecklistItemSchema = z.object({
+  task_id: z.string().uuid(),
+  title: z.string().min(1),
+});
+
+export const UpdateChecklistItemSchema = z.object({
+  title: z.string().min(1).optional(),
+  is_done: z.boolean().optional(),
+  sort_order: z.number().optional(),
+});
+
+export const ChecklistItemIdSchema = uuid;
+
 export const CreateNoteSchema = z.object({
   title: z.string().min(1),
   content: z.string().optional(),

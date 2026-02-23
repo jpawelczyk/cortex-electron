@@ -16,6 +16,16 @@
 -- agent couldn't read ai_agents to validate itself — circular dependency).
 -- STABLE because JWT claims are constant within a transaction.
 -- NULLIF guards against empty-string from current_setting when no JWT is set.
+--
+-- ACCEPTED RISK — timing side-channel: SECURITY DEFINER functions execute at
+-- a fixed privilege level, so a valid-but-revoked agent_id will take slightly
+-- longer than a completely unknown id (EXISTS short-circuits on the first
+-- matching row). An attacker could in theory enumerate agent IDs by measuring
+-- response times. Impact is LOW: agent IDs are UUIDs (2^122 space), and the
+-- leaked bit is only "this UUID was ever a valid agent for this user", not the
+-- api_key_hash or any sensitive payload. Mitigating with constant-time lookups
+-- would require pl/pgsql and a dummy SELECT, adding complexity for minimal
+-- gain. Accepted as low-risk until agents are exposed to untrusted callers.
 DROP FUNCTION IF EXISTS public.is_authorized_agent(UUID);
 CREATE FUNCTION public.is_authorized_agent(row_user_id UUID)
 RETURNS BOOLEAN

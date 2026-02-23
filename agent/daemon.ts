@@ -16,23 +16,21 @@ import Fastify from 'fastify';
 import fs from 'node:fs/promises';
 import { initDatabase, closeDatabase } from './db.js';
 import * as queries from './queries.js';
+import { logger } from './logger.js';
+import {
+  CreateTaskSchema,
+  UpdateTaskSchema,
+  TaskIdSchema,
+  CreateNoteSchema,
+  UpdateNoteSchema,
+  NoteIdSchema,
+  CreateProjectSchema,
+  UpdateProjectSchema,
+  ProjectIdSchema,
+} from '../src/shared/validation.js';
 
 const PORT = parseInt(process.env.CORTEX_AGENT_PORT ?? '7654', 10);
 if (isNaN(PORT)) throw new Error('Invalid CORTEX_AGENT_PORT');
-
-// --- Input validation helpers ---
-
-const VALID_TASK_STATUSES = new Set(['inbox', 'today', 'upcoming', 'someday', 'logbook']);
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}(T[\d:.]+Z?)?$/;
-
-function isValidUUID(v: string): boolean {
-  return UUID_RE.test(v);
-}
-
-function isValidISODate(v: string): boolean {
-  return ISO_DATE_RE.test(v) && !isNaN(Date.parse(v));
-}
 
 const AGENT_ID = process.env.CORTEX_AGENT_ID;
 const OPENCLAW_URL = process.env.OPENCLAW_WEBHOOK_URL || 'http://127.0.0.1:18789';
@@ -44,7 +42,8 @@ const EVENTS_FILE = '/tmp/cortex-agent-events.jsonl';
 const seenAssignments = new Set<string>();
 
 async function onTaskAssigned(task: { id: string; title: string; notes: string | null; priority: string | null; deadline: string | null }) {
-  console.log(`📋 New task assigned: ${task.title}`);
+  logger.info(`New task assigned: ${task.id}`);
+  logger.debug(`New task assigned: ${task.id} - ${task.title}`);
 
   // Always log to events file
   const notification = {
@@ -59,7 +58,7 @@ async function onTaskAssigned(task: { id: string; title: string; notes: string |
   try {
     await fs.appendFile(EVENTS_FILE, JSON.stringify(notification) + '\n');
   } catch (err) {
-    console.error('Failed to write event file:', err);
+    logger.error('Failed to write event file:', err);
   }
 
   // Call OpenClaw webhook to spawn isolated session
@@ -97,16 +96,16 @@ curl -X PATCH http://127.0.0.1:7654/tasks/${task.id} -H "Content-Type: applicati
       });
 
       if (res.ok) {
-        console.log(`✓ OpenClaw agent spawned for task: ${task.title}`);
+        logger.info(`OpenClaw agent spawned for task: ${task.id}`);
       } else {
         const err = await res.text();
-        console.error(`✗ OpenClaw webhook failed (${res.status}): ${err}`);
+        logger.error(`OpenClaw webhook failed (${res.status}): ${err}`);
       }
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') {
-        console.error('OpenClaw webhook timed out');
+        logger.error('OpenClaw webhook timed out');
       } else {
-        console.error('✗ OpenClaw webhook error:', err);
+        logger.error('OpenClaw webhook error:', err);
       }
     } finally {
       clearTimeout(timeout);
@@ -126,7 +125,7 @@ async function pollAssignments() {
       }
     }
   } catch (err) {
-    console.error('Assignment poll error:', err);
+    logger.error('Assignment poll error:', err);
   }
 }
 
@@ -154,11 +153,11 @@ function waitForSync(db: Awaited<ReturnType<typeof initDatabase>>, timeoutMs = 1
 async function start() {
   const db = await initDatabase();
   await waitForSync(db);
-  console.log('Sync connected');
+  logger.info('Sync connected');
 
   const DAEMON_KEY = process.env.CORTEX_DAEMON_KEY;
   if (!DAEMON_KEY) {
-    console.warn('Warning: CORTEX_DAEMON_KEY is not set. Authentication is disabled.');
+    logger.warn('CORTEX_DAEMON_KEY is not set. Authentication is disabled.');
   }
 
   const app = Fastify();
@@ -217,43 +216,26 @@ async function start() {
   // --- Write endpoints ---
 
   app.post('/tasks', async (req, reply) => {
-    const { title, status, priority, project_id, when_date, deadline } = req.body as {
-      title?: string;
-      status?: string;
-      priority?: string;
-      project_id?: string;
-      when_date?: string;
-      deadline?: string;
-    };
-    if (!title || typeof title !== 'string') {
-      return reply.code(400).send({ error: 'title is required' });
+    const result = CreateTaskSchema.safeParse(req.body);
+    if (!result.success) {
+      return reply.code(400).send({ error: result.error.errors[0]?.message ?? 'Invalid input' });
     }
-    if (status !== undefined && !VALID_TASK_STATUSES.has(status)) {
-      return reply.code(400).send({ error: `status must be one of: ${[...VALID_TASK_STATUSES].join(', ')}` });
-    }
-    if (project_id !== undefined && !isValidUUID(project_id)) {
-      return reply.code(400).send({ error: 'project_id must be a valid UUID' });
-    }
-    if (when_date !== undefined && !isValidISODate(when_date)) {
-      return reply.code(400).send({ error: 'when_date must be a valid ISO date string' });
-    }
-    if (deadline !== undefined && !isValidISODate(deadline)) {
-      return reply.code(400).send({ error: 'deadline must be a valid ISO date string' });
-    }
+    const { title, status, priority, project_id, when_date, deadline } = result.data;
     return queries.createTask(title, { status, priority, project_id, when_date, deadline });
   });
 
   app.patch('/tasks/:id', async (req, reply) => {
-    const { id } = req.params as { id: string };
-    if (!isValidUUID(id)) {
+    const idResult = TaskIdSchema.safeParse((req.params as { id: string }).id);
+    if (!idResult.success) {
       return reply.code(400).send({ error: 'id must be a valid UUID' });
     }
-    const { status, notes } = req.body as { status?: string; notes?: string };
-    if (status !== undefined && !VALID_TASK_STATUSES.has(status)) {
-      return reply.code(400).send({ error: `status must be one of: ${[...VALID_TASK_STATUSES].join(', ')}` });
+    const bodyResult = UpdateTaskSchema.safeParse(req.body);
+    if (!bodyResult.success) {
+      return reply.code(400).send({ error: bodyResult.error.errors[0]?.message ?? 'Invalid input' });
     }
+    const { status, notes } = bodyResult.data;
     try {
-      const found = await queries.updateTask(id, { status, notes });
+      const found = await queries.updateTask(idResult.data, { status, notes });
       if (!found) return reply.code(404).send({ error: 'Task not found' });
       return { success: true };
     } catch (err) {
@@ -263,8 +245,9 @@ async function start() {
   });
 
   app.delete('/tasks/:id', async (req, reply) => {
-    const { id } = req.params as { id: string };
-    const found = await queries.deleteTask(id);
+    const idResult = TaskIdSchema.safeParse((req.params as { id: string }).id);
+    if (!idResult.success) return reply.code(400).send({ error: 'id must be a valid UUID' });
+    const found = await queries.deleteTask(idResult.data);
     if (!found) return reply.code(404).send({ error: 'Task not found' });
     return { success: true };
   });
@@ -274,44 +257,34 @@ async function start() {
   app.get('/notes', async () => queries.getNotes());
 
   app.post('/notes', async (req, reply) => {
-    const { title, content, context_id, project_id } = req.body as {
-      title?: string;
-      content?: string;
-      context_id?: string;
-      project_id?: string;
-    };
-    if (!title || typeof title !== 'string') {
-      return reply.code(400).send({ error: 'title is required' });
+    const result = CreateNoteSchema.safeParse(req.body);
+    if (!result.success) {
+      return reply.code(400).send({ error: result.error.errors[0]?.message ?? 'Invalid input' });
     }
-    if (context_id !== undefined && !isValidUUID(context_id)) {
-      return reply.code(400).send({ error: 'context_id must be a valid UUID' });
-    }
-    if (project_id !== undefined && !isValidUUID(project_id)) {
-      return reply.code(400).send({ error: 'project_id must be a valid UUID' });
-    }
+    const { title, content, context_id, project_id } = result.data;
     return queries.createNote(title, { content, context_id, project_id });
   });
 
   app.patch('/notes/:id', async (req, reply) => {
-    const { id } = req.params as { id: string };
-    if (!isValidUUID(id)) {
-      return reply.code(400).send({ error: 'id must be a valid UUID' });
+    const idResult = NoteIdSchema.safeParse((req.params as { id: string }).id);
+    if (!idResult.success) return reply.code(400).send({ error: 'id must be a valid UUID' });
+    const bodyResult = UpdateNoteSchema.safeParse(req.body);
+    if (!bodyResult.success) {
+      return reply.code(400).send({ error: bodyResult.error.errors[0]?.message ?? 'Invalid input' });
     }
-    const fields = req.body as { title?: string; content?: string; context_id?: string | null; project_id?: string | null; is_pinned?: number };
-    if (fields.context_id !== undefined && fields.context_id !== null && !isValidUUID(fields.context_id)) {
-      return reply.code(400).send({ error: 'context_id must be a valid UUID' });
-    }
-    if (fields.project_id !== undefined && fields.project_id !== null && !isValidUUID(fields.project_id)) {
-      return reply.code(400).send({ error: 'project_id must be a valid UUID' });
-    }
-    const found = await queries.updateNote(id, fields);
+    const { is_pinned, ...rest } = bodyResult.data;
+    const found = await queries.updateNote(idResult.data, {
+      ...rest,
+      ...(is_pinned !== undefined ? { is_pinned: is_pinned ? 1 : 0 } : {}),
+    });
     if (!found) return reply.code(404).send({ error: 'Note not found' });
     return { success: true };
   });
 
   app.delete('/notes/:id', async (req, reply) => {
-    const { id } = req.params as { id: string };
-    const found = await queries.deleteNote(id);
+    const idResult = NoteIdSchema.safeParse((req.params as { id: string }).id);
+    if (!idResult.success) return reply.code(400).send({ error: 'id must be a valid UUID' });
+    const found = await queries.deleteNote(idResult.data);
     if (!found) return reply.code(404).send({ error: 'Note not found' });
     return { success: true };
   });
@@ -319,38 +292,30 @@ async function start() {
   // --- Projects ---
 
   app.post('/projects', async (req, reply) => {
-    const { title, description, status, context_id } = req.body as {
-      title?: string;
-      description?: string;
-      status?: string;
-      context_id?: string;
-    };
-    if (!title || typeof title !== 'string') {
-      return reply.code(400).send({ error: 'title is required' });
+    const result = CreateProjectSchema.safeParse(req.body);
+    if (!result.success) {
+      return reply.code(400).send({ error: result.error.errors[0]?.message ?? 'Invalid input' });
     }
-    if (context_id !== undefined && !isValidUUID(context_id)) {
-      return reply.code(400).send({ error: 'context_id must be a valid UUID' });
-    }
+    const { title, description, status, context_id } = result.data;
     return queries.createProject(title, { description, status, context_id });
   });
 
   app.patch('/projects/:id', async (req, reply) => {
-    const { id } = req.params as { id: string };
-    if (!isValidUUID(id)) {
-      return reply.code(400).send({ error: 'id must be a valid UUID' });
+    const idResult = ProjectIdSchema.safeParse((req.params as { id: string }).id);
+    if (!idResult.success) return reply.code(400).send({ error: 'id must be a valid UUID' });
+    const bodyResult = UpdateProjectSchema.safeParse(req.body);
+    if (!bodyResult.success) {
+      return reply.code(400).send({ error: bodyResult.error.errors[0]?.message ?? 'Invalid input' });
     }
-    const fields = req.body as { title?: string; description?: string; status?: string; context_id?: string | null };
-    if (fields.context_id !== undefined && fields.context_id !== null && !isValidUUID(fields.context_id)) {
-      return reply.code(400).send({ error: 'context_id must be a valid UUID' });
-    }
-    const found = await queries.updateProject(id, fields);
+    const found = await queries.updateProject(idResult.data, bodyResult.data);
     if (!found) return reply.code(404).send({ error: 'Project not found' });
     return { success: true };
   });
 
   app.delete('/projects/:id', async (req, reply) => {
-    const { id } = req.params as { id: string };
-    const found = await queries.deleteProject(id);
+    const idResult = ProjectIdSchema.safeParse((req.params as { id: string }).id);
+    if (!idResult.success) return reply.code(400).send({ error: 'id must be a valid UUID' });
+    const found = await queries.deleteProject(idResult.data);
     if (!found) return reply.code(404).send({ error: 'Project not found' });
     return { success: true };
   });
@@ -358,7 +323,7 @@ async function start() {
   // --- Graceful shutdown ---
 
   const shutdown = async () => {
-    console.log('\nShutting down...');
+    logger.info('Shutting down...');
     await app.close();
     await closeDatabase();
     process.exit(0);
@@ -370,18 +335,18 @@ async function start() {
   // --- Start ---
 
   await app.listen({ port: PORT, host: '127.0.0.1' });
-  console.log(`Agent daemon listening on http://127.0.0.1:${PORT}`);
+  logger.info(`Agent daemon listening on http://127.0.0.1:${PORT}`);
 
   // Start assignment watcher
   if (AGENT_ID) {
     // Initial poll to seed seen set
     await pollAssignments();
     setInterval(pollAssignments, 2000);
-    console.log(`Watching for tasks assigned to ${AGENT_ID}`);
+    logger.info(`Watching for tasks assigned to agent ${AGENT_ID}`);
   }
 }
 
 start().catch((err) => {
-  console.error('Fatal:', err);
+  logger.error('Fatal:', err);
   process.exit(1);
 });

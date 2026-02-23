@@ -106,6 +106,17 @@ describe('ContextSlice', () => {
       expect(mockCortex.contexts.create).toHaveBeenCalledWith({ name: 'Personal' });
       expect(result).toEqual(newCtx);
     });
+
+    it('sets contextsError on failure', async () => {
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockCortex.contexts.create.mockRejectedValue(new Error('create failed'));
+
+      const store = createStore();
+      await store.createContext({ name: 'Personal' });
+
+      expect(store.contextsError).toBe('create failed');
+      spy.mockRestore();
+    });
   });
 
   describe('updateContext', () => {
@@ -119,6 +130,17 @@ describe('ContextSlice', () => {
       expect(mockCortex.contexts.update).toHaveBeenCalledWith('ctx-1', { name: 'Updated' });
       expect(result).toEqual(updated);
     });
+
+    it('sets contextsError on failure', async () => {
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockCortex.contexts.update.mockRejectedValue(new Error('update failed'));
+
+      const store = createStore({ contexts: [fakeContext()] });
+      await store.updateContext('ctx-1', { name: 'Updated' });
+
+      expect(store.contextsError).toBe('update failed');
+      spy.mockRestore();
+    });
   });
 
   describe('deleteContext', () => {
@@ -129,6 +151,17 @@ describe('ContextSlice', () => {
       await store.deleteContext('ctx-1');
 
       expect(mockCortex.contexts.delete).toHaveBeenCalledWith('ctx-1');
+    });
+
+    it('sets contextsError on failure', async () => {
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockCortex.contexts.delete.mockRejectedValue(new Error('delete failed'));
+
+      const store = createStore({ contexts: [fakeContext()] });
+      await store.deleteContext('ctx-1');
+
+      expect(store.contextsError).toBe('delete failed');
+      spy.mockRestore();
     });
   });
 

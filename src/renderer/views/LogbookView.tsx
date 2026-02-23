@@ -1,31 +1,23 @@
 import { useEffect, useMemo, useCallback } from 'react';
 import { BookOpen } from 'lucide-react';
+import { format, differenceInCalendarDays, parseISO } from 'date-fns';
 import { useStore } from '../stores';
 import { TaskList } from '../components/TaskList';
 import { filterTasksByContext } from '../lib/contextFilter';
 import type { Task } from '@shared/types';
 
 function formatCompletionDate(iso: string): string {
-  const date = new Date(iso);
-  const now = new Date();
-
-  const dateDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const diffMs = today.getTime() - dateDay.getTime();
-  const diffDays = Math.round(diffMs / 86400000);
+  const date = parseISO(iso);
+  const diffDays = differenceInCalendarDays(new Date(), date);
 
   if (diffDays === 0) return 'Today';
   if (diffDays === 1) return 'Yesterday';
 
-  return date.toLocaleDateString('en-US', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  });
+  return format(date, 'MMMM d, yyyy');
 }
 
 function dateKey(iso: string): string {
-  return new Date(iso).toISOString().slice(0, 10);
+  return format(parseISO(iso), 'yyyy-MM-dd');
 }
 
 interface DateGroup {
@@ -52,8 +44,8 @@ export function LogbookView() {
     const filtered = filterTasksByContext(visible, activeContextIds, projects);
     return filtered.sort(
       (a, b) =>
-        new Date(b.completed_at!).getTime() -
-        new Date(a.completed_at!).getTime(),
+        parseISO(b.completed_at!).getTime() -
+        parseISO(a.completed_at!).getTime(),
     );
   }, [tasks, activeContextIds, projects]);
 

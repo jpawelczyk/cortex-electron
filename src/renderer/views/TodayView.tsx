@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Sun } from 'lucide-react';
+import { format } from 'date-fns';
 import { useStore } from '../stores';
 import { TaskList } from '../components/TaskList';
 import { filterTasksByContext } from '../lib/contextFilter';
@@ -7,8 +8,7 @@ import { filterTasksByContext } from '../lib/contextFilter';
 const SORT_DELAY_MS = 400;
 
 function getToday(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return format(new Date(), 'yyyy-MM-dd');
 }
 
 export function TodayView() {
@@ -40,7 +40,11 @@ export function TodayView() {
 
   useEffect(() => {
     const timers = sortTimers.current;
-    return () => timers.forEach(clearTimeout);
+    const everCompleted = everCompletedIds.current;
+    return () => {
+      timers.forEach(clearTimeout);
+      everCompleted.clear();
+    };
   }, []);
 
   // Reconcile completedIds with actual task statuses for tasks the user hasn't
@@ -53,6 +57,10 @@ export function TodayView() {
         if (interactedIds.current.has(task.id)) continue;
         if (task.status === 'logbook' && !next.has(task.id)) {
           next.add(task.id);
+          if (everCompletedIds.current.size >= 200) {
+            const [oldest] = everCompletedIds.current;
+            everCompletedIds.current.delete(oldest);
+          }
           everCompletedIds.current.add(task.id);
           changed = true;
         } else if (task.status !== 'logbook' && next.has(task.id)) {
@@ -105,6 +113,10 @@ export function TodayView() {
         // Complete
         updateTask(id, { status: 'logbook' });
         setCompletedIds((prev) => new Set(prev).add(id));
+        if (everCompletedIds.current.size >= 200) {
+          const [oldest] = everCompletedIds.current;
+          everCompletedIds.current.delete(oldest);
+        }
         everCompletedIds.current.add(id);
         const timer = setTimeout(() => {
           setSettledIds((prev) => [id, ...prev]);

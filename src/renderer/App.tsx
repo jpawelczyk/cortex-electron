@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { format } from 'date-fns';
 import { Plus, Search, Settings } from 'lucide-react';
 import { ContextSelector } from './components/ContextSelector';
 import { ContextSettings } from './components/ContextSettings';
@@ -102,6 +103,7 @@ function AuthenticatedApp() {
   fetchContextsRef.current = fetchContexts;
   const fetchNotesRef = useRef(fetchNotes);
   fetchNotesRef.current = fetchNotes;
+  const isFetchingRef = useRef(false);
 
   useKeyboardShortcuts({ setActiveView: handleViewChange, deselectTask, startInlineCreate, startInlineProjectCreate, startInlineNoteCreate, toggleCommandPalette, activeView, selectedProjectId });
   useGlobalShortcuts({ setActiveView: handleViewChange, startInlineCreate, startInlineProjectCreate, activeView, selectedProjectId });
@@ -109,11 +111,14 @@ function AuthenticatedApp() {
   // Proactively load all data from local SQLite on mount.
   // This is instant (local DB) and ensures views never render empty after a reload.
   useEffect(() => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
     fetchTasksRef.current();
     fetchTrashedTasksRef.current();
     fetchProjectsRef.current();
     fetchContextsRef.current();
     fetchNotesRef.current();
+    isFetchingRef.current = false;
   }, []);
 
   // Auto-refresh stores when PowerSync detects table changes (sync or local writes)
@@ -145,10 +150,7 @@ function AuthenticatedApp() {
     return cleanup;
   }, []);
 
-  const today = useMemo(() => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  }, []);
+  const today = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
 
   const taskCounts = useMemo(() => {
     // Context-filtered tasks for counts that respect the active filter

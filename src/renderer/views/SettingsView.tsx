@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { format, parseISO } from 'date-fns';
 import { Bot, Plus, KeyRound } from 'lucide-react';
 import { useStore } from '../stores';
 import { Button } from '@renderer/components/ui/button';
@@ -95,9 +96,9 @@ function AgentRow({ agent, onRevoke }: AgentRowProps) {
             )}
           </div>
           <p className="text-xs text-muted-foreground">
-            Created {new Date(agent.created_at).toLocaleDateString()}
+            Created {format(parseISO(agent.created_at), 'M/d/yyyy')}
             {agent.last_used_at && (
-              <> &middot; Last used {new Date(agent.last_used_at).toLocaleDateString()}</>
+              <> &middot; Last used {format(parseISO(agent.last_used_at), 'M/d/yyyy')}</>
             )}
           </p>
         </div>

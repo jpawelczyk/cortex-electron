@@ -19,4 +19,4 @@ bucket_definitions:
       - SELECT * FROM notes WHERE user_id = bucket.user_id
       - SELECT note_id || '_' || stakeholder_id AS id, note_id, stakeholder_id, user_id FROM note_stakeholders WHERE user_id = bucket.user_id
       - SELECT * FROM daily_notes WHERE user_id = bucket.user_id
-      - SELECT * FROM ai_agents WHERE user_id = bucket.user_id
+      - SELECT id, user_id, name, permissions, last_used_at, created_at, revoked_at FROM ai_agents WHERE user_id = bucket.user_id

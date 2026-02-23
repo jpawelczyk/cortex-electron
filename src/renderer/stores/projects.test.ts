@@ -5,11 +5,11 @@ type SetFn = (partial: Partial<ProjectSlice> | ((s: ProjectSlice) => Partial<Pro
 type GetFn = () => ProjectSlice;
 
 function createStore(overrides?: Partial<ProjectSlice>): ProjectSlice {
-  let state: ProjectSlice;
+  const state = {} as ProjectSlice;
 
   const set: SetFn = (partial) => {
     const update = typeof partial === 'function' ? partial(state) : partial;
-    state = { ...state, ...update };
+    Object.assign(state, update);
   };
 
   const get: GetFn = () => state;
@@ -19,10 +19,7 @@ function createStore(overrides?: Partial<ProjectSlice>): ProjectSlice {
     get: GetFn,
     api: Record<string, never>,
   ) => ProjectSlice;
-  state = {
-    ...creator(set, get, {}),
-    ...overrides,
-  };
+  Object.assign(state, creator(set, get, {}), overrides);
 
   return state;
 }
@@ -111,6 +108,17 @@ describe('ProjectSlice', () => {
       expect(mockCortex.projects.create).toHaveBeenCalledWith({ title: 'New' });
       expect(result).toEqual(newProject);
     });
+
+    it('sets projectsError on failure', async () => {
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockCortex.projects.create.mockRejectedValue(new Error('create failed'));
+
+      const store = createStore();
+      await store.createProject({ title: 'New' });
+
+      expect(store.projectsError).toBe('create failed');
+      spy.mockRestore();
+    });
   });
 
   describe('updateProject', () => {
@@ -124,6 +132,17 @@ describe('ProjectSlice', () => {
       expect(mockCortex.projects.update).toHaveBeenCalledWith('proj-1', { title: 'Updated' });
       expect(result).toEqual(updated);
     });
+
+    it('sets projectsError on failure', async () => {
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockCortex.projects.update.mockRejectedValue(new Error('update failed'));
+
+      const store = createStore({ projects: [fakeProject()] });
+      await store.updateProject('proj-1', { title: 'Updated' });
+
+      expect(store.projectsError).toBe('update failed');
+      spy.mockRestore();
+    });
   });
 
   describe('deleteProject', () => {
@@ -134,6 +153,17 @@ describe('ProjectSlice', () => {
       await store.deleteProject('proj-1');
 
       expect(mockCortex.projects.delete).toHaveBeenCalledWith('proj-1');
+    });
+
+    it('sets projectsError on failure', async () => {
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockCortex.projects.delete.mockRejectedValue(new Error('delete failed'));
+
+      const store = createStore({ projects: [fakeProject()] });
+      await store.deleteProject('proj-1');
+
+      expect(store.projectsError).toBe('delete failed');
+      spy.mockRestore();
     });
   });
 

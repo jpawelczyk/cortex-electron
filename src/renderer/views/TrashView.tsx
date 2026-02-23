@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { format, parseISO } from 'date-fns';
 import { Trash2, RotateCcw, Check, X } from 'lucide-react';
 import { useStore } from '../stores';
 
@@ -81,7 +82,7 @@ export function TrashView() {
                 </button>
                 {task.deleted_at && (
                   <span className="text-xs text-muted-foreground/60 shrink-0">
-                    {new Date(task.deleted_at).toLocaleDateString()}
+                    {format(parseISO(task.deleted_at), 'M/d/yyyy')}
                   </span>
                 )}
               </div>

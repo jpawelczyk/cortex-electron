@@ -22,6 +22,7 @@
     "@powersync/node": "^0.17.1",
     "@radix-ui/react-popover": "^1.1.15",
     "@supabase/supabase-js": "^2.97.0",
+    "@tanstack/react-virtual": "^3.13.18",
     "@tiptap/extension-code-block-lowlight": "^3.20.0",
     "@tiptap/extension-link": "^3.20.0",
     "@tiptap/extension-placeholder": "^3.20.0",

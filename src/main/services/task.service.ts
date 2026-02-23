@@ -6,6 +6,10 @@ function getToday(): string {
   return new Date().toISOString().split('T')[0];
 }
 
+function getUTCDateString(date: Date): string {
+  return date.toISOString().split('T')[0];
+}
+
 function isTerminalStatus(s: TaskStatus): boolean {
   return s === 'logbook' || s === 'cancelled';
 }
@@ -255,10 +259,14 @@ export function createTaskService(ctx: DbContext): TaskService {
     async markStaleTasks(thresholdDays: number): Promise<number> {
       const now = new Date().toISOString();
       const today = getToday();
-      // Calculate the cutoff date: when_date must be before (today - threshold) days
-      const cutoff = new Date();
-      cutoff.setDate(cutoff.getDate() - thresholdDays);
-      const cutoffDate = cutoff.toISOString().split('T')[0];
+      // Calculate the cutoff date using UTC to avoid timezone drift.
+      // when_date must be strictly before (today - thresholdDays) in UTC.
+      const cutoff = new Date(Date.UTC(
+        new Date().getUTCFullYear(),
+        new Date().getUTCMonth(),
+        new Date().getUTCDate() - thresholdDays,
+      ));
+      const cutoffDate = getUTCDateString(cutoff);
 
       const result = await db.execute(`
         UPDATE tasks SET

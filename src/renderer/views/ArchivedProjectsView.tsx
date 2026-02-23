@@ -1,14 +1,11 @@
 import { useMemo } from 'react';
 import { RotateCcw } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
 import { useStore } from '../stores';
 import { filterProjectsByContext } from '../lib/contextFilter';
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
+  return format(parseISO(iso), 'MMM d, yyyy');
 }
 
 export function ArchivedProjectsView() {
@@ -21,7 +18,7 @@ export function ArchivedProjectsView() {
   const archivedProjects = useMemo(() => {
     const statusFiltered = projects.filter((p) => p.status === 'archived' && !p.deleted_at);
     const contextFiltered = filterProjectsByContext(statusFiltered, activeContextIds);
-    return contextFiltered.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+    return contextFiltered.sort((a, b) => parseISO(b.updated_at).getTime() - parseISO(a.updated_at).getTime());
   }, [projects, activeContextIds]);
 
   const taskCountsByProject = useMemo(() => {

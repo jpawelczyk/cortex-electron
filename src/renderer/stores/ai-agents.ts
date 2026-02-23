@@ -28,17 +28,28 @@ export const createAIAgentSlice: StateCreator<AIAgentSlice> = (set) => ({
   },
 
   createAgent: async (name: string) => {
-    const result = await window.cortex.agents.create({ name }) as { agent: AIAgent; key: string };
-    set((state) => ({ agents: [result.agent, ...state.agents] }));
-    return result.key;
+    try {
+      const result = await window.cortex.agents.create({ name }) as { agent: AIAgent; key: string };
+      set((state) => ({ agents: [result.agent, ...state.agents] }));
+      return result.key;
+    } catch (err) {
+      console.error('[AIAgentSlice] createAgent failed:', err);
+      set({ agentsError: err instanceof Error ? err.message : 'Unknown error' });
+      return null as unknown as string;
+    }
   },
 
   revokeAgent: async (id: string) => {
-    await window.cortex.agents.revoke(id);
-    set((state) => ({
-      agents: state.agents.map((a) =>
-        a.id === id ? { ...a, revoked_at: new Date().toISOString() } : a
-      ),
-    }));
+    try {
+      await window.cortex.agents.revoke(id);
+      set((state) => ({
+        agents: state.agents.map((a) =>
+          a.id === id ? { ...a, revoked_at: new Date().toISOString() } : a
+        ),
+      }));
+    } catch (err) {
+      console.error('[AIAgentSlice] revokeAgent failed:', err);
+      set({ agentsError: err instanceof Error ? err.message : 'Unknown error' });
+    }
   },
 });

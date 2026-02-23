@@ -6,11 +6,11 @@ type GetFn = () => TaskSlice;
 
 // Helper to create a standalone store from the slice
 function createStore(overrides?: Partial<TaskSlice>): TaskSlice {
-  let state: TaskSlice;
+  const state = {} as TaskSlice;
 
   const set: SetFn = (partial) => {
     const update = typeof partial === 'function' ? partial(state) : partial;
-    state = { ...state, ...update };
+    Object.assign(state, update);
   };
 
   const get: GetFn = () => state;
@@ -21,10 +21,7 @@ function createStore(overrides?: Partial<TaskSlice>): TaskSlice {
     get: GetFn,
     api: Record<string, never>,
   ) => TaskSlice;
-  state = {
-    ...creator(set, get, {}),
-    ...overrides,
-  };
+  Object.assign(state, creator(set, get, {}), overrides);
 
   return state;
 }
@@ -137,6 +134,17 @@ describe('TaskSlice', () => {
       expect(mockCortex.tasks.create).toHaveBeenCalledWith({ title: 'New task' });
       expect(result).toEqual(newTask);
     });
+
+    it('sets tasksError on failure', async () => {
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockCortex.tasks.create.mockRejectedValue(new Error('create failed'));
+
+      const store = createStore();
+      await store.createTask({ title: 'New task' });
+
+      expect(store.tasksError).toBe('create failed');
+      spy.mockRestore();
+    });
   });
 
   describe('updateTask', () => {
@@ -150,6 +158,17 @@ describe('TaskSlice', () => {
       expect(mockCortex.tasks.update).toHaveBeenCalledWith('task-1', { title: 'Updated' });
       expect(result).toEqual(updated);
     });
+
+    it('sets tasksError on failure', async () => {
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockCortex.tasks.update.mockRejectedValue(new Error('update failed'));
+
+      const store = createStore({ tasks: [fakeTask()] });
+      await store.updateTask('task-1', { title: 'Updated' });
+
+      expect(store.tasksError).toBe('update failed');
+      spy.mockRestore();
+    });
   });
 
   describe('deleteTask', () => {
@@ -160,6 +179,17 @@ describe('TaskSlice', () => {
       await store.deleteTask('task-1');
 
       expect(mockCortex.tasks.delete).toHaveBeenCalledWith('task-1');
+    });
+
+    it('sets tasksError on failure', async () => {
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockCortex.tasks.delete.mockRejectedValue(new Error('delete failed'));
+
+      const store = createStore({ tasks: [fakeTask()] });
+      await store.deleteTask('task-1');
+
+      expect(store.tasksError).toBe('delete failed');
+      spy.mockRestore();
     });
   });
 
@@ -209,6 +239,39 @@ describe('TaskSlice', () => {
       await store.deleteTask('task-1');
 
       expect(mockCortex.tasks.delete).toHaveBeenCalledWith('task-1');
+    });
+
+    it('fetchTrashedTasks sets tasksError on failure', async () => {
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockCortex.tasks.listTrashed.mockRejectedValue(new Error('trash failed'));
+
+      const store = createStore();
+      await store.fetchTrashedTasks();
+
+      expect(store.tasksError).toBe('trash failed');
+      spy.mockRestore();
+    });
+
+    it('restoreTask sets tasksError on failure', async () => {
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockCortex.tasks.restore.mockRejectedValue(new Error('restore failed'));
+
+      const store = createStore({ trashedTasks: [fakeTask({ deleted_at: '2026-02-17T00:00:00.000Z' })] });
+      await store.restoreTask('task-1');
+
+      expect(store.tasksError).toBe('restore failed');
+      spy.mockRestore();
+    });
+
+    it('emptyTrash sets tasksError on failure', async () => {
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockCortex.tasks.emptyTrash.mockRejectedValue(new Error('empty failed'));
+
+      const store = createStore({ trashedTasks: [fakeTask({ deleted_at: '2026-02-17T00:00:00.000Z' })] });
+      await store.emptyTrash();
+
+      expect(store.tasksError).toBe('empty failed');
+      spy.mockRestore();
     });
   });
 

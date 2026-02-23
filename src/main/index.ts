@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { app, BrowserWindow, ipcMain, nativeImage } from 'electron';
+import { app, BrowserWindow, ipcMain, nativeImage, session } from 'electron';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import { initDatabase, closeDatabase, getPowerSyncDatabase } from './db/index.js';
@@ -95,6 +95,24 @@ app.on('second-instance', () => {
 });
 
 app.whenReady().then(async () => {
+  // Add Content Security Policy headers
+  // In dev mode, Vite injects inline scripts for HMR and React's JSX preamble,
+  // so we must allow 'unsafe-inline' for scripts. In production, we lock it down.
+  const isDev = !!process.env.VITE_DEV_SERVER_URL;
+  const scriptSrc = isDev
+    ? "script-src 'self' 'unsafe-inline'"
+    : "script-src 'self'";
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': [
+          `default-src 'self'; style-src 'self' 'unsafe-inline'; ${scriptSrc}; img-src 'self' data:; font-src 'self' data:; connect-src 'self'${isDev ? ' ws:' : ''};`,
+        ],
+      },
+    });
+  });
+
   const db = await initDatabase();
   const notifyRenderer = (tables: string[]) => {
     if (mainWindow && !mainWindow.isDestroyed()) {

@@ -32,24 +32,41 @@ export const createProjectSlice: StateCreator<ProjectSlice> = (set, get) => ({
   },
 
   createProject: async (input) => {
-    const project = await window.cortex.projects.create(input) as Project;
-    set((state) => ({ projects: [...state.projects, project] }));
-    return project;
+    try {
+      const project = await window.cortex.projects.create(input) as Project;
+      set((state) => ({ projects: [...state.projects, project] }));
+      return project;
+    } catch (err) {
+      console.error('[ProjectSlice] createProject failed:', err);
+      set({ projectsError: err instanceof Error ? err.message : 'Unknown error' });
+      return null as unknown as Project;
+    }
   },
 
   updateProject: async (id, input) => {
-    const project = await window.cortex.projects.update(id, input) as Project;
-    set((state) => ({
-      projects: state.projects.map((p) => (p.id === id ? project : p)),
-    }));
-    return project;
+    try {
+      const project = await window.cortex.projects.update(id, input) as Project;
+      set((state) => ({
+        projects: state.projects.map((p) => (p.id === id ? project : p)),
+      }));
+      return project;
+    } catch (err) {
+      console.error('[ProjectSlice] updateProject failed:', err);
+      set({ projectsError: err instanceof Error ? err.message : 'Unknown error' });
+      return null as unknown as Project;
+    }
   },
 
   deleteProject: async (id) => {
-    await window.cortex.projects.delete(id);
-    set((state) => ({
-      projects: state.projects.filter((p) => p.id !== id),
-    }));
+    try {
+      await window.cortex.projects.delete(id);
+      set((state) => ({
+        projects: state.projects.filter((p) => p.id !== id),
+      }));
+    } catch (err) {
+      console.error('[ProjectSlice] deleteProject failed:', err);
+      set({ projectsError: err instanceof Error ? err.message : 'Unknown error' });
+    }
   },
 
   getProjectsByStatus: (status) => get().projects.filter((p) => p.status === status),

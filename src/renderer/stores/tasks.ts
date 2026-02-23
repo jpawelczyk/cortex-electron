@@ -38,48 +38,80 @@ export const createTaskSlice: StateCreator<TaskSlice> = (set, get) => ({
   },
 
   createTask: async (input) => {
-    const task = await window.cortex.tasks.create(input) as Task;
-    set((state) => ({ tasks: [...state.tasks, task] }));
-    return task;
+    try {
+      const task = await window.cortex.tasks.create(input) as Task;
+      set((state) => ({ tasks: [...state.tasks, task] }));
+      return task;
+    } catch (err) {
+      console.error('[TaskSlice] createTask failed:', err);
+      set({ tasksError: err instanceof Error ? err.message : 'Unknown error' });
+      return null as unknown as Task;
+    }
   },
 
   updateTask: async (id, input) => {
-    const task = await window.cortex.tasks.update(id, input) as Task;
-    set((state) => ({
-      tasks: state.tasks.map((t) => (t.id === id ? task : t)),
-    }));
-    return task;
+    try {
+      const task = await window.cortex.tasks.update(id, input) as Task;
+      set((state) => ({
+        tasks: state.tasks.map((t) => (t.id === id ? task : t)),
+      }));
+      return task;
+    } catch (err) {
+      console.error('[TaskSlice] updateTask failed:', err);
+      set({ tasksError: err instanceof Error ? err.message : 'Unknown error' });
+      return null as unknown as Task;
+    }
   },
 
   deleteTask: async (id) => {
     const task = get().tasks.find((t) => t.id === id);
-    await window.cortex.tasks.delete(id);
-    set((state) => ({
-      tasks: state.tasks.filter((t) => t.id !== id),
-      trashedTasks: task
-        ? [...state.trashedTasks, { ...task, deleted_at: new Date().toISOString() }]
-        : state.trashedTasks,
-    }));
+    try {
+      await window.cortex.tasks.delete(id);
+      set((state) => ({
+        tasks: state.tasks.filter((t) => t.id !== id),
+        trashedTasks: task
+          ? [...state.trashedTasks, { ...task, deleted_at: new Date().toISOString() }]
+          : state.trashedTasks,
+      }));
+    } catch (err) {
+      console.error('[TaskSlice] deleteTask failed:', err);
+      set({ tasksError: err instanceof Error ? err.message : 'Unknown error' });
+    }
   },
 
   trashedTasks: [],
 
   fetchTrashedTasks: async () => {
-    const trashedTasks = await window.cortex.tasks.listTrashed() as Task[];
-    set({ trashedTasks });
+    try {
+      const trashedTasks = await window.cortex.tasks.listTrashed() as Task[];
+      set({ trashedTasks });
+    } catch (err) {
+      console.error('[TaskSlice] fetchTrashedTasks failed:', err);
+      set({ tasksError: err instanceof Error ? err.message : 'Unknown error' });
+    }
   },
 
   restoreTask: async (id) => {
-    const restored = await window.cortex.tasks.restore(id) as Task;
-    set((state) => ({
-      trashedTasks: state.trashedTasks.filter((t) => t.id !== id),
-      tasks: [...state.tasks, restored],
-    }));
+    try {
+      const restored = await window.cortex.tasks.restore(id) as Task;
+      set((state) => ({
+        trashedTasks: state.trashedTasks.filter((t) => t.id !== id),
+        tasks: [...state.tasks, restored],
+      }));
+    } catch (err) {
+      console.error('[TaskSlice] restoreTask failed:', err);
+      set({ tasksError: err instanceof Error ? err.message : 'Unknown error' });
+    }
   },
 
   emptyTrash: async () => {
-    await window.cortex.tasks.emptyTrash();
-    set({ trashedTasks: [] });
+    try {
+      await window.cortex.tasks.emptyTrash();
+      set({ trashedTasks: [] });
+    } catch (err) {
+      console.error('[TaskSlice] emptyTrash failed:', err);
+      set({ tasksError: err instanceof Error ? err.message : 'Unknown error' });
+    }
   },
 
   getTasksByStatus: (status) => get().tasks.filter((t) => t.status === status),

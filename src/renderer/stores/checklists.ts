@@ -4,6 +4,7 @@ import type { ChecklistItem, CreateChecklistItemInput, UpdateChecklistItemInput 
 export interface ChecklistSlice {
   checklistItems: Record<string, ChecklistItem[]>;
   checklistsLoading: Record<string, boolean>;
+  checklistsError: string | null;
 
   fetchChecklistItems: (taskId: string) => Promise<void>;
   createChecklistItem: (input: CreateChecklistItemInput) => Promise<ChecklistItem>;
@@ -15,6 +16,7 @@ export interface ChecklistSlice {
 export const createChecklistSlice: StateCreator<ChecklistSlice> = (set, _get) => ({
   checklistItems: {},
   checklistsLoading: {},
+  checklistsError: null,
 
   fetchChecklistItems: async (taskId) => {
     set((state) => ({
@@ -30,62 +32,85 @@ export const createChecklistSlice: StateCreator<ChecklistSlice> = (set, _get) =>
       console.error('[ChecklistSlice] fetchChecklistItems failed:', err);
       set((state) => ({
         checklistsLoading: { ...state.checklistsLoading, [taskId]: false },
+        checklistsError: err instanceof Error ? err.message : 'Unknown error',
       }));
     }
   },
 
   createChecklistItem: async (input) => {
-    const item = await window.cortex.checklists.create(input) as ChecklistItem;
-    set((state) => {
-      const existing = state.checklistItems[input.task_id] ?? [];
-      return {
-        checklistItems: {
-          ...state.checklistItems,
-          [input.task_id]: [...existing, item],
-        },
-      };
-    });
-    return item;
+    try {
+      const item = await window.cortex.checklists.create(input) as ChecklistItem;
+      set((state) => {
+        const existing = state.checklistItems[input.task_id] ?? [];
+        return {
+          checklistItems: {
+            ...state.checklistItems,
+            [input.task_id]: [...existing, item],
+          },
+        };
+      });
+      return item;
+    } catch (err) {
+      console.error('[ChecklistSlice] createChecklistItem failed:', err);
+      set({ checklistsError: err instanceof Error ? err.message : 'Unknown error' });
+      return null as unknown as ChecklistItem;
+    }
   },
 
   updateChecklistItem: async (id, taskId, input) => {
-    const item = await window.cortex.checklists.update(id, input) as ChecklistItem;
-    set((state) => ({
-      checklistItems: {
-        ...state.checklistItems,
-        [taskId]: (state.checklistItems[taskId] ?? []).map((i) => (i.id === id ? item : i)),
-      },
-    }));
-    return item;
+    try {
+      const item = await window.cortex.checklists.update(id, input) as ChecklistItem;
+      set((state) => ({
+        checklistItems: {
+          ...state.checklistItems,
+          [taskId]: (state.checklistItems[taskId] ?? []).map((i) => (i.id === id ? item : i)),
+        },
+      }));
+      return item;
+    } catch (err) {
+      console.error('[ChecklistSlice] updateChecklistItem failed:', err);
+      set({ checklistsError: err instanceof Error ? err.message : 'Unknown error' });
+      return null as unknown as ChecklistItem;
+    }
   },
 
   deleteChecklistItem: async (id, taskId) => {
-    await window.cortex.checklists.delete(id);
-    set((state) => ({
-      checklistItems: {
-        ...state.checklistItems,
-        [taskId]: (state.checklistItems[taskId] ?? []).filter((i) => i.id !== id),
-      },
-    }));
+    try {
+      await window.cortex.checklists.delete(id);
+      set((state) => ({
+        checklistItems: {
+          ...state.checklistItems,
+          [taskId]: (state.checklistItems[taskId] ?? []).filter((i) => i.id !== id),
+        },
+      }));
+    } catch (err) {
+      console.error('[ChecklistSlice] deleteChecklistItem failed:', err);
+      set({ checklistsError: err instanceof Error ? err.message : 'Unknown error' });
+    }
   },
 
   reorderChecklistItems: async (taskId, itemIds) => {
-    await window.cortex.checklists.reorder(taskId, itemIds);
-    set((state) => {
-      const current = state.checklistItems[taskId] ?? [];
-      const itemMap = new Map(current.map((i) => [i.id, i]));
-      const reordered = itemIds
-        .map((id, index) => {
-          const item = itemMap.get(id);
-          return item ? { ...item, sort_order: index } : undefined;
-        })
-        .filter((i): i is ChecklistItem => i !== undefined);
-      return {
-        checklistItems: {
-          ...state.checklistItems,
-          [taskId]: reordered,
-        },
-      };
-    });
+    try {
+      await window.cortex.checklists.reorder(taskId, itemIds);
+      set((state) => {
+        const current = state.checklistItems[taskId] ?? [];
+        const itemMap = new Map(current.map((i) => [i.id, i]));
+        const reordered = itemIds
+          .map((id, index) => {
+            const item = itemMap.get(id);
+            return item ? { ...item, sort_order: index } : undefined;
+          })
+          .filter((i): i is ChecklistItem => i !== undefined);
+        return {
+          checklistItems: {
+            ...state.checklistItems,
+            [taskId]: reordered,
+          },
+        };
+      });
+    } catch (err) {
+      console.error('[ChecklistSlice] reorderChecklistItems failed:', err);
+      set({ checklistsError: err instanceof Error ? err.message : 'Unknown error' });
+    }
   },
 });

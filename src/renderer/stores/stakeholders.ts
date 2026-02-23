@@ -29,23 +29,40 @@ export const createStakeholderSlice: StateCreator<StakeholderSlice> = (set) => (
   },
 
   createStakeholder: async (input) => {
-    const stakeholder = await window.cortex.stakeholders.create(input) as Stakeholder;
-    set((state) => ({ stakeholders: [...state.stakeholders, stakeholder] }));
-    return stakeholder;
+    try {
+      const stakeholder = await window.cortex.stakeholders.create(input) as Stakeholder;
+      set((state) => ({ stakeholders: [...state.stakeholders, stakeholder] }));
+      return stakeholder;
+    } catch (err) {
+      console.error('[StakeholderSlice] createStakeholder failed:', err);
+      set({ stakeholdersError: err instanceof Error ? err.message : 'Unknown error' });
+      return null as unknown as Stakeholder;
+    }
   },
 
   updateStakeholder: async (id, input) => {
-    const stakeholder = await window.cortex.stakeholders.update(id, input) as Stakeholder;
-    set((state) => ({
-      stakeholders: state.stakeholders.map((s) => (s.id === id ? stakeholder : s)),
-    }));
-    return stakeholder;
+    try {
+      const stakeholder = await window.cortex.stakeholders.update(id, input) as Stakeholder;
+      set((state) => ({
+        stakeholders: state.stakeholders.map((s) => (s.id === id ? stakeholder : s)),
+      }));
+      return stakeholder;
+    } catch (err) {
+      console.error('[StakeholderSlice] updateStakeholder failed:', err);
+      set({ stakeholdersError: err instanceof Error ? err.message : 'Unknown error' });
+      return null as unknown as Stakeholder;
+    }
   },
 
   deleteStakeholder: async (id) => {
-    await window.cortex.stakeholders.delete(id);
-    set((state) => ({
-      stakeholders: state.stakeholders.filter((s) => s.id !== id),
-    }));
+    try {
+      await window.cortex.stakeholders.delete(id);
+      set((state) => ({
+        stakeholders: state.stakeholders.filter((s) => s.id !== id),
+      }));
+    } catch (err) {
+      console.error('[StakeholderSlice] deleteStakeholder failed:', err);
+      set({ stakeholdersError: err instanceof Error ? err.message : 'Unknown error' });
+    }
   },
 });

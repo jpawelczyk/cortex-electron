@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { parseISO } from 'date-fns';
 import { Clock, Plus, Trash2, Check, X, Briefcase, Home, FlaskConical, type LucideIcon } from 'lucide-react';
 import type { Project, ProjectStatus } from '@shared/types';
 import { useStore } from '../stores';
@@ -39,7 +40,7 @@ const STATUS_CONFIG: Record<string, { label: string; className: string }> = Obje
 );
 
 function isStale(project: Project): boolean {
-  const updatedAt = new Date(project.updated_at);
+  const updatedAt = parseISO(project.updated_at);
   const now = new Date();
   const diffMs = now.getTime() - updatedAt.getTime();
   const diffDays = diffMs / (1000 * 60 * 60 * 24);
@@ -74,7 +75,7 @@ export function ProjectsOverviewView() {
       .filter((p) => ACTIVE_STATUSES.includes(p.status) && !p.deleted_at);
     const contextFiltered = filterProjectsByContext(statusFiltered, activeContextIds);
     return contextFiltered
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      .sort((a, b) => parseISO(b.created_at).getTime() - parseISO(a.created_at).getTime());
   }, [projects, activeContextIds]);
 
   const taskCountsByProject = useMemo(() => {

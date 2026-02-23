@@ -79,4 +79,24 @@ describe('TaskList', () => {
     render(<TaskList tasks={tasks} title="Inbox" onCompleteTask={vi.fn()} />);
     expect(screen.getByText('3')).toBeInTheDocument();
   });
+
+  it('uses animated list for 50 or fewer tasks', () => {
+    const tasks = Array.from({ length: 50 }, (_, i) =>
+      fakeTask({ id: `task-${i}`, title: `Task ${i}` }),
+    );
+    render(<TaskList tasks={tasks} onCompleteTask={vi.fn()} />);
+    // All tasks rendered directly in the DOM (no virtual windowing)
+    expect(screen.getByText('Task 0')).toBeInTheDocument();
+    expect(screen.getByText('Task 49')).toBeInTheDocument();
+  });
+
+  it('uses virtual scrolling container for more than 50 tasks', () => {
+    const tasks = Array.from({ length: 51 }, (_, i) =>
+      fakeTask({ id: `task-${i}`, title: `Task ${i}` }),
+    );
+    const { container } = render(<TaskList tasks={tasks} onCompleteTask={vi.fn()} />);
+    // Virtual list renders an overflow scroll container (not AnimatePresence)
+    const scrollContainer = container.querySelector('.overflow-auto');
+    expect(scrollContainer).toBeInTheDocument();
+  });
 });
