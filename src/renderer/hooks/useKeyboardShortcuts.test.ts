@@ -10,20 +10,14 @@ function fireKey(key: string, opts: Partial<KeyboardEvent> = {}) {
 describe('useKeyboardShortcuts', () => {
   let setActiveView: ReturnType<typeof vi.fn>;
   let deselectTask: ReturnType<typeof vi.fn>;
-  let startInlineCreate: ReturnType<typeof vi.fn>;
-  let startInlineProjectCreate: ReturnType<typeof vi.fn>;
-  let startInlineNoteCreate: ReturnType<typeof vi.fn>;
+  let performContextCreate: ReturnType<typeof vi.fn>;
   let toggleCommandPalette: ReturnType<typeof vi.fn>;
-  let activeView: string;
 
   beforeEach(() => {
     setActiveView = vi.fn();
     deselectTask = vi.fn();
-    startInlineCreate = vi.fn();
-    startInlineProjectCreate = vi.fn();
-    startInlineNoteCreate = vi.fn();
+    performContextCreate = vi.fn();
     toggleCommandPalette = vi.fn();
-    activeView = 'inbox';
   });
 
   afterEach(() => {
@@ -32,7 +26,7 @@ describe('useKeyboardShortcuts', () => {
 
   function renderShortcuts() {
     return renderHook(() =>
-      useKeyboardShortcuts({ setActiveView, deselectTask, startInlineCreate, startInlineProjectCreate, startInlineNoteCreate, toggleCommandPalette, activeView })
+      useKeyboardShortcuts({ setActiveView, deselectTask, performContextCreate, toggleCommandPalette })
     );
   }
 
@@ -97,31 +91,10 @@ describe('useKeyboardShortcuts', () => {
   });
 
   describe('Cmd+N → context-sensitive new item', () => {
-    it('navigates to inbox and starts inline task create from non-project views', () => {
-      activeView = 'inbox';
+    it('calls performContextCreate', () => {
       renderShortcuts();
       fireKey('n', { metaKey: true });
-      expect(setActiveView).toHaveBeenCalledWith('inbox');
-      expect(startInlineCreate).toHaveBeenCalled();
-      expect(startInlineProjectCreate).not.toHaveBeenCalled();
-    });
-
-    it('starts inline project create when on projects view', () => {
-      activeView = 'projects';
-      renderShortcuts();
-      fireKey('n', { metaKey: true });
-      expect(startInlineProjectCreate).toHaveBeenCalled();
-      expect(startInlineCreate).not.toHaveBeenCalled();
-      expect(setActiveView).not.toHaveBeenCalled();
-    });
-
-    it('starts inline note create when on notes view', () => {
-      activeView = 'notes';
-      renderShortcuts();
-      fireKey('n', { metaKey: true });
-      expect(startInlineNoteCreate).toHaveBeenCalled();
-      expect(startInlineCreate).not.toHaveBeenCalled();
-      expect(setActiveView).not.toHaveBeenCalled();
+      expect(performContextCreate).toHaveBeenCalled();
     });
   });
 

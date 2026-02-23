@@ -7,10 +7,6 @@ import { parseTaskInput } from '../lib/parseTaskInput';
 import { TokenAutocomplete } from './TokenAutocomplete';
 import { cn } from '../lib/utils';
 
-interface InlineTaskCardProps {
-  projectId?: string;
-}
-
 interface ActiveToken {
   type: 'context' | 'project';
   query: string;
@@ -38,18 +34,19 @@ function getActiveToken(input: string, cursorPos: number): ActiveToken | null {
   };
 }
 
-export function InlineTaskCard({ projectId }: InlineTaskCardProps = {}) {
+export function InlineTaskCard() {
   const createTask = useStore((s) => s.createTask);
   const cancelInlineCreate = useStore((s) => s.cancelInlineCreate);
   const createChecklistItem = useStore((s) => s.createChecklistItem);
   const contexts = useStore((s) => s.contexts);
   const projects = useStore((s) => s.projects);
+  const inlineCreateDefaults = useStore((s) => s.inlineCreateDefaults);
 
   const [title, setTitle] = useState('');
   const [notes, setNotes] = useState('');
-  const [whenDate, setWhenDate] = useState<string | null>(null);
+  const [whenDate, setWhenDate] = useState<string | null>(inlineCreateDefaults?.when_date ?? null);
   const [deadline, setDeadline] = useState<string | null>(null);
-  const [status, setStatus] = useState<TaskStatus>('inbox');
+  const [status, setStatus] = useState<TaskStatus>(inlineCreateDefaults?.status ?? 'inbox');
   const [checklistItems, setChecklistItems] = useState<{ key: number; title: string }[]>([]);
   const [nextKey, setNextKey] = useState(0);
   const [activeToken, setActiveToken] = useState<ActiveToken | null>(null);
@@ -72,8 +69,9 @@ export function InlineTaskCard({ projectId }: InlineTaskCardProps = {}) {
   checklistRef.current = checklistItems;
   activeTokenRef.current = activeToken;
 
-  const projectIdRef = useRef(projectId);
-  projectIdRef.current = projectId;
+  const defaultProjectId = inlineCreateDefaults?.project_id ?? null;
+  const defaultProjectIdRef = useRef(defaultProjectId);
+  defaultProjectIdRef.current = defaultProjectId;
 
   const parsed = useMemo(
     () => parseTaskInput(title, contexts ?? [], projects ?? []),
@@ -133,11 +131,11 @@ export function InlineTaskCard({ projectId }: InlineTaskCardProps = {}) {
       input.status = statusRef.current;
     }
 
-    // Token project overrides prop
+    // Token project overrides default
     if (parsedAtSave.projectId) {
       input.project_id = parsedAtSave.projectId;
-    } else if (projectIdRef.current) {
-      input.project_id = projectIdRef.current;
+    } else if (defaultProjectIdRef.current) {
+      input.project_id = defaultProjectIdRef.current;
     }
 
     if (parsedAtSave.contextId) {

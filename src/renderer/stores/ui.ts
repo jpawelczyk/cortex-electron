@@ -1,4 +1,11 @@
 import { StateCreator } from 'zustand';
+import type { TaskStatus } from '@shared/types';
+
+export interface InlineCreateDefaults {
+  when_date?: string;
+  status?: TaskStatus;
+  project_id?: string;
+}
 
 export interface UISlice {
   activeContextId: string | null;
@@ -25,7 +32,8 @@ export interface UISlice {
   deselectProject: () => void;
 
   isInlineCreating: boolean;
-  startInlineCreate: () => void;
+  inlineCreateDefaults: InlineCreateDefaults | null;
+  startInlineCreate: (defaults?: InlineCreateDefaults) => void;
   cancelInlineCreate: () => void;
 
   isInlineProjectCreating: boolean;
@@ -35,6 +43,10 @@ export interface UISlice {
   isInlineNoteCreating: boolean;
   startInlineNoteCreate: () => void;
   cancelInlineNoteCreate: () => void;
+
+  isInlineStakeholderCreating: boolean;
+  startInlineStakeholderCreate: () => void;
+  cancelInlineStakeholderCreate: () => void;
 
   commandPaletteOpen: boolean;
   openCommandPalette: () => void;
@@ -67,11 +79,12 @@ export const createUISlice: StateCreator<UISlice> = (set, get) => ({
   deselectProject: () => set({ selectedProjectId: null }),
 
   isInlineCreating: false,
-  startInlineCreate: () => {
+  inlineCreateDefaults: null,
+  startInlineCreate: (defaults) => {
     if (get().isInlineCreating) return;
-    set({ isInlineCreating: true, selectedTaskId: null });
+    set({ isInlineCreating: true, inlineCreateDefaults: defaults ?? null, selectedTaskId: null });
   },
-  cancelInlineCreate: () => set({ isInlineCreating: false }),
+  cancelInlineCreate: () => set({ isInlineCreating: false, inlineCreateDefaults: null }),
 
   isInlineProjectCreating: false,
   startInlineProjectCreate: () => {
@@ -86,6 +99,13 @@ export const createUISlice: StateCreator<UISlice> = (set, get) => ({
     set({ isInlineNoteCreating: true });
   },
   cancelInlineNoteCreate: () => set({ isInlineNoteCreating: false }),
+
+  isInlineStakeholderCreating: false,
+  startInlineStakeholderCreate: () => {
+    if (get().isInlineStakeholderCreating) return;
+    set({ isInlineStakeholderCreating: true });
+  },
+  cancelInlineStakeholderCreate: () => set({ isInlineStakeholderCreating: false }),
 
   commandPaletteOpen: false,
   openCommandPalette: () => set({ commandPaletteOpen: true }),

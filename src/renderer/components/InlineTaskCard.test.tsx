@@ -17,6 +17,8 @@ const mockProjects = [
   { id: 'proj-2', title: 'Website', description: null, status: 'active' as const, context_id: null, sort_order: 1, created_at: '', updated_at: '', completed_at: null, deleted_at: null },
 ];
 
+let mockInlineCreateDefaults: Record<string, unknown> | null = null;
+
 vi.mock('../stores', () => ({
   useStore: (selector: (state: Record<string, unknown>) => unknown) => {
     const state = {
@@ -25,6 +27,7 @@ vi.mock('../stores', () => ({
       createChecklistItem: mockCreateChecklistItem,
       contexts: mockContexts,
       projects: mockProjects,
+      inlineCreateDefaults: mockInlineCreateDefaults,
     };
     return selector(state);
   },
@@ -50,6 +53,7 @@ vi.mock('./DatePickerButton', () => ({
 describe('InlineTaskCard', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockInlineCreateDefaults = null;
     mockCreateTask.mockResolvedValue({
       id: 'new-1',
       title: 'Test',
@@ -338,8 +342,9 @@ describe('InlineTaskCard', () => {
     });
   });
 
-  it('includes project_id in createTask when projectId prop is provided', () => {
-    render(<InlineTaskCard projectId="proj-1" />);
+  it('includes project_id in createTask when inlineCreateDefaults has project_id', () => {
+    mockInlineCreateDefaults = { project_id: 'proj-1' };
+    render(<InlineTaskCard />);
     const input = screen.getByPlaceholderText('New task');
 
     fireEvent.change(input, { target: { value: 'Project task' } });
@@ -348,6 +353,7 @@ describe('InlineTaskCard', () => {
     expect(mockCreateTask).toHaveBeenCalledWith(
       expect.objectContaining({ title: 'Project task', project_id: 'proj-1' }),
     );
+    mockInlineCreateDefaults = null;
   });
 
   it('does not include project_id when projectId prop is absent', () => {
@@ -450,8 +456,9 @@ describe('InlineTaskCard', () => {
     });
   });
 
-  it('parsed token project overrides projectId prop', async () => {
-    render(<InlineTaskCard projectId="proj-2" />);
+  it('parsed token project overrides inlineCreateDefaults project_id', async () => {
+    mockInlineCreateDefaults = { project_id: 'proj-2' };
+    render(<InlineTaskCard />);
     const input = screen.getByPlaceholderText('New task');
 
     fireEvent.change(input, { target: { value: 'Task +Cortex' } });
@@ -462,6 +469,7 @@ describe('InlineTaskCard', () => {
         expect.objectContaining({ project_id: 'proj-1' })
       );
     });
+    mockInlineCreateDefaults = null;
   });
 
   // --- Autocomplete tests ---

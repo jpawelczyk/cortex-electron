@@ -490,7 +490,7 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
         )}
 
         {/* Inline task creation (same as other views) */}
-        {isInlineCreating && <InlineTaskCard projectId={projectId} />}
+        {isInlineCreating && <InlineTaskCard />}
 
         {/* Task list */}
         {!isInlineCreating && projectTasks.length === 0 ? (
@@ -500,7 +500,7 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
             <button
               type="button"
               data-testid="empty-state-cta"
-              onClick={startInlineCreate}
+              onClick={() => startInlineCreate({ project_id: projectId })}
               className="mt-4 flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 transition-colors cursor-default"
             >
               <Plus className="size-4" />

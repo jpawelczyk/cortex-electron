@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Layers } from 'lucide-react';
 import { useStore } from '../stores';
 import { TaskList } from '../components/TaskList';
+import { InlineTaskCard } from '../components/InlineTaskCard';
 import { filterTasksByContext } from '../lib/contextFilter';
 
 const DISMISS_DELAY_MS = 2500;
@@ -14,6 +15,7 @@ export function AnytimeView() {
   const updateTask = useStore((s) => s.updateTask);
   const selectTask = useStore((s) => s.selectTask);
   const selectedTaskId = useStore((s) => s.selectedTaskId);
+  const isInlineCreating = useStore((s) => s.isInlineCreating);
 
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
@@ -83,7 +85,9 @@ export function AnytimeView() {
           <h2 className="text-xl font-semibold text-foreground">Anytime</h2>
         </div>
 
-        {anytimeTasks.length === 0 ? (
+        {isInlineCreating && <InlineTaskCard />}
+
+        {anytimeTasks.length === 0 && !isInlineCreating ? (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
             <Layers className="size-10 mb-3 opacity-30" strokeWidth={1.25} />
             <p className="text-sm">No anytime tasks</p>

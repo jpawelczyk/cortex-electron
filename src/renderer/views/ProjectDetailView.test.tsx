@@ -20,6 +20,7 @@ let mockTasks: Task[] = [];
 let mockContexts: Context[] = [];
 let mockSelectedTaskId: string | null = null;
 let mockIsInlineCreating = false;
+let mockInlineCreateDefaults: Record<string, unknown> | null = null;
 
 // Mock DatePickerButton to avoid Calendar/Popover rendering issues in jsdom
 vi.mock('../components/DatePickerButton', () => ({
@@ -45,6 +46,7 @@ vi.mock('../stores', () => ({
       selectTask: mockSelectTask,
       selectedTaskId: mockSelectedTaskId,
       isInlineCreating: mockIsInlineCreating,
+      inlineCreateDefaults: mockInlineCreateDefaults,
       startInlineCreate: mockStartInlineCreate,
       cancelInlineCreate: mockCancelInlineCreate,
       deleteProject: mockDeleteProject,
@@ -128,6 +130,7 @@ describe('ProjectDetailView', () => {
     mockContexts = [];
     mockSelectedTaskId = null;
     mockIsInlineCreating = false;
+    mockInlineCreateDefaults = null;
   });
 
   afterEach(() => {
@@ -418,6 +421,7 @@ describe('ProjectDetailView', () => {
 
   it('InlineTaskCard creates tasks with project_id', () => {
     mockIsInlineCreating = true;
+    mockInlineCreateDefaults = { project_id: 'proj-1' };
     render(<ProjectDetailView projectId="proj-1" />);
 
     const input = screen.getByPlaceholderText('New task');

@@ -6,6 +6,8 @@ import { ContextSettings } from './components/ContextSettings';
 import { CommandPalette } from './components/CommandPalette';
 import { useStore } from './stores';
 import { filterTasksByContext } from './lib/contextFilter';
+import { getCreateAction } from './lib/getCreateAction';
+import { executeCreateAction } from './lib/executeCreateAction';
 import { Sidebar, SidebarView } from './components/Sidebar';
 import { InboxView } from './views/InboxView';
 import { TodayView } from './views/TodayView';
@@ -76,6 +78,7 @@ function AuthenticatedApp() {
   const startInlineCreate = useStore((s) => s.startInlineCreate);
   const startInlineProjectCreate = useStore((s) => s.startInlineProjectCreate);
   const startInlineNoteCreate = useStore((s) => s.startInlineNoteCreate);
+  const startInlineStakeholderCreate = useStore((s) => s.startInlineStakeholderCreate);
   const selectedProjectId = useStore((s) => s.selectedProjectId);
   const deselectProject = useStore((s) => s.deselectProject);
   const selectedNoteId = useStore((s) => s.selectedNoteId);
@@ -116,7 +119,20 @@ function AuthenticatedApp() {
   fetchStakeholdersRef.current = fetchStakeholders;
   const isFetchingRef = useRef(false);
 
-  useKeyboardShortcuts({ setActiveView: handleViewChange, deselectTask, startInlineCreate, startInlineProjectCreate, startInlineNoteCreate, toggleCommandPalette, activeView, selectedProjectId });
+  const today = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
+
+  const performContextCreate = useCallback(() => {
+    const action = getCreateAction({ activeView, selectedProjectId, today });
+    executeCreateAction(action, {
+      setActiveView: handleViewChange,
+      startInlineCreate,
+      startInlineProjectCreate,
+      startInlineNoteCreate,
+      startInlineStakeholderCreate,
+    });
+  }, [activeView, selectedProjectId, today, handleViewChange, startInlineCreate, startInlineProjectCreate, startInlineNoteCreate, startInlineStakeholderCreate]);
+
+  useKeyboardShortcuts({ setActiveView: handleViewChange, deselectTask, performContextCreate, toggleCommandPalette });
   useGlobalShortcuts({ setActiveView: handleViewChange, startInlineCreate, startInlineProjectCreate, activeView, selectedProjectId });
 
   // Proactively load all data from local SQLite on mount.
@@ -166,8 +182,6 @@ function AuthenticatedApp() {
     });
     return cleanup;
   }, []);
-
-  const today = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
 
   const taskCounts = useMemo(() => {
     // Context-filtered tasks for counts that respect the active filter
@@ -233,18 +247,7 @@ function AuthenticatedApp() {
           </button>
           <button
             onMouseDown={(e) => e.stopPropagation()}
-            onClick={() => {
-              if (activeView === 'projects' && selectedProjectId) {
-                startInlineCreate();
-              } else if (activeView === 'projects') {
-                startInlineProjectCreate();
-              } else if (activeView === 'notes') {
-                startInlineNoteCreate();
-              } else {
-                setActiveView('inbox');
-                startInlineCreate();
-              }
-            }}
+            onClick={performContextCreate}
             className="no-drag p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
           >
             <Plus className="size-5" />

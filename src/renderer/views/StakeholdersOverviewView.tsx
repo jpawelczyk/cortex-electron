@@ -43,9 +43,12 @@ export function StakeholdersOverviewView() {
   const fetchStakeholders = useStore(s => s.fetchStakeholders);
   const selectStakeholder = useStore(s => s.selectStakeholder);
 
+  const isCreating = useStore(s => s.isInlineStakeholderCreating);
+  const startInlineStakeholderCreate = useStore(s => s.startInlineStakeholderCreate);
+  const cancelInlineStakeholderCreate = useStore(s => s.cancelInlineStakeholderCreate);
+
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<StakeholderSort>('name');
-  const [isCreating, setIsCreating] = useState(false);
 
   useEffect(() => {
     fetchStakeholders();
@@ -108,13 +111,13 @@ export function StakeholdersOverviewView() {
 
         {isCreating ? (
           <div className="mb-4">
-            <InlineStakeholderCard onClose={() => setIsCreating(false)} />
+            <InlineStakeholderCard onClose={cancelInlineStakeholderCreate} />
           </div>
         ) : (
           <button
             type="button"
             data-testid="new-stakeholder-trigger"
-            onClick={() => setIsCreating(true)}
+            onClick={startInlineStakeholderCreate}
             className="flex items-center gap-3 w-full px-4 py-3 mb-4 rounded-lg border border-dashed border-border/60 bg-card/20 text-muted-foreground/60 hover:text-muted-foreground hover:bg-accent/30 hover:border-border transition-colors cursor-pointer"
           >
             <Plus className="size-4" strokeWidth={1.5} />

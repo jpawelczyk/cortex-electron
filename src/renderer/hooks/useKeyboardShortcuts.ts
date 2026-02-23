@@ -4,12 +4,8 @@ import type { SidebarView } from '../components/Sidebar';
 interface KeyboardShortcutDeps {
   setActiveView: (view: SidebarView) => void;
   deselectTask: () => void;
-  startInlineCreate: () => void;
-  startInlineProjectCreate: () => void;
-  startInlineNoteCreate: () => void;
+  performContextCreate: () => void;
   toggleCommandPalette: () => void;
-  activeView: string;
-  selectedProjectId?: string | null;
 }
 
 const VIEW_KEYS: Record<string, SidebarView> = {
@@ -21,12 +17,8 @@ const VIEW_KEYS: Record<string, SidebarView> = {
 export function useKeyboardShortcuts({
   setActiveView,
   deselectTask,
-  startInlineCreate,
-  startInlineProjectCreate,
-  startInlineNoteCreate,
+  performContextCreate,
   toggleCommandPalette,
-  activeView,
-  selectedProjectId,
 }: KeyboardShortcutDeps) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -58,16 +50,7 @@ export function useKeyboardShortcuts({
 
         if (e.key === 'n') {
           e.preventDefault();
-          if (activeView === 'projects' && selectedProjectId) {
-            startInlineCreate();
-          } else if (activeView === 'projects') {
-            startInlineProjectCreate();
-          } else if (activeView === 'notes') {
-            startInlineNoteCreate();
-          } else {
-            setActiveView('inbox');
-            startInlineCreate();
-          }
+          performContextCreate();
           return;
         }
 
@@ -80,5 +63,5 @@ export function useKeyboardShortcuts({
 
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [setActiveView, deselectTask, startInlineCreate, startInlineProjectCreate, startInlineNoteCreate, toggleCommandPalette, activeView, selectedProjectId]);
+  }, [setActiveView, deselectTask, performContextCreate, toggleCommandPalette]);
 }
