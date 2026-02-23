@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Circle, CheckCircle2, Calendar, Flag, Trash2, Check, X, Cloud, Layers, User } from 'lucide-react';
+import { Circle, CheckCircle2, Calendar, Flag, Trash2, Check, X, Cloud, Layers, Bot } from 'lucide-react';
 import type { Task } from '@shared/types';
 import { useStore } from '../stores';
 import { useDebouncedCallback } from '../hooks/useDebouncedCallback';
@@ -251,11 +251,10 @@ function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, isComple
     [agents],
   );
 
-  const assigneeLabel = useMemo(() => {
-    if (!task.assignee_id) return 'Unassigned';
-    if (authUser && task.assignee_id === authUser.id) return 'Me';
-    const agent = agents.find((a) => a.id === task.assignee_id);
-    return agent ? agent.name : 'Unassigned';
+  const assignedAgent = useMemo(() => {
+    if (!task.assignee_id) return null;
+    if (authUser && task.assignee_id === authUser.id) return null;
+    return agents.find((a) => a.id === task.assignee_id) ?? null;
   }, [task.assignee_id, authUser, agents]);
 
   const handleAssigneeChange = (assigneeId: string | null) => {
@@ -486,48 +485,58 @@ function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, isComple
                 <PopoverTrigger asChild>
                   <button
                     type="button"
-                    aria-label="Assignee"
+                    aria-label="Assign to agent"
                     tabIndex={isExpanded ? 0 : -1}
-                    className="inline-flex items-center gap-1.5 px-1.5 py-1 text-xs text-muted-foreground hover:bg-accent/60 rounded-md transition-colors cursor-pointer"
+                    className={cn(
+                      "inline-flex items-center gap-1.5 px-1.5 py-1 text-xs rounded-md transition-colors cursor-pointer",
+                      assignedAgent
+                        ? "text-foreground hover:bg-accent/60"
+                        : "text-muted-foreground hover:bg-accent/60",
+                    )}
                   >
-                    <User className="size-3" />
-                    <span>{assigneeLabel}</span>
+                    <Bot className="size-3" />
+                    <span>{assignedAgent ? assignedAgent.name : 'Assign to Agent'}</span>
+                    {assignedAgent && (
+                      <span className="text-[10px] bg-accent px-1 py-0.5 rounded text-muted-foreground leading-none">AI</span>
+                    )}
                   </button>
                 </PopoverTrigger>
                 <PopoverContent className="w-48 p-1" align="start">
-                  <button
-                    role="option"
-                    aria-label="Unassigned"
-                    type="button"
-                    onClick={() => handleAssigneeChange(null)}
-                    className="flex items-center w-full px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent rounded-md cursor-pointer"
-                  >
-                    Unassigned
-                  </button>
-                  {authUser && (
+                  {assignedAgent && (
                     <button
                       role="option"
-                      aria-label="Me"
+                      aria-label="Remove agent"
                       type="button"
-                      onClick={() => handleAssigneeChange(authUser.id)}
-                      className="flex items-center w-full px-2 py-1.5 text-sm text-foreground hover:bg-accent rounded-md cursor-pointer"
+                      onClick={() => handleAssigneeChange(null)}
+                      className="flex items-center gap-2 w-full px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent rounded-md cursor-pointer"
                     >
-                      Me
+                      <X className="size-3" />
+                      <span>Remove agent</span>
                     </button>
                   )}
-                  {activeAgents.map((agent) => (
-                    <button
-                      key={agent.id}
-                      role="option"
-                      aria-label={agent.name}
-                      type="button"
-                      onClick={() => handleAssigneeChange(agent.id)}
-                      className="flex items-center gap-2 w-full px-2 py-1.5 text-sm text-foreground hover:bg-accent rounded-md cursor-pointer"
-                    >
-                      <span>{agent.name}</span>
-                      <span className="text-[10px] text-muted-foreground">AI</span>
-                    </button>
-                  ))}
+                  {activeAgents.length === 0 ? (
+                    <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                      No agents available
+                    </div>
+                  ) : (
+                    activeAgents.map((agent) => (
+                      <button
+                        key={agent.id}
+                        role="option"
+                        aria-label={agent.name}
+                        type="button"
+                        onClick={() => handleAssigneeChange(agent.id)}
+                        className={cn(
+                          "flex items-center gap-2 w-full px-2 py-1.5 text-sm hover:bg-accent rounded-md cursor-pointer",
+                          agent.id === task.assignee_id ? "text-foreground font-medium" : "text-foreground",
+                        )}
+                      >
+                        <Bot className="size-3 text-muted-foreground" />
+                        <span>{agent.name}</span>
+                        <span className="text-[10px] text-muted-foreground">AI</span>
+                      </button>
+                    ))
+                  )}
                 </PopoverContent>
               </Popover>
               </div>
