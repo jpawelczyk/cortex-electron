@@ -1,3 +1,17 @@
+/**
+ * Cortex Agent Daemon
+ *
+ * API Key Authentication
+ * ----------------------
+ * Set the CORTEX_DAEMON_KEY environment variable to a securely generated key.
+ * Generate a key with:
+ *   openssl rand -hex 32
+ *
+ * Pass the key in requests via the x-api-key header:
+ *   curl -H "x-api-key: <your-key>" http://127.0.0.1:7654/tasks
+ *
+ * If CORTEX_DAEMON_KEY is not set, authentication is skipped with a warning (dev mode).
+ */
 import Fastify from 'fastify';
 import fs from 'node:fs/promises';
 import { initDatabase, closeDatabase } from './db.js';
@@ -119,7 +133,22 @@ async function start() {
   await waitForSync(db);
   console.log('Sync connected');
 
+  const DAEMON_KEY = process.env.CORTEX_DAEMON_KEY;
+  if (!DAEMON_KEY) {
+    console.warn('Warning: CORTEX_DAEMON_KEY is not set. Authentication is disabled.');
+  }
+
   const app = Fastify();
+
+  // Auth preHandler — skips /health
+  app.addHook('preHandler', async (req, reply) => {
+    if (req.url === '/health') return;
+    if (!DAEMON_KEY) return; // graceful degradation in dev
+    const key = req.headers['x-api-key'];
+    if (key !== DAEMON_KEY) {
+      return reply.code(401).send({ error: 'Unauthorized' });
+    }
+  });
 
   // Health
   app.get('/health', async () => ({

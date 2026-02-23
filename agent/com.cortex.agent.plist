@@ -1,30 +1,63 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Cortex Agent Daemon — launchd plist template
+  =============================================
+  Install:
+    cp agent/com.cortex.agent.plist ~/Library/LaunchAgents/com.cortex.agent.plist
+    # Edit the copy to fill in your environment variable values
+    launchctl load ~/Library/LaunchAgents/com.cortex.agent.plist
+
+  Uninstall:
+    launchctl unload ~/Library/LaunchAgents/com.cortex.agent.plist
+    rm ~/Library/LaunchAgents/com.cortex.agent.plist
+
+  Generate CORTEX_DAEMON_KEY:
+    openssl rand -hex 32
+-->
 <plist version="1.0">
 <dict>
   <key>Label</key>
   <string>com.cortex.agent</string>
+
   <key>ProgramArguments</key>
   <array>
     <string>/usr/local/bin/npx</string>
     <string>tsx</string>
-    <string>daemon.ts</string>
+    <string>/Users/YOUR_USERNAME/Developer/projects/cortex/agent/daemon.ts</string>
   </array>
+
   <key>WorkingDirectory</key>
-  <!-- UPDATE: Set to your agent directory path -->
-  <string>/path/to/cortex/agent</string>
+  <string>/Users/YOUR_USERNAME/Developer/projects/cortex</string>
+
   <key>EnvironmentVariables</key>
   <dict>
-    <key>PATH</key>
-    <string>/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin</string>
+    <key>CORTEX_DAEMON_KEY</key>
+    <string>REPLACE_WITH_OUTPUT_OF_openssl_rand_-hex_32</string>
+    <key>CORTEX_AGENT_ID</key>
+    <string>REPLACE_WITH_AGENT_UUID</string>
+    <key>CORTEX_AGENT_PORT</key>
+    <string>7654</string>
+    <key>SUPABASE_URL</key>
+    <string>REPLACE_WITH_SUPABASE_URL</string>
+    <key>SUPABASE_ANON_KEY</key>
+    <string>REPLACE_WITH_SUPABASE_ANON_KEY</string>
+    <key>POWERSYNC_URL</key>
+    <string>REPLACE_WITH_POWERSYNC_URL</string>
+    <key>CORTEX_API_KEY</key>
+    <string>REPLACE_WITH_CORTEX_API_KEY</string>
   </dict>
-  <key>RunAtLoad</key>
-  <true/>
+
   <key>KeepAlive</key>
   <true/>
+
+  <key>RunAtLoad</key>
+  <true/>
+
   <key>StandardOutPath</key>
-  <string>/tmp/cortex-agent.log</string>
+  <string>/Users/YOUR_USERNAME/Library/Logs/cortex-agent.log</string>
+
   <key>StandardErrorPath</key>
-  <string>/tmp/cortex-agent.log</string>
+  <string>/Users/YOUR_USERNAME/Library/Logs/cortex-agent.log</string>
 </dict>
 </plist>
