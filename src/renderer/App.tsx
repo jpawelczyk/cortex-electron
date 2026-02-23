@@ -106,8 +106,14 @@ function AuthenticatedApp() {
   useKeyboardShortcuts({ setActiveView: handleViewChange, deselectTask, startInlineCreate, startInlineProjectCreate, startInlineNoteCreate, toggleCommandPalette, activeView, selectedProjectId });
   useGlobalShortcuts({ setActiveView: handleViewChange, startInlineCreate, startInlineProjectCreate, activeView, selectedProjectId });
 
+  // Proactively load all data from local SQLite on mount.
+  // This is instant (local DB) and ensures views never render empty after a reload.
   useEffect(() => {
+    fetchTasksRef.current();
     fetchTrashedTasksRef.current();
+    fetchProjectsRef.current();
+    fetchContextsRef.current();
+    fetchNotesRef.current();
   }, []);
 
   // Auto-refresh stores when PowerSync detects table changes (sync or local writes)
