@@ -4,7 +4,7 @@ import { useStore } from '../stores';
 import { TaskList } from '../components/TaskList';
 import { filterTasksByContext } from '../lib/contextFilter';
 
-const SORT_DELAY_MS = 400;
+const DISMISS_DELAY_MS = 2500;
 
 export function SomedayView() {
   const tasks = useStore((s) => s.tasks);
@@ -16,14 +16,14 @@ export function SomedayView() {
   const selectedTaskId = useStore((s) => s.selectedTaskId);
 
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
-  const [settledIds, setSettledIds] = useState<string[]>([]);
+  const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
   const everCompletedIds = useRef(new Set<string>());
-  const sortTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  const dismissTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
   const completedIdsRef = useRef(completedIds);
   completedIdsRef.current = completedIds;
 
   useEffect(() => {
-    const timers = sortTimers.current;
+    const timers = dismissTimers.current;
     return () => timers.forEach(clearTimeout);
   }, []);
 
@@ -33,21 +33,13 @@ export function SomedayView() {
 
   const somedayTasks = useMemo(() => {
     const visible = tasks.filter((t) => {
+      if (dismissedIds.has(t.id)) return false;
       if (t.status === 'logbook' && everCompletedIds.current.has(t.id)) return true;
       if (t.status === 'someday') return true;
       return false;
     });
-    const filtered = filterTasksByContext(visible, activeContextIds, projects);
-    return filtered.sort((a, b) => {
-      const aIdx = settledIds.indexOf(a.id);
-      const bIdx = settledIds.indexOf(b.id);
-      const aSettled = aIdx >= 0 ? 1 : 0;
-      const bSettled = bIdx >= 0 ? 1 : 0;
-      if (aSettled !== bSettled) return aSettled - bSettled;
-      if (aSettled && bSettled) return aIdx - bIdx;
-      return 0;
-    });
-  }, [tasks, settledIds, activeContextIds, projects]);
+    return filterTasksByContext(visible, activeContextIds, projects);
+  }, [tasks, dismissedIds, activeContextIds, projects]);
 
   const handleComplete = useCallback(
     (id: string) => {
@@ -59,22 +51,26 @@ export function SomedayView() {
           next.delete(id);
           return next;
         });
-        const existing = sortTimers.current.get(id);
+        const existing = dismissTimers.current.get(id);
         if (existing) {
           clearTimeout(existing);
-          sortTimers.current.delete(id);
+          dismissTimers.current.delete(id);
         }
-        setSettledIds((prev) => prev.filter((x) => x !== id));
+        setDismissedIds((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
       } else {
         // Complete
         updateTask(id, { status: 'logbook' });
         setCompletedIds((prev) => new Set(prev).add(id));
         everCompletedIds.current.add(id);
         const timer = setTimeout(() => {
-          setSettledIds((prev) => [id, ...prev]);
-          sortTimers.current.delete(id);
-        }, SORT_DELAY_MS);
-        sortTimers.current.set(id, timer);
+          setDismissedIds((prev) => new Set(prev).add(id));
+          dismissTimers.current.delete(id);
+        }, DISMISS_DELAY_MS);
+        dismissTimers.current.set(id, timer);
       }
     },
     [updateTask],

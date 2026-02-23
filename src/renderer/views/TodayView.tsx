@@ -5,7 +5,7 @@ import { useStore } from '../stores';
 import { TaskList } from '../components/TaskList';
 import { filterTasksByContext } from '../lib/contextFilter';
 
-const SORT_DELAY_MS = 400;
+const DISMISS_DELAY_MS = 2500;
 
 function getToday(): string {
   return format(new Date(), 'yyyy-MM-dd');
@@ -23,10 +23,7 @@ export function TodayView() {
 
   // Toggle signal: which tasks are currently completed from the UI's perspective.
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
-  // Ordered settled list: newly settled tasks are prepended so they stay at
-  // their current visual position (top of the settled section) and don't cause
-  // a reorder of already-settled tasks.
-  const [settledIds, setSettledIds] = useState<string[]>([]);
+  const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
   // Filter signal: keeps logbook tasks visible during the async IPC window
   // after uncomplete (when completedIds no longer has the id but the store
   // hasn't updated to today yet).
@@ -34,12 +31,12 @@ export function TodayView() {
   // Tracks tasks the user has directly clicked so external updates don't
   // override their local intent.
   const interactedIds = useRef(new Set<string>());
-  const sortTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  const dismissTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
   const completedIdsRef = useRef(completedIds);
   completedIdsRef.current = completedIds;
 
   useEffect(() => {
-    const timers = sortTimers.current;
+    const timers = dismissTimers.current;
     const everCompleted = everCompletedIds.current;
     return () => {
       timers.forEach(clearTimeout);
@@ -62,9 +59,28 @@ export function TodayView() {
             everCompletedIds.current.delete(oldest);
           }
           everCompletedIds.current.add(task.id);
+          // Start dismiss timer for externally-completed task
+          if (!dismissTimers.current.has(task.id)) {
+            const timer = setTimeout(() => {
+              setDismissedIds((p) => new Set(p).add(task.id));
+              dismissTimers.current.delete(task.id);
+            }, DISMISS_DELAY_MS);
+            dismissTimers.current.set(task.id, timer);
+          }
           changed = true;
         } else if (task.status !== 'logbook' && next.has(task.id)) {
           next.delete(task.id);
+          // Clear dismiss state for externally un-completed task
+          const existing = dismissTimers.current.get(task.id);
+          if (existing) {
+            clearTimeout(existing);
+            dismissTimers.current.delete(task.id);
+          }
+          setDismissedIds((p) => {
+            const n = new Set(p);
+            n.delete(task.id);
+            return n;
+          });
           changed = true;
         }
       }
@@ -74,23 +90,15 @@ export function TodayView() {
 
   const todayTasks = useMemo(() => {
     const visible = tasks.filter((t) => {
+      if (dismissedIds.has(t.id)) return false;
       if (t.status === 'logbook' && everCompletedIds.current.has(t.id)) return true;
       if (t.status === 'logbook' || t.status === 'cancelled') return false;
       // Exclude overdue-by-deadline tasks — those belong in Inbox
       if (t.deadline && t.deadline < today) return false;
       return t.status === 'today' || t.when_date === today;
     });
-    const filtered = filterTasksByContext(visible, activeContextIds, projects);
-    return filtered.sort((a, b) => {
-      const aIdx = settledIds.indexOf(a.id);
-      const bIdx = settledIds.indexOf(b.id);
-      const aSettled = aIdx >= 0 ? 1 : 0;
-      const bSettled = bIdx >= 0 ? 1 : 0;
-      if (aSettled !== bSettled) return aSettled - bSettled;
-      if (aSettled && bSettled) return aIdx - bIdx;
-      return 0;
-    });
-  }, [tasks, today, settledIds, activeContextIds, projects]);
+    return filterTasksByContext(visible, activeContextIds, projects);
+  }, [tasks, today, dismissedIds, activeContextIds, projects]);
 
   const handleComplete = useCallback(
     (id: string) => {
@@ -103,12 +111,16 @@ export function TodayView() {
           next.delete(id);
           return next;
         });
-        const existing = sortTimers.current.get(id);
+        const existing = dismissTimers.current.get(id);
         if (existing) {
           clearTimeout(existing);
-          sortTimers.current.delete(id);
+          dismissTimers.current.delete(id);
         }
-        setSettledIds((prev) => prev.filter((x) => x !== id));
+        setDismissedIds((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
       } else {
         // Complete
         updateTask(id, { status: 'logbook' });
@@ -119,10 +131,10 @@ export function TodayView() {
         }
         everCompletedIds.current.add(id);
         const timer = setTimeout(() => {
-          setSettledIds((prev) => [id, ...prev]);
-          sortTimers.current.delete(id);
-        }, SORT_DELAY_MS);
-        sortTimers.current.set(id, timer);
+          setDismissedIds((prev) => new Set(prev).add(id));
+          dismissTimers.current.delete(id);
+        }, DISMISS_DELAY_MS);
+        dismissTimers.current.set(id, timer);
       }
     },
     [updateTask],

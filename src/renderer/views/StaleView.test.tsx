@@ -111,7 +111,7 @@ describe('StaleView', () => {
     expect(screen.getByText('Just completed')).toBeInTheDocument();
   });
 
-  it('sorts completed tasks to the bottom after delay', () => {
+  it('dismisses completed task after delay', () => {
     vi.useFakeTimers();
     mockTasks = [fakeTask({ id: '1', title: 'Stale task' })];
     const { rerender } = render(<StaleView />);
@@ -124,12 +124,11 @@ describe('StaleView', () => {
     ];
     rerender(<StaleView />);
 
-    act(() => { vi.advanceTimersByTime(400); });
+    act(() => { vi.advanceTimersByTime(2500); });
 
     const items = screen.getAllByTestId('task-item');
-    expect(items).toHaveLength(2);
+    expect(items).toHaveLength(1);
     expect(items[0]).toHaveTextContent('New stale task');
-    expect(items[1]).toHaveTextContent('Done task');
 
     vi.useRealTimers();
   });

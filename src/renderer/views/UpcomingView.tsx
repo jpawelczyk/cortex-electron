@@ -6,7 +6,7 @@ import { TaskList } from '../components/TaskList';
 import { filterTasksByContext } from '../lib/contextFilter';
 import type { Task } from '@shared/types';
 
-const SORT_DELAY_MS = 400;
+const DISMISS_DELAY_MS = 2500;
 
 function getToday(): string {
   return format(new Date(), 'yyyy-MM-dd');
@@ -47,14 +47,14 @@ export function UpcomingView() {
   const selectedTaskId = useStore((s) => s.selectedTaskId);
 
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
-  const [settledIds, setSettledIds] = useState<string[]>([]);
+  const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
   const everCompletedIds = useRef(new Set<string>());
-  const sortTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  const dismissTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
   const completedIdsRef = useRef(completedIds);
   completedIdsRef.current = completedIds;
 
   useEffect(() => {
-    const timers = sortTimers.current;
+    const timers = dismissTimers.current;
     return () => timers.forEach(clearTimeout);
   }, []);
 
@@ -65,6 +65,7 @@ export function UpcomingView() {
   const upcomingTasks = useMemo(() => {
     const today = getToday();
     const visible = tasks.filter((t) => {
+      if (dismissedIds.has(t.id)) return false;
       if (t.status === 'logbook' && everCompletedIds.current.has(t.id)) return true;
       if (t.status === 'upcoming') {
         // Tasks whose when_date has arrived belong in Today view
@@ -74,7 +75,7 @@ export function UpcomingView() {
       return false;
     });
     return filterTasksByContext(visible, activeContextIds, projects);
-  }, [tasks, activeContextIds, projects]);
+  }, [tasks, dismissedIds, activeContextIds, projects]);
 
   const groupedTasks = useMemo(() => {
     const groups: DateGroup[] = [];
@@ -102,21 +103,8 @@ export function UpcomingView() {
       }
     }
 
-    // Sort settled tasks to bottom within each group
-    for (const group of groups) {
-      group.tasks.sort((a, b) => {
-        const aIdx = settledIds.indexOf(a.id);
-        const bIdx = settledIds.indexOf(b.id);
-        const aSettled = aIdx >= 0 ? 1 : 0;
-        const bSettled = bIdx >= 0 ? 1 : 0;
-        if (aSettled !== bSettled) return aSettled - bSettled;
-        if (aSettled && bSettled) return aIdx - bIdx;
-        return 0;
-      });
-    }
-
     return groups;
-  }, [upcomingTasks, settledIds]);
+  }, [upcomingTasks]);
 
   const handleComplete = useCallback(
     (id: string) => {
@@ -128,22 +116,26 @@ export function UpcomingView() {
           next.delete(id);
           return next;
         });
-        const existing = sortTimers.current.get(id);
+        const existing = dismissTimers.current.get(id);
         if (existing) {
           clearTimeout(existing);
-          sortTimers.current.delete(id);
+          dismissTimers.current.delete(id);
         }
-        setSettledIds((prev) => prev.filter((x) => x !== id));
+        setDismissedIds((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
       } else {
         // Complete
         updateTask(id, { status: 'logbook' });
         setCompletedIds((prev) => new Set(prev).add(id));
         everCompletedIds.current.add(id);
         const timer = setTimeout(() => {
-          setSettledIds((prev) => [id, ...prev]);
-          sortTimers.current.delete(id);
-        }, SORT_DELAY_MS);
-        sortTimers.current.set(id, timer);
+          setDismissedIds((prev) => new Set(prev).add(id));
+          dismissTimers.current.delete(id);
+        }, DISMISS_DELAY_MS);
+        dismissTimers.current.set(id, timer);
       }
     },
     [updateTask],

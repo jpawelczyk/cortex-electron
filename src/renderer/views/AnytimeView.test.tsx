@@ -114,7 +114,7 @@ describe('AnytimeView', () => {
       expect(screen.getByText('Just completed')).toBeInTheDocument();
     });
 
-    it('sorts completed tasks to the bottom after delay', () => {
+    it('dismisses completed task after delay', () => {
       vi.useFakeTimers();
       mockTasks = [fakeTask({ id: '1', title: 'Active task' })];
       const { rerender } = render(<AnytimeView />);
@@ -127,13 +127,12 @@ describe('AnytimeView', () => {
       ];
       rerender(<AnytimeView />);
 
-      // Advance past sort delay
-      act(() => { vi.advanceTimersByTime(400); });
+      // Advance past dismiss delay
+      act(() => { vi.advanceTimersByTime(2500); });
 
       const items = screen.getAllByTestId('task-item');
-      expect(items).toHaveLength(2);
+      expect(items).toHaveLength(1);
       expect(items[0]).toHaveTextContent('New anytime task');
-      expect(items[1]).toHaveTextContent('Done task');
 
       vi.useRealTimers();
     });

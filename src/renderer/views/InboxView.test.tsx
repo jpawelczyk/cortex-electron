@@ -233,7 +233,7 @@ describe('InboxView', () => {
       vi.useRealTimers();
     });
 
-    it('sorts completed tasks to the bottom after delay', () => {
+    it('dismisses completed task after delay', () => {
       vi.useFakeTimers();
       mockTasks = [fakeTask({ id: '1', title: 'Active task', status: 'inbox' })];
       const { rerender } = render(<InboxView />);
@@ -248,13 +248,12 @@ describe('InboxView', () => {
       ];
       rerender(<InboxView />);
 
-      // Advance past sort delay
-      act(() => { vi.advanceTimersByTime(400); });
+      // Advance past dismiss delay
+      act(() => { vi.advanceTimersByTime(2500); });
 
       const items = screen.getAllByTestId('task-item');
-      expect(items).toHaveLength(2);
+      expect(items).toHaveLength(1);
       expect(items[0]).toHaveTextContent('New inbox task');
-      expect(items[1]).toHaveTextContent('Done task');
 
       vi.useRealTimers();
     });
@@ -313,39 +312,6 @@ describe('InboxView', () => {
       expect(screen.getByText('Task B')).toBeInTheDocument();
     });
 
-    it('shows logbook tasks completed today on fresh mount', () => {
-      vi.useFakeTimers();
-      vi.setSystemTime(new Date('2026-02-18T12:00:00'));
-
-      mockTasks = [
-        fakeTask({ id: '1', title: 'Done today', status: 'logbook', completed_at: '2026-02-18T10:00:00.000Z' }),
-        fakeTask({ id: '2', title: 'Inbox task', status: 'inbox' }),
-      ];
-      render(<InboxView />);
-
-      expect(screen.getByText('Done today')).toBeInTheDocument();
-      expect(screen.getByText('Inbox task')).toBeInTheDocument();
-
-      vi.useRealTimers();
-    });
-
-    it('sorts tasks completed today to the bottom on fresh mount', () => {
-      vi.useFakeTimers();
-      vi.setSystemTime(new Date('2026-02-18T12:00:00'));
-
-      mockTasks = [
-        fakeTask({ id: '1', title: 'Done today', status: 'logbook', completed_at: '2026-02-18T09:00:00.000Z' }),
-        fakeTask({ id: '2', title: 'Inbox task', status: 'inbox' }),
-      ];
-      render(<InboxView />);
-
-      const items = screen.getAllByTestId('task-item');
-      expect(items[0]).toHaveTextContent('Inbox task');
-      expect(items[1]).toHaveTextContent('Done today');
-
-      vi.useRealTimers();
-    });
-
     it('does not show logbook tasks completed on previous days', () => {
       vi.useFakeTimers();
       vi.setSystemTime(new Date('2026-02-18T12:00:00'));
@@ -358,36 +324,6 @@ describe('InboxView', () => {
 
       expect(screen.queryByText('Done yesterday')).not.toBeInTheDocument();
       expect(screen.getByText('Inbox task')).toBeInTheDocument();
-
-      vi.useRealTimers();
-    });
-
-    it('shows store-loaded logbook task completed today with checked checkbox', () => {
-      vi.useFakeTimers();
-      vi.setSystemTime(new Date('2026-02-18T12:00:00'));
-
-      mockTasks = [
-        fakeTask({ id: '1', title: 'Done today', status: 'logbook', completed_at: '2026-02-18T09:00:00.000Z' }),
-      ];
-      render(<InboxView />);
-
-      expect(screen.getByRole('checkbox')).toHaveAttribute('aria-checked', 'true');
-
-      vi.useRealTimers();
-    });
-
-    it('uncompletes a store-loaded logbook task on checkbox click', () => {
-      vi.useFakeTimers();
-      vi.setSystemTime(new Date('2026-02-18T12:00:00'));
-
-      mockTasks = [
-        fakeTask({ id: '1', title: 'Done today', status: 'logbook', completed_at: '2026-02-18T09:00:00.000Z' }),
-      ];
-      render(<InboxView />);
-
-      // Click checkbox on the already-completed task
-      act(() => { screen.getByRole('checkbox').click(); });
-      expect(mockUpdateTask).toHaveBeenCalledWith('1', { status: 'inbox' });
 
       vi.useRealTimers();
     });

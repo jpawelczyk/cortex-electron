@@ -110,6 +110,29 @@ describe('SomedayView', () => {
     expect(screen.getByText('Just completed')).toBeInTheDocument();
   });
 
+  it('dismisses completed task after delay', () => {
+    vi.useFakeTimers();
+    mockTasks = [fakeTask({ id: '1', title: 'Active task' })];
+    const { rerender } = render(<SomedayView />);
+
+    act(() => { screen.getByRole('checkbox').click(); });
+
+    mockTasks = [
+      fakeTask({ id: '1', title: 'Done task', status: 'logbook', completed_at: '2026-02-18T00:00:00.000Z' }),
+      fakeTask({ id: '2', title: 'New someday task', status: 'someday' }),
+    ];
+    rerender(<SomedayView />);
+
+    // Advance past dismiss delay
+    act(() => { vi.advanceTimersByTime(2500); });
+
+    const items = screen.getAllByTestId('task-item');
+    expect(items).toHaveLength(1);
+    expect(items[0]).toHaveTextContent('New someday task');
+
+    vi.useRealTimers();
+  });
+
   it('shows empty state message', () => {
     render(<SomedayView />);
     expect(screen.getByText(/no someday tasks/i)).toBeInTheDocument();

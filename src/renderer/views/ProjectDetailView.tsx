@@ -16,7 +16,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
 
 const DEBOUNCE_MS = 500;
 const STALENESS_DAYS = 14;
-const SORT_DELAY_MS = 400;
+const DISMISS_DELAY_MS = 2500;
 
 const STATUS_OPTIONS: { value: ProjectStatus; label: string; className: string }[] = [
   { value: 'planned', label: 'Planned', className: 'bg-muted-foreground/20 text-muted-foreground' },
@@ -66,14 +66,14 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
 
   // --- Completion animation state (same as InboxView / TodayView) ---
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
-  const [settledIds, setSettledIds] = useState<string[]>([]);
+  const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
   const everCompletedIds = useRef(new Set<string>());
-  const sortTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  const dismissTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
   const completedIdsRef = useRef(completedIds);
   completedIdsRef.current = completedIds;
 
   useEffect(() => {
-    const timers = sortTimers.current;
+    const timers = dismissTimers.current;
     return () => timers.forEach(clearTimeout);
   }, []);
 
@@ -85,21 +85,13 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
   );
 
   const projectTasks = useMemo(() => {
-    const visible = tasks.filter((t) =>
+    return tasks.filter((t) =>
       t.project_id === projectId &&
       !t.deleted_at &&
+      !dismissedIds.has(t.id) &&
       (t.status !== 'logbook' || everCompletedIds.current.has(t.id)),
     );
-    return visible.sort((a, b) => {
-      const aIdx = settledIds.indexOf(a.id);
-      const bIdx = settledIds.indexOf(b.id);
-      const aSettled = aIdx >= 0 ? 1 : 0;
-      const bSettled = bIdx >= 0 ? 1 : 0;
-      if (aSettled !== bSettled) return aSettled - bSettled;
-      if (aSettled && bSettled) return aIdx - bIdx;
-      return 0;
-    });
-  }, [tasks, projectId, settledIds]);
+  }, [tasks, projectId, dismissedIds]);
 
   const hasIncompleteTasks = useMemo(
     () => projectTasks.some((t) => t.status !== 'logbook' && t.status !== 'cancelled'),
@@ -190,22 +182,26 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
           next.delete(id);
           return next;
         });
-        const existing = sortTimers.current.get(id);
+        const existing = dismissTimers.current.get(id);
         if (existing) {
           clearTimeout(existing);
-          sortTimers.current.delete(id);
+          dismissTimers.current.delete(id);
         }
-        setSettledIds((prev) => prev.filter((x) => x !== id));
+        setDismissedIds((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
       } else {
         // Complete
         updateTask(id, { status: 'logbook' });
         setCompletedIds((prev) => new Set(prev).add(id));
         everCompletedIds.current.add(id);
         const timer = setTimeout(() => {
-          setSettledIds((prev) => [id, ...prev]);
-          sortTimers.current.delete(id);
-        }, SORT_DELAY_MS);
-        sortTimers.current.set(id, timer);
+          setDismissedIds((prev) => new Set(prev).add(id));
+          dismissTimers.current.delete(id);
+        }, DISMISS_DELAY_MS);
+        dismissTimers.current.set(id, timer);
       }
     },
     [updateTask],
