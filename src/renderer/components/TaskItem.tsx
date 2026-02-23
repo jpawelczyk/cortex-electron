@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Circle, CheckCircle2, Calendar, Flag, Trash2, Check, X, Cloud, Layers, Bot } from 'lucide-react';
+import { Circle, CheckCircle2, Calendar, Flag, Trash2, Check, X, Cloud, Layers, Bot, Lock } from 'lucide-react';
 import type { Task } from '@shared/types';
 import { useStore } from '../stores';
 import { useDebouncedCallback } from '../hooks/useDebouncedCallback';
@@ -439,7 +439,7 @@ function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, isComple
                     style={{ backgroundColor: effectiveContext?.color ?? undefined }}
                   />
                   <span>{effectiveContext?.name}</span>
-                  <span className="text-muted-foreground/50">(project)</span>
+                  <Lock className="size-3 text-muted-foreground/50" />
                 </div>
               ) : (
                 <Popover open={contextOpen} onOpenChange={setContextOpen}>

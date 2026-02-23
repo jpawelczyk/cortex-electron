@@ -815,8 +815,8 @@ describe('TaskItem context picker (expanded)', () => {
     render(
       <TaskItem task={fakeTask({ project_id: 'proj-1', context_id: null })} onComplete={vi.fn()} isExpanded />
     );
-    // Should show "(project)" indicator
-    expect(screen.getByText(/project/)).toBeInTheDocument();
+    // Should show inherited context name (non-editable)
+    expect(screen.getAllByText('Work').length).toBeGreaterThanOrEqual(1);
     // Should NOT have a clickable context button
     expect(screen.queryByRole('button', { name: /context/i })).not.toBeInTheDocument();
   });
