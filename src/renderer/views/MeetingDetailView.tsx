@@ -114,7 +114,7 @@ export function MeetingDetailView({ meetingId }: MeetingDetailViewProps) {
 
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="max-w-3xl mx-auto px-12 py-8">
+      <div className="px-12 py-8">
         {/* Top bar: back + delete */}
         <div className="flex items-center justify-between mb-6">
           <button
@@ -158,243 +158,139 @@ export function MeetingDetailView({ meetingId }: MeetingDetailViewProps) {
           )}
         </div>
 
-        {/* Header */}
-        <div className="mb-8">
-          {/* Title */}
-          <input
-            ref={titleRef}
-            value={title}
-            data-testid="meeting-title-input"
-            onChange={(e) => {
-              setTitle(e.target.value);
-              debouncedSaveTitle(e.target.value);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                editorRef.current?.focus();
-              }
-            }}
-            className="w-full bg-transparent text-xl font-semibold text-foreground px-0 py-1 border-0 focus:outline-none focus:ring-0 mb-3"
-            placeholder="Meeting title"
-          />
+        {/* Title */}
+        <input
+          ref={titleRef}
+          value={title}
+          data-testid="meeting-title-input"
+          onChange={(e) => {
+            setTitle(e.target.value);
+            debouncedSaveTitle(e.target.value);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              editorRef.current?.focus();
+            }
+          }}
+          className="w-full text-2xl font-bold bg-transparent border-0 outline-none mb-4 text-foreground placeholder:text-muted-foreground/50"
+          placeholder="Meeting title"
+        />
 
-          {/* Metadata pills: status, context, project */}
-          <div className="flex items-center gap-3">
-            {/* Status selector */}
-            <Popover open={statusOpen} onOpenChange={setStatusOpen}>
-              <PopoverTrigger asChild>
+        {/* Metadata pills */}
+        <div className="flex items-center gap-3 mb-4">
+          {/* Status selector */}
+          <Popover open={statusOpen} onOpenChange={setStatusOpen}>
+            <PopoverTrigger asChild>
+              <button
+                data-testid="meeting-status-picker"
+                className={`text-xs px-2.5 py-1 rounded-full font-medium cursor-default transition-colors ${currentStatusConfig?.className ?? ''}`}
+              >
+                {currentStatusConfig?.label ?? meeting.status}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-48 p-1" align="start">
+              {STATUS_OPTIONS.map(opt => (
                 <button
-                  data-testid="meeting-status-picker"
-                  className={`text-xs px-2.5 py-1 rounded-full font-medium cursor-default transition-colors ${currentStatusConfig?.className ?? ''}`}
-                >
-                  {currentStatusConfig?.label ?? meeting.status}
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-48 p-1" align="start">
-                {STATUS_OPTIONS.map(opt => (
-                  <button
-                    key={opt.value}
-                    role="option"
-                    aria-label={opt.label}
-                    onClick={() => { updateMeeting(meetingId, { status: opt.value }); setStatusOpen(false); }}
-                    className="flex items-center gap-2 w-full px-2 py-1.5 text-sm text-foreground hover:bg-accent rounded-md cursor-pointer"
-                  >
-                    <span className={`size-2 rounded-full ${opt.className.split(' ')[0]}`} />
-                    <span>{opt.label}</span>
-                  </button>
-                ))}
-              </PopoverContent>
-            </Popover>
-
-            {/* Context selector */}
-            <Popover open={contextOpen} onOpenChange={setContextOpen}>
-              <PopoverTrigger asChild>
-                <button
-                  data-testid="meeting-context-picker"
-                  className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium cursor-default transition-all ${
-                    context
-                      ? 'bg-accent/50 text-foreground hover:bg-accent'
-                      : 'bg-transparent text-muted-foreground hover:bg-accent/50'
-                  }`}
-                >
-                  {context ? (
-                    <>
-                      <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: context.color ?? undefined }} />
-                      {context.name}
-                    </>
-                  ) : (
-                    'No context'
-                  )}
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-48 p-1" align="start">
-                <button
+                  key={opt.value}
                   role="option"
-                  aria-label="None"
-                  onClick={() => { updateMeeting(meetingId, { context_id: null }); setContextOpen(false); }}
-                  className="flex items-center gap-2 w-full px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent rounded-md cursor-pointer"
+                  aria-label={opt.label}
+                  onClick={() => { updateMeeting(meetingId, { status: opt.value }); setStatusOpen(false); }}
+                  className="flex items-center gap-2 w-full px-2 py-1.5 text-sm text-foreground hover:bg-accent rounded-md cursor-pointer"
                 >
-                  None
+                  <span className={`size-2 rounded-full ${opt.className.split(' ')[0]}`} />
+                  <span>{opt.label}</span>
                 </button>
-                {contexts.map(c => (
-                  <button
-                    key={c.id}
-                    role="option"
-                    aria-label={c.name}
-                    onClick={() => { updateMeeting(meetingId, { context_id: c.id }); setContextOpen(false); }}
-                    className="flex items-center gap-2 w-full px-2 py-1.5 text-sm text-foreground hover:bg-accent rounded-md cursor-pointer"
-                  >
-                    <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: c.color ?? 'currentColor' }} />
-                    {c.name}
-                  </button>
-                ))}
-              </PopoverContent>
-            </Popover>
+              ))}
+            </PopoverContent>
+          </Popover>
 
-            {/* Project selector */}
-            <Popover open={projectOpen} onOpenChange={setProjectOpen}>
-              <PopoverTrigger asChild>
+          {/* Context selector */}
+          <Popover open={contextOpen} onOpenChange={setContextOpen}>
+            <PopoverTrigger asChild>
+              <button
+                data-testid="meeting-context-picker"
+                className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium cursor-default transition-all ${
+                  context
+                    ? 'bg-accent/50 text-foreground hover:bg-accent'
+                    : 'bg-transparent text-muted-foreground hover:bg-accent/50'
+                }`}
+              >
+                {context ? (
+                  <>
+                    <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: context.color ?? undefined }} />
+                    {context.name}
+                  </>
+                ) : (
+                  'No context'
+                )}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-48 p-1" align="start">
+              <button
+                role="option"
+                aria-label="None"
+                onClick={() => { updateMeeting(meetingId, { context_id: null }); setContextOpen(false); }}
+                className="flex items-center gap-2 w-full px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent rounded-md cursor-pointer"
+              >
+                None
+              </button>
+              {contexts.map(c => (
                 <button
-                  data-testid="meeting-project-picker"
-                  className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium cursor-default transition-all ${
-                    meeting.project_id
-                      ? 'bg-accent/50 text-foreground hover:bg-accent'
-                      : 'bg-transparent text-muted-foreground hover:bg-accent/50'
-                  }`}
-                >
-                  {(() => {
-                    const proj = meeting.project_id ? projects.find(p => p.id === meeting.project_id) : null;
-                    return proj ? proj.title : 'No project';
-                  })()}
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-48 p-1" align="start">
-                <button
+                  key={c.id}
                   role="option"
-                  aria-label="None"
-                  onClick={() => { updateMeeting(meetingId, { project_id: null }); setProjectOpen(false); }}
-                  className="flex items-center gap-2 w-full px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent rounded-md cursor-pointer"
+                  aria-label={c.name}
+                  onClick={() => { updateMeeting(meetingId, { context_id: c.id }); setContextOpen(false); }}
+                  className="flex items-center gap-2 w-full px-2 py-1.5 text-sm text-foreground hover:bg-accent rounded-md cursor-pointer"
                 >
-                  None
+                  <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: c.color ?? 'currentColor' }} />
+                  {c.name}
                 </button>
-                {projects.filter(p => !p.deleted_at).map(p => (
-                  <button
-                    key={p.id}
-                    role="option"
-                    aria-label={p.title}
-                    onClick={() => { updateMeeting(meetingId, { project_id: p.id }); setProjectOpen(false); }}
-                    className="flex items-center gap-2 w-full px-2 py-1.5 text-sm text-foreground hover:bg-accent rounded-md cursor-pointer"
-                  >
-                    {p.title}
-                  </button>
-                ))}
-              </PopoverContent>
-            </Popover>
-          </div>
-        </div>
+              ))}
+            </PopoverContent>
+          </Popover>
 
-        {/* Schedule */}
-        <div className="mb-6">
-          <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Schedule</h3>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <Calendar className="size-4 text-muted-foreground shrink-0" />
-              <input
-                type="date"
-                value={startDateStr}
-                data-testid="meeting-date-input"
-                onChange={(e) => {
-                  const newDate = e.target.value;
-                  if (!newDate) return;
-                  const time = meeting.is_all_day ? '00:00:00' : startTimeStr + ':00';
-                  updateMeeting(meetingId, { start_time: `${newDate}T${time}` });
-                }}
-                className="text-sm bg-transparent text-foreground border-0 outline-none focus:ring-0"
-              />
-            </div>
-            {!meeting.is_all_day && (
-              <div className="flex items-center gap-2">
-                <Clock className="size-4 text-muted-foreground shrink-0" />
-                <input
-                  type="time"
-                  value={startTimeStr}
-                  data-testid="meeting-start-time-input"
-                  onChange={(e) => {
-                    const time = e.target.value;
-                    if (!time) return;
-                    updateMeeting(meetingId, { start_time: `${startDateStr}T${time}:00` });
-                  }}
-                  className="text-sm bg-transparent text-foreground border-0 outline-none focus:ring-0"
-                />
-                <span className="text-muted-foreground text-sm">–</span>
-                <input
-                  type="time"
-                  value={endTimeStr}
-                  data-testid="meeting-end-time-input"
-                  onChange={(e) => {
-                    const time = e.target.value;
-                    if (!time) return;
-                    updateMeeting(meetingId, { end_time: `${startDateStr}T${time}:00` });
-                  }}
-                  className="text-sm bg-transparent text-foreground border-0 outline-none focus:ring-0"
-                  placeholder="End time"
-                />
-              </div>
-            )}
-            <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer ml-auto">
-              <input
-                type="checkbox"
-                checked={meeting.is_all_day}
-                data-testid="meeting-all-day-toggle"
-                onChange={(e) => updateMeeting(meetingId, { is_all_day: e.target.checked })}
-                className="rounded"
-              />
-              All day
-            </label>
-          </div>
-        </div>
-
-        {/* Details */}
-        <div className="mb-6">
-          <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Details</h3>
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <MapPin className="size-4 text-muted-foreground shrink-0" />
-              <input
-                value={location}
-                onChange={(e) => { setLocation(e.target.value); debouncedSaveLocation(e.target.value); }}
-                className="flex-1 text-sm bg-transparent border-0 outline-none text-foreground placeholder:text-muted-foreground/50"
-                placeholder="Location"
-                data-testid="meeting-location-input"
-              />
-            </div>
-            <div className="flex items-center gap-3">
-              <Link className="size-4 text-muted-foreground shrink-0" />
-              <input
-                value={meetingUrl}
-                onChange={(e) => { setMeetingUrl(e.target.value); debouncedSaveMeetingUrl(e.target.value); }}
-                className="flex-1 text-sm bg-transparent border-0 outline-none text-foreground placeholder:text-muted-foreground/50"
-                placeholder="Meeting URL"
-                data-testid="meeting-url-input"
-              />
-              {meetingUrl && (
-                <a
-                  href={meetingUrl.startsWith('http') ? meetingUrl : `https://${meetingUrl}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-primary hover:underline shrink-0"
+          {/* Project selector */}
+          <Popover open={projectOpen} onOpenChange={setProjectOpen}>
+            <PopoverTrigger asChild>
+              <button
+                data-testid="meeting-project-picker"
+                className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium cursor-default transition-all ${
+                  meeting.project_id
+                    ? 'bg-accent/50 text-foreground hover:bg-accent'
+                    : 'bg-transparent text-muted-foreground hover:bg-accent/50'
+                }`}
+              >
+                {(() => {
+                  const proj = meeting.project_id ? projects.find(p => p.id === meeting.project_id) : null;
+                  return proj ? proj.title : 'No project';
+                })()}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-48 p-1" align="start">
+              <button
+                role="option"
+                aria-label="None"
+                onClick={() => { updateMeeting(meetingId, { project_id: null }); setProjectOpen(false); }}
+                className="flex items-center gap-2 w-full px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent rounded-md cursor-pointer"
+              >
+                None
+              </button>
+              {projects.filter(p => !p.deleted_at).map(p => (
+                <button
+                  key={p.id}
+                  role="option"
+                  aria-label={p.title}
+                  onClick={() => { updateMeeting(meetingId, { project_id: p.id }); setProjectOpen(false); }}
+                  className="flex items-center gap-2 w-full px-2 py-1.5 text-sm text-foreground hover:bg-accent rounded-md cursor-pointer"
                 >
-                  Open
-                </a>
-              )}
-            </div>
-          </div>
-        </div>
+                  {p.title}
+                </button>
+              ))}
+            </PopoverContent>
+          </Popover>
 
-        {/* Attendees */}
-        <div className="mb-6">
-          <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Attendees</h3>
+          {/* Attendees */}
           <StakeholderPicker
             selectedIds={attendeeIds}
             onLink={(stakeholderId) => linkAttendee(meetingId, stakeholderId)}
@@ -402,9 +298,101 @@ export function MeetingDetailView({ meetingId }: MeetingDetailViewProps) {
           />
         </div>
 
+        {/* Schedule + details row */}
+        <div className="flex items-center gap-4 text-sm text-muted-foreground mb-6 flex-wrap">
+          <div className="flex items-center gap-1.5">
+            <Calendar className="size-3.5 shrink-0" />
+            <input
+              type="date"
+              value={startDateStr}
+              data-testid="meeting-date-input"
+              onChange={(e) => {
+                const newDate = e.target.value;
+                if (!newDate) return;
+                const time = meeting.is_all_day ? '00:00:00' : startTimeStr + ':00';
+                updateMeeting(meetingId, { start_time: `${newDate}T${time}` });
+              }}
+              className="bg-transparent text-sm text-foreground border-0 outline-none focus:ring-0 p-0 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer relative"
+            />
+          </div>
+          {!meeting.is_all_day && (
+            <div className="flex items-center gap-1.5">
+              <Clock className="size-3.5 shrink-0" />
+              <input
+                type="time"
+                value={startTimeStr}
+                data-testid="meeting-start-time-input"
+                onChange={(e) => {
+                  const time = e.target.value;
+                  if (!time) return;
+                  updateMeeting(meetingId, { start_time: `${startDateStr}T${time}:00` });
+                }}
+                className="bg-transparent text-sm text-foreground border-0 outline-none focus:ring-0 p-0 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer relative"
+              />
+              <span>–</span>
+              <input
+                type="time"
+                value={endTimeStr}
+                data-testid="meeting-end-time-input"
+                onChange={(e) => {
+                  const time = e.target.value;
+                  if (!time) return;
+                  updateMeeting(meetingId, { end_time: `${startDateStr}T${time}:00` });
+                }}
+                className="bg-transparent text-sm text-foreground border-0 outline-none focus:ring-0 p-0 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer relative"
+                placeholder="End"
+              />
+            </div>
+          )}
+          <button
+            data-testid="meeting-all-day-toggle"
+            onClick={() => updateMeeting(meetingId, { is_all_day: !meeting.is_all_day })}
+            className={`text-xs px-2 py-0.5 rounded-full transition-colors cursor-default ${
+              meeting.is_all_day
+                ? 'bg-primary/15 text-primary font-medium'
+                : 'text-muted-foreground hover:bg-accent/50'
+            }`}
+          >
+            All day
+          </button>
+        </div>
+
+        {/* Details */}
+        <div className="space-y-2 mb-6">
+          <div className="flex items-center gap-3">
+            <MapPin className="size-3.5 text-muted-foreground/50 shrink-0" />
+            <input
+              value={location}
+              onChange={(e) => { setLocation(e.target.value); debouncedSaveLocation(e.target.value); }}
+              className="flex-1 text-sm bg-transparent border-0 outline-none text-foreground placeholder:text-muted-foreground/30"
+              placeholder="Add location"
+              data-testid="meeting-location-input"
+            />
+          </div>
+          <div className="flex items-center gap-3">
+            <Link className="size-3.5 text-muted-foreground/50 shrink-0" />
+            <input
+              value={meetingUrl}
+              onChange={(e) => { setMeetingUrl(e.target.value); debouncedSaveMeetingUrl(e.target.value); }}
+              className="flex-1 text-sm bg-transparent border-0 outline-none text-foreground placeholder:text-muted-foreground/30"
+              placeholder="Add meeting URL"
+              data-testid="meeting-url-input"
+            />
+            {meetingUrl && (
+              <a
+                href={meetingUrl.startsWith('http') ? meetingUrl : `https://${meetingUrl}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-primary hover:underline shrink-0"
+              >
+                Open
+              </a>
+            )}
+          </div>
+        </div>
+
         {/* Recording */}
-        <div className="mb-8">
-          <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Recording</h3>
+        <div className="mb-6">
           <RecordingControls
             meetingId={meetingId}
             audioPath={meeting.audio_path}
@@ -412,19 +400,16 @@ export function MeetingDetailView({ meetingId }: MeetingDetailViewProps) {
           />
         </div>
 
-        {/* Notes */}
-        <div>
-          <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Notes</h3>
-          <MarkdownEditor
-            ref={editorRef}
-            key={meetingId}
-            value={notes}
-            onChange={(md) => {
-              setNotes(md);
-              debouncedSaveNotes(md);
-            }}
-          />
-        </div>
+        {/* Editor */}
+        <MarkdownEditor
+          ref={editorRef}
+          key={meetingId}
+          value={notes}
+          onChange={(md) => {
+            setNotes(md);
+            debouncedSaveNotes(md);
+          }}
+        />
       </div>
     </div>
   );
