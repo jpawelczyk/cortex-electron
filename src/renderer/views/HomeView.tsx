@@ -1,9 +1,22 @@
 import { useMemo, useState, useCallback, useRef, useEffect } from 'react';
-import { format } from 'date-fns';
-import { CloudSun, CheckCircle2 } from 'lucide-react';
+import { format, parseISO, isToday } from 'date-fns';
+import { CloudSun, CheckCircle2, Video } from 'lucide-react';
 import { useStore } from '../stores';
 import { useWeather } from '../hooks/useWeather';
 import { TaskList } from '../components/TaskList';
+import type { Meeting } from '../../shared/types';
+
+function formatMeetingTime(meeting: Meeting): string {
+  if (meeting.is_all_day) return 'All day';
+  const start = parseISO(meeting.start_time);
+  const timeStr = start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  if (meeting.end_time) {
+    const end = parseISO(meeting.end_time);
+    const endStr = end.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    return `${timeStr} – ${endStr}`;
+  }
+  return timeStr;
+}
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -42,6 +55,8 @@ export function HomeView() {
   const updateTask = useStore((s) => s.updateTask);
   const selectTask = useStore((s) => s.selectTask);
   const selectedTaskId = useStore((s) => s.selectedTaskId);
+  const meetings = useStore((s) => s.meetings);
+  const selectMeeting = useStore((s) => s.selectMeeting);
   const weather = useWeather(weatherCity);
 
   const today = format(now, 'yyyy-MM-dd');
@@ -103,6 +118,12 @@ export function HomeView() {
     },
     [updateTask],
   );
+
+  const todayMeetings = useMemo(() => {
+    return meetings
+      .filter((m) => !m.deleted_at && m.status !== 'cancelled' && isToday(parseISO(m.start_time)))
+      .sort((a, b) => parseISO(a.start_time).getTime() - parseISO(b.start_time).getTime());
+  }, [meetings]);
 
   const subtitle = getSubtitle(todayCount, overdueCount);
   const displayName = firstName || 'there';
@@ -214,6 +235,50 @@ export function HomeView() {
                 selectedTaskId={selectedTaskId}
                 completedIds={completedIds}
               />
+            )}
+          </div>
+        </div>
+        {/* Today's Meetings */}
+        <div
+          className="mt-6 rounded-xl border border-[oklch(1_0_0/6%)] overflow-hidden"
+          style={{
+            background: 'oklch(0.17 0.015 265 / 50%)',
+            backdropFilter: 'blur(20px) saturate(1.5)',
+            boxShadow: '0 1px 2px oklch(0 0 0 / 20%)',
+          }}
+        >
+          <div className="flex items-center gap-3 px-6 py-4 border-b border-[oklch(1_0_0/6%)]">
+            <h2 className="text-sm font-semibold text-foreground">Today&apos;s Meetings</h2>
+            {todayMeetings.length > 0 && (
+              <span className="text-xs tabular-nums text-muted-foreground/60">{todayMeetings.length}</span>
+            )}
+          </div>
+
+          <div className="px-3 py-2">
+            {todayMeetings.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
+                <Video className="size-8 mb-2 opacity-20" strokeWidth={1.25} />
+                <p className="text-sm">No meetings today</p>
+              </div>
+            ) : (
+              <div className="flex flex-col">
+                {todayMeetings.map((m) => (
+                  <div
+                    key={m.id}
+                    onClick={() => selectMeeting(m.id)}
+                    className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-accent/40 cursor-default transition-colors"
+                  >
+                    <Video className="size-4 text-muted-foreground shrink-0" strokeWidth={1.5} />
+                    <div className="flex-1 min-w-0">
+                      <span className="font-medium text-sm truncate block">{m.title}</span>
+                      <span className="text-xs text-muted-foreground">{formatMeetingTime(m)}</span>
+                    </div>
+                    {m.location && (
+                      <span className="text-xs text-muted-foreground/60 truncate max-w-[140px]">{m.location}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         </div>
