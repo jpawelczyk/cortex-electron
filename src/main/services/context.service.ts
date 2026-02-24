@@ -21,15 +21,16 @@ const DEFAULT_CONTEXTS: { name: string; color: string; icon: string; sort_order:
 export async function seedDefaultContexts(ctx: DbContext): Promise<void> {
   const { db } = ctx;
 
-  const count = await db.getOptional<{ count: number }>(
-    'SELECT COUNT(*) as count FROM contexts WHERE deleted_at IS NULL'
-  );
-
-  if (count && count.count > 0) return;
-
   const now = new Date().toISOString();
 
   for (const def of DEFAULT_CONTEXTS) {
+    // Check by name to avoid duplicates when sync delivers the same context
+    const existing = await db.getOptional<{ id: string }>(
+      'SELECT id FROM contexts WHERE name = ? AND deleted_at IS NULL',
+      [def.name]
+    );
+    if (existing) continue;
+
     await db.execute(
       'INSERT INTO contexts (id, name, color, icon, sort_order, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
       [uuid(), def.name, def.color, def.icon, def.sort_order, now, now, null]

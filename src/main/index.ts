@@ -116,6 +116,18 @@ app.whenReady().then(async () => {
     });
   });
 
+  // Register auth handlers BEFORE initDatabase() — the renderer can show
+  // the login form while the DB is still initialising (especially in prod
+  // where Worker spawn from asar is slow). Auth handlers only need the
+  // Supabase client, not the local DB.
+  const syncConfig = getSyncConfig();
+  if (syncConfig) {
+    const authStorage = new FileAuthStorage(app.getPath('userData'));
+    const connector = new SupabaseConnector(syncConfig, authStorage);
+    registerAuthHandlers(connector);
+  }
+  ipcMain.handle('auth:is-configured', () => !!syncConfig);
+
   createWindow();
   registerGlobalShortcuts(mainWindow!);
 
@@ -178,18 +190,6 @@ app.whenReady().then(async () => {
       `Cortex could not start its database.\n\n${err instanceof Error ? err.message : String(err)}`,
     );
   }
-
-  // Register auth handlers if sync is configured
-  // Sync connection is now driven by the renderer after successful auth
-  const syncConfig = getSyncConfig();
-  if (syncConfig) {
-    const authStorage = new FileAuthStorage(app.getPath('userData'));
-    const connector = new SupabaseConnector(syncConfig, authStorage);
-    registerAuthHandlers(connector);
-  }
-
-  // Let renderer know whether auth is required
-  ipcMain.handle('auth:is-configured', () => !!syncConfig);
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

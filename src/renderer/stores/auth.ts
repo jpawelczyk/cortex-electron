@@ -73,68 +73,78 @@ export const createAuthSlice: StateCreator<AuthSlice & SettingsSlice, [], [], Au
   signIn: async (email: string, password: string) => {
     set({ authLoading: true, authError: null });
 
-    const result = await window.cortex.auth.signIn({ email, password }) as {
-      success: boolean;
-      data?: { session: unknown & { user?: unknown }; user: unknown };
-      error?: string;
-    };
+    try {
+      const result = await window.cortex.auth.signIn({ email, password }) as {
+        success: boolean;
+        data?: { session: unknown & { user?: unknown }; user: unknown };
+        error?: string;
+      };
 
-    if (!result.success) {
-      set({ authLoading: false, authError: result.error ?? 'Sign in failed' });
-      return;
+      if (!result.success) {
+        set({ authLoading: false, authError: result.error ?? 'Sign in failed' });
+        return;
+      }
+
+      const session = result.data?.session as { user?: unknown } | undefined;
+      const user = result.data?.user ?? null;
+      set({
+        authSession: session ?? null,
+        authUser: user,
+        authLoading: false,
+        authError: null,
+      });
+
+      if (user) {
+        hydrateProfileFromUser(user, get().setUserProfile);
+      }
+
+      // Connect sync after successful sign in
+      await window.cortex.sync.connect();
+    } catch (err) {
+      console.error('[AuthSlice] signIn failed:', err);
+      set({ authLoading: false, authError: 'Sign in failed. Please try again.' });
     }
-
-    const session = result.data?.session as { user?: unknown } | undefined;
-    const user = result.data?.user ?? null;
-    set({
-      authSession: session ?? null,
-      authUser: user,
-      authLoading: false,
-      authError: null,
-    });
-
-    if (user) {
-      hydrateProfileFromUser(user, get().setUserProfile);
-    }
-
-    // Connect sync after successful sign in
-    await window.cortex.sync.connect();
   },
 
   signUp: async (email: string, password: string, firstName?: string, lastName?: string) => {
     set({ authLoading: true, authError: null });
 
-    const result = await window.cortex.auth.signUp({
-      email,
-      password,
-      first_name: firstName,
-      last_name: lastName,
-    }) as {
-      success: boolean;
-      data?: { session: unknown | null; user: unknown };
-      error?: string;
-    };
+    try {
+      const result = await window.cortex.auth.signUp({
+        email,
+        password,
+        first_name: firstName,
+        last_name: lastName,
+      }) as {
+        success: boolean;
+        data?: { session: unknown | null; user: unknown };
+        error?: string;
+      };
 
-    if (!result.success) {
-      set({ authLoading: false, authError: result.error ?? 'Sign up failed' });
-      return;
-    }
+      if (!result.success) {
+        set({ authLoading: false, authError: result.error ?? 'Sign up failed' });
+        return;
+      }
 
-    const user = result.data?.user ?? null;
-    set({
-      authUser: user,
-      authSession: result.data?.session ?? null,
-      authLoading: false,
-      authError: null,
-    });
+      const user = result.data?.user ?? null;
+      set({
+        authUser: user,
+        authSession: result.data?.session ?? null,
+        authLoading: false,
+        authError: null,
+      });
 
-    if (user) {
-      hydrateProfileFromUser(user, get().setUserProfile);
-    }
+      if (user) {
+        hydrateProfileFromUser(user, get().setUserProfile);
+      }
 
-    // Connect sync if session was returned (auto-confirmed user)
-    if (result.data?.session) {
-      await window.cortex.sync.connect();
+      // Connect sync if session was returned (auto-confirmed user)
+      if (result.data?.session) {
+        await window.cortex.sync.connect();
+      }
+    } catch (err) {
+      console.error('[AuthSlice] signUp failed:', err);
+      set({ authLoading: false, authError: 'Sign up failed. Please try again.' });
     }
   },
 

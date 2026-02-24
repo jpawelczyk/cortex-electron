@@ -275,14 +275,17 @@ describe('ContextService', () => {
       expect(research.icon).toBe('FlaskConical');
     });
 
-    it('does nothing when contexts already exist', async () => {
-      await contextService.create({ name: 'Existing' });
+    it('does not duplicate contexts that already exist by name', async () => {
+      await contextService.create({ name: 'Work' });
 
       await seedDefaultContexts({ db: db.db });
 
       const contexts = await contextService.getAll();
-      expect(contexts).toHaveLength(1);
-      expect(contexts[0].name).toBe('Existing');
+      // 'Work' already existed so should not be re-inserted; Personal + Research are new
+      expect(contexts).toHaveLength(3);
+      expect(contexts.filter(c => c.name === 'Work')).toHaveLength(1);
+      expect(contexts.filter(c => c.name === 'Personal')).toHaveLength(1);
+      expect(contexts.filter(c => c.name === 'Research')).toHaveLength(1);
     });
   });
 
