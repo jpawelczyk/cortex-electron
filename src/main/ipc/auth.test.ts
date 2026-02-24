@@ -141,6 +141,7 @@ describe('auth IPC handlers', () => {
       expect(mockConnector.client.auth.signUp).toHaveBeenCalledWith({
         email: 'new@example.com',
         password: 'securepass',
+        options: { data: {} },
       });
     });
 

@@ -63,7 +63,7 @@ describe('SignUp', () => {
     await user.type(screen.getByLabelText('Confirm password'), 'securepass');
     await user.click(screen.getByRole('button', { name: 'Sign up' }));
 
-    expect(mockSignUp).toHaveBeenCalledWith('new@example.com', 'securepass');
+    expect(mockSignUp).toHaveBeenCalledWith('new@example.com', 'securepass', undefined, undefined);
   });
 
   it('shows error when passwords do not match', async () => {
@@ -115,8 +115,8 @@ describe('SignUp', () => {
     expect(screen.getByRole('button', { name: 'Creating account...' })).toBeInTheDocument();
   });
 
-  it('autofocuses the email field', () => {
+  it('autofocuses the first name field', () => {
     render(<SignUp onSwitchToSignIn={onSwitchToSignIn} />);
-    expect(screen.getByLabelText('Email')).toHaveFocus();
+    expect(screen.getByLabelText('First name')).toHaveFocus();
   });
 });
