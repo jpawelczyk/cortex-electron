@@ -16,7 +16,15 @@ export default defineConfig({
           build: {
             outDir: path.resolve(__dirname, 'dist/main'),
             rollupOptions: {
-              external: ['better-sqlite3', '@powersync/node', '@powersync/common', '@supabase/supabase-js'],
+              external: [
+              'better-sqlite3',
+              '@powersync/node',
+              '@powersync/common',
+              '@supabase/supabase-js',
+              '@huggingface/transformers',
+              'onnxruntime-node',
+              'sharp', // optional dep of transformers.js
+            ],
             },
           },
           resolve: {
