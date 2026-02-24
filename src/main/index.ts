@@ -139,7 +139,7 @@ app.whenReady().then(async () => {
         mainWindow.webContents.send('powersync:tables-updated', tables);
       }
     };
-    registerHandlers(db, notifyRenderer);
+    registerHandlers(db, notifyRenderer, () => searchService);
 
     createWindow();
     registerGlobalShortcuts(mainWindow!);

@@ -12,6 +12,8 @@ import { createMeetingService } from '../services/meeting.service';
 import { createMeetingAttendeeService } from '../services/meeting-attendee.service';
 import type { AsyncDatabase } from '../db/types';
 import type { DbContext } from '../db/types';
+import type { SearchService } from '../search/search-service';
+import type { SearchableEntityType } from '@shared/search-types';
 import {
   CreateNoteSchema, UpdateNoteSchema, NoteIdSchema,
   CreateAIAgentSchema, AIAgentIdSchema,
@@ -44,11 +46,15 @@ function handleWrite(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   handler: (...args: any[]) => Promise<unknown>,
   _notify: NotifyChangeFn,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  afterSuccess?: (result: unknown, ...args: any[]) => void,
 ): void {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ipcMain.handle(channel, async (_: any, ...args: any[]) => {
     try {
-      return await handler(...args);
+      const result = await handler(...args);
+      afterSuccess?.(result, ...args);
+      return result;
     } catch (err) {
       console.error(`[IPC ${channel}]`, err instanceof Error ? err.message : String(err));
       throw toIpcError(err);
@@ -56,8 +62,12 @@ function handleWrite(
   });
 }
 
-export function registerHandlers(db: AsyncDatabase, notify: NotifyChangeFn): void {
+export function registerHandlers(db: AsyncDatabase, notify: NotifyChangeFn, getSearchService?: () => SearchService | null): void {
   const ctx: DbContext = { db };
+
+  const indexEntity = (entityType: SearchableEntityType) =>
+    (result: unknown) => { const e = result as { id?: string }; if (e?.id) getSearchService?.()?.indexEntity(e.id, entityType, result); };
+  const removeEntity = (_result: unknown, id: unknown) => { getSearchService?.()?.removeEntity(id as string); };
 
   const taskService = createTaskService(ctx);
   const projectService = createProjectService(ctx);
@@ -77,10 +87,10 @@ export function registerHandlers(db: AsyncDatabase, notify: NotifyChangeFn): voi
   ipcMain.handle('tasks:listTrashed', async () => { try { return await taskService.listTrashed(); } catch (err) { console.error('[IPC tasks:listTrashed]', err instanceof Error ? err.message : String(err)); throw toIpcError(err); } });
 
   // Tasks — writes
-  handleWrite('tasks:create', ['tasks'], (input) => taskService.create(CreateTaskSchema.parse(input)), notify);
-  handleWrite('tasks:update', ['tasks'], (id, input) => taskService.update(TaskIdSchema.parse(id as string), UpdateTaskSchema.parse(input)), notify);
-  handleWrite('tasks:delete', ['tasks'], (id) => taskService.delete(TaskIdSchema.parse(id as string)), notify);
-  handleWrite('tasks:restore', ['tasks'], (id) => taskService.restore(TaskIdSchema.parse(id as string)), notify);
+  handleWrite('tasks:create', ['tasks'], (input) => taskService.create(CreateTaskSchema.parse(input)), notify, indexEntity('task'));
+  handleWrite('tasks:update', ['tasks'], (id, input) => taskService.update(TaskIdSchema.parse(id as string), UpdateTaskSchema.parse(input)), notify, indexEntity('task'));
+  handleWrite('tasks:delete', ['tasks'], (id) => taskService.delete(TaskIdSchema.parse(id as string)), notify, removeEntity);
+  handleWrite('tasks:restore', ['tasks'], (id) => taskService.restore(TaskIdSchema.parse(id as string)), notify, indexEntity('task'));
   handleWrite('tasks:emptyTrash', ['tasks'], () => taskService.emptyTrash(), notify);
   handleWrite('tasks:purgeExpiredTrash', ['tasks'], (days) => taskService.purgeExpiredTrash(days as number), notify);
 
@@ -89,9 +99,9 @@ export function registerHandlers(db: AsyncDatabase, notify: NotifyChangeFn): voi
   ipcMain.handle('projects:get', async (_, id: string) => { try { return await projectService.get(ProjectIdSchema.parse(id)); } catch (err) { console.error('[IPC projects:get]', err instanceof Error ? err.message : String(err)); throw toIpcError(err); } });
 
   // Projects — writes
-  handleWrite('projects:create', ['projects'], (input) => projectService.create(CreateProjectSchema.parse(input)), notify);
-  handleWrite('projects:update', ['projects'], (id, input) => projectService.update(ProjectIdSchema.parse(id as string), UpdateProjectSchema.parse(input)), notify);
-  handleWrite('projects:delete', ['projects'], (id) => projectService.delete(ProjectIdSchema.parse(id as string)), notify);
+  handleWrite('projects:create', ['projects'], (input) => projectService.create(CreateProjectSchema.parse(input)), notify, indexEntity('project'));
+  handleWrite('projects:update', ['projects'], (id, input) => projectService.update(ProjectIdSchema.parse(id as string), UpdateProjectSchema.parse(input)), notify, indexEntity('project'));
+  handleWrite('projects:delete', ['projects'], (id) => projectService.delete(ProjectIdSchema.parse(id as string)), notify, removeEntity);
 
   // Contexts — reads
   ipcMain.handle('contexts:list', async () => { try { return await contextService.getAll(); } catch (err) { console.error('[IPC contexts:list]', err instanceof Error ? err.message : String(err)); throw toIpcError(err); } });
@@ -107,9 +117,9 @@ export function registerHandlers(db: AsyncDatabase, notify: NotifyChangeFn): voi
   ipcMain.handle('stakeholders:get', async (_, id: string) => { try { return await stakeholderService.get(StakeholderIdSchema.parse(id)); } catch (err) { console.error('[IPC stakeholders:get]', err instanceof Error ? err.message : String(err)); throw toIpcError(err); } });
 
   // Stakeholders — writes
-  handleWrite('stakeholders:create', ['stakeholders'], (input) => stakeholderService.create(CreateStakeholderSchema.parse(input)), notify);
-  handleWrite('stakeholders:update', ['stakeholders'], (id, input) => stakeholderService.update(StakeholderIdSchema.parse(id as string), UpdateStakeholderSchema.parse(input)), notify);
-  handleWrite('stakeholders:delete', ['stakeholders'], (id) => stakeholderService.delete(StakeholderIdSchema.parse(id as string)), notify);
+  handleWrite('stakeholders:create', ['stakeholders'], (input) => stakeholderService.create(CreateStakeholderSchema.parse(input)), notify, indexEntity('stakeholder'));
+  handleWrite('stakeholders:update', ['stakeholders'], (id, input) => stakeholderService.update(StakeholderIdSchema.parse(id as string), UpdateStakeholderSchema.parse(input)), notify, indexEntity('stakeholder'));
+  handleWrite('stakeholders:delete', ['stakeholders'], (id) => stakeholderService.delete(StakeholderIdSchema.parse(id as string)), notify, removeEntity);
 
   // Project Stakeholders — reads
   ipcMain.handle('projectStakeholders:list', async (_, projectId: string) => { try { return await projectStakeholderService.listByProject(ProjectIdSchema.parse(projectId)); } catch (err) { console.error('[IPC projectStakeholders:list]', err instanceof Error ? err.message : String(err)); throw toIpcError(err); } });
@@ -141,9 +151,9 @@ export function registerHandlers(db: AsyncDatabase, notify: NotifyChangeFn): voi
   ipcMain.handle('notes:get', async (_, id: string) => { try { return await noteService.get(NoteIdSchema.parse(id)); } catch (err) { console.error('[IPC notes:get]', err instanceof Error ? err.message : String(err)); throw toIpcError(err); } });
 
   // Notes — writes
-  handleWrite('notes:create', ['notes'], (input) => noteService.create(CreateNoteSchema.parse(input)), notify);
-  handleWrite('notes:update', ['notes'], (id, input) => noteService.update(NoteIdSchema.parse(id as string), UpdateNoteSchema.parse(input)), notify);
-  handleWrite('notes:delete', ['notes'], (id) => noteService.delete(NoteIdSchema.parse(id as string)), notify);
+  handleWrite('notes:create', ['notes'], (input) => noteService.create(CreateNoteSchema.parse(input)), notify, indexEntity('note'));
+  handleWrite('notes:update', ['notes'], (id, input) => noteService.update(NoteIdSchema.parse(id as string), UpdateNoteSchema.parse(input)), notify, indexEntity('note'));
+  handleWrite('notes:delete', ['notes'], (id) => noteService.delete(NoteIdSchema.parse(id as string)), notify, removeEntity);
 
   // AI Agents — reads
   ipcMain.handle('agents:list', async () => { try { return await agentService.list(); } catch (err) { console.error('[IPC agents:list]', err instanceof Error ? err.message : String(err)); throw toIpcError(err); } });
@@ -157,9 +167,9 @@ export function registerHandlers(db: AsyncDatabase, notify: NotifyChangeFn): voi
   ipcMain.handle('meetings:get', async (_, id: string) => { try { return await meetingService.get(MeetingIdSchema.parse(id)); } catch (err) { console.error('[IPC meetings:get]', err instanceof Error ? err.message : String(err)); throw toIpcError(err); } });
 
   // Meetings — writes
-  handleWrite('meetings:create', ['meetings'], (input) => meetingService.create(CreateMeetingSchema.parse(input)), notify);
-  handleWrite('meetings:update', ['meetings'], (id, input) => meetingService.update(MeetingIdSchema.parse(id as string), UpdateMeetingSchema.parse(input)), notify);
-  handleWrite('meetings:delete', ['meetings'], (id) => meetingService.delete(MeetingIdSchema.parse(id as string)), notify);
+  handleWrite('meetings:create', ['meetings'], (input) => meetingService.create(CreateMeetingSchema.parse(input)), notify, indexEntity('meeting'));
+  handleWrite('meetings:update', ['meetings'], (id, input) => meetingService.update(MeetingIdSchema.parse(id as string), UpdateMeetingSchema.parse(input)), notify, indexEntity('meeting'));
+  handleWrite('meetings:delete', ['meetings'], (id) => meetingService.delete(MeetingIdSchema.parse(id as string)), notify, removeEntity);
 
   // Meeting Attendees — reads
   ipcMain.handle('meetingAttendees:list', async (_, meetingId: string) => { try { return await meetingAttendeeService.listByMeeting(MeetingIdSchema.parse(meetingId)); } catch (err) { console.error('[IPC meetingAttendees:list]', err instanceof Error ? err.message : String(err)); throw toIpcError(err); } });
