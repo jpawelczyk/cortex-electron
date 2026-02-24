@@ -56,6 +56,7 @@ vi.mock('../stores', () => ({
       fetchChecklistItems: vi.fn(),
       deleteChecklistItem: vi.fn(),
       updateChecklistItem: vi.fn(),
+      activeContextIds: [],
       stakeholders: [],
       projectStakeholderLinks: [],
       fetchProjectStakeholders: vi.fn(),
