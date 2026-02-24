@@ -228,11 +228,25 @@ export async function updateNote(
 export async function deleteNote(id: string): Promise<boolean> {
   const db = getDatabase();
   const now = new Date().toISOString();
-  const result = await db.execute(
-    'UPDATE notes SET deleted_at = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL',
+  
+  // Check if note exists and isn't already deleted
+  const existing = await db.getOptional<{ deleted_at: string | null }>(
+    'SELECT deleted_at FROM notes WHERE id = ?',
+    [id],
+  );
+  if (!existing || existing.deleted_at !== null) return false;
+  
+  await db.execute(
+    'UPDATE notes SET deleted_at = ?, updated_at = ? WHERE id = ?',
     [now, now, id],
   );
-  return (result.rowsAffected ?? 0) > 0;
+  
+  // Verify deletion (don't trust rowsAffected — PowerSync bug)
+  const check = await db.getOptional<{ deleted_at: string | null }>(
+    'SELECT deleted_at FROM notes WHERE id = ?',
+    [id],
+  );
+  return check?.deleted_at !== null;
 }
 
 // --- Projects CRUD ---
@@ -284,11 +298,25 @@ export async function updateProject(
 export async function deleteProject(id: string): Promise<boolean> {
   const db = getDatabase();
   const now = new Date().toISOString();
-  const result = await db.execute(
-    'UPDATE projects SET deleted_at = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL',
+  
+  // Check if project exists and isn't already deleted
+  const existing = await db.getOptional<{ deleted_at: string | null }>(
+    'SELECT deleted_at FROM projects WHERE id = ?',
+    [id],
+  );
+  if (!existing || existing.deleted_at !== null) return false;
+  
+  await db.execute(
+    'UPDATE projects SET deleted_at = ?, updated_at = ? WHERE id = ?',
     [now, now, id],
   );
-  return (result.rowsAffected ?? 0) > 0;
+  
+  // Verify deletion (don't trust rowsAffected — PowerSync bug)
+  const check = await db.getOptional<{ deleted_at: string | null }>(
+    'SELECT deleted_at FROM projects WHERE id = ?',
+    [id],
+  );
+  return check?.deleted_at !== null;
 }
 
 // --- Tasks (delete) ---
@@ -296,11 +324,25 @@ export async function deleteProject(id: string): Promise<boolean> {
 export async function deleteTask(id: string): Promise<boolean> {
   const db = getDatabase();
   const now = new Date().toISOString();
-  const result = await db.execute(
-    'UPDATE tasks SET deleted_at = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL',
+  
+  // Check if task exists and isn't already deleted
+  const existing = await db.getOptional<{ deleted_at: string | null }>(
+    'SELECT deleted_at FROM tasks WHERE id = ?',
+    [id],
+  );
+  if (!existing || existing.deleted_at !== null) return false;
+  
+  await db.execute(
+    'UPDATE tasks SET deleted_at = ?, updated_at = ? WHERE id = ?',
     [now, now, id],
   );
-  return (result.rowsAffected ?? 0) > 0;
+  
+  // Verify deletion (don't trust rowsAffected — PowerSync bug)
+  const check = await db.getOptional<{ deleted_at: string | null }>(
+    'SELECT deleted_at FROM tasks WHERE id = ?',
+    [id],
+  );
+  return check?.deleted_at !== null;
 }
 
 // --- Context ---
