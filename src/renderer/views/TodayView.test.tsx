@@ -294,6 +294,32 @@ describe('TodayView', () => {
       expect(screen.queryByText('Old completed')).not.toBeInTheDocument();
       expect(screen.getByText('Today task')).toBeInTheDocument();
     });
+
+    it('does not flash old logbook tasks when completing a task', () => {
+      vi.useFakeTimers();
+      mockTasks = [
+        fakeTask({ id: '1', title: 'Old completed', status: 'logbook', completed_at: '2026-01-01T00:00:00.000Z' }),
+        fakeTask({ id: '2', title: 'Active task', status: 'today' }),
+      ];
+      const { rerender } = render(<TodayView />);
+
+      // Complete the active task
+      act(() => { screen.getByRole('checkbox').click(); });
+
+      // Store updates: task 2 is now logbook
+      mockTasks = [
+        fakeTask({ id: '1', title: 'Old completed', status: 'logbook', completed_at: '2026-01-01T00:00:00.000Z' }),
+        fakeTask({ id: '2', title: 'Active task', status: 'logbook', completed_at: '2026-02-18T00:00:00.000Z' }),
+      ];
+      rerender(<TodayView />);
+
+      // Old logbook task should NOT appear even within the dismiss window
+      expect(screen.queryByText('Old completed')).not.toBeInTheDocument();
+      // Recently completed task should still be visible
+      expect(screen.getByText('Active task')).toBeInTheDocument();
+
+      vi.useRealTimers();
+    });
   });
 
   describe('context filtering', () => {

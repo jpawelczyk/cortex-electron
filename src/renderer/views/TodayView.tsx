@@ -7,6 +7,9 @@ import { InlineTaskCard } from '../components/InlineTaskCard';
 import { filterTasksByContext } from '../lib/contextFilter';
 
 const DISMISS_DELAY_MS = 2500;
+// Only animate logbook tasks completed within this window (handles sync/agent completions).
+// Historical logbook tasks older than this are ignored to prevent them flashing in the UI.
+const EXTERNAL_COMPLETION_THRESHOLD_MS = 5 * 60 * 1000;
 
 function getToday(): string {
   return format(new Date(), 'yyyy-MM-dd');
@@ -49,12 +52,18 @@ export function TodayView() {
   // Reconcile completedIds with actual task statuses for tasks the user hasn't
   // interacted with this session (handles external completions from sync/agents).
   useEffect(() => {
+    const now = Date.now();
     setCompletedIds((prev) => {
       let changed = false;
       const next = new Set(prev);
       for (const task of tasks) {
         if (interactedIds.current.has(task.id)) continue;
         if (task.status === 'logbook' && !next.has(task.id)) {
+          // Skip historical logbook tasks — only animate recent external completions
+          if (task.completed_at) {
+            const age = now - new Date(task.completed_at).getTime();
+            if (age > EXTERNAL_COMPLETION_THRESHOLD_MS) continue;
+          }
           next.add(task.id);
           if (everCompletedIds.current.size >= 200) {
             const [oldest] = everCompletedIds.current;
