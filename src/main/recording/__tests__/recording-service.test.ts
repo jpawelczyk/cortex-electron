@@ -16,10 +16,20 @@ vi.mock('fs/promises', () => ({
   mkdir: vi.fn(),
   writeFile: vi.fn(),
   unlink: vi.fn(),
+  rename: vi.fn(),
+}));
+
+// Mock child_process before importing the module under test
+vi.mock('child_process', () => ({
+  execFile: vi.fn((_cmd: unknown, _args: unknown, _opts: unknown, cb: unknown) => {
+    (cb as (err: null) => void)(null);
+    return { kill: vi.fn() };
+  }),
 }));
 
 import { app, desktopCapturer } from 'electron';
 import * as fs from 'fs/promises';
+import * as childProcess from 'child_process';
 import { createRecordingService } from '../recording-service';
 
 describe('RecordingService', () => {
@@ -86,6 +96,32 @@ describe('RecordingService', () => {
       const buffer = Buffer.from('fake-audio-data');
       const result = await service.saveRecording('meeting-1', buffer);
       expect(result).toMatch(/\/mock\/userData\/recordings\/.*meeting-1.*\.webm$/);
+    });
+
+    it('remuxes the file with ffmpeg to fix duration metadata', async () => {
+      const buffer = Buffer.from('fake-audio-data');
+      await service.saveRecording('meeting-1', buffer);
+      expect(childProcess.execFile).toHaveBeenCalledWith(
+        'ffmpeg',
+        expect.arrayContaining(['-c', 'copy']),
+        expect.anything(),
+        expect.any(Function),
+      );
+      expect(fs.rename).toHaveBeenCalled();
+    });
+
+    it('keeps original file if ffmpeg is not available', async () => {
+      vi.mocked(childProcess.execFile).mockImplementation(
+        (_cmd: unknown, _args: unknown, _opts: unknown, cb: unknown) => {
+          (cb as (err: Error) => void)(new Error('not found'));
+          return { kill: vi.fn() } as never;
+        },
+      );
+      vi.mocked(fs.unlink).mockResolvedValue(undefined);
+      const buffer = Buffer.from('fake-audio-data');
+      const result = await service.saveRecording('meeting-1', buffer);
+      expect(result).toMatch(/\.webm$/);
+      expect(fs.rename).not.toHaveBeenCalled();
     });
   });
 

@@ -8,7 +8,6 @@ export interface AudioPlayerHandle {
 
 interface AudioPlayerProps {
   src: string;
-  fallbackDuration?: number | null;
   onTimeUpdate?: (currentTime: number) => void;
 }
 
@@ -20,7 +19,7 @@ function formatTime(seconds: number): string {
 }
 
 export const AudioPlayer = forwardRef<AudioPlayerHandle, AudioPlayerProps>(
-  function AudioPlayer({ src, fallbackDuration, onTimeUpdate }, ref) {
+  function AudioPlayer({ src, onTimeUpdate }, ref) {
     const audioRef = useRef<HTMLAudioElement>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
@@ -63,8 +62,7 @@ export const AudioPlayer = forwardRef<AudioPlayerHandle, AudioPlayerProps>(
     function handleLoadedMetadata() {
       const audio = audioRef.current;
       if (!audio) return;
-      const d = audio.duration;
-      setDuration(isFinite(d) ? d : (fallbackDuration ?? 0));
+      setDuration(audio.duration);
     }
 
     function handleEnded() {

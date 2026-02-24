@@ -394,7 +394,6 @@ export function MeetingDetailView({ meetingId }: MeetingDetailViewProps) {
             <AudioPlayer
               ref={audioPlayerRef}
               src={`cortex-audio://${meeting.audio_path}`}
-              fallbackDuration={meeting.recording_duration}
             />
           </div>
         )}

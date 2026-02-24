@@ -1,5 +1,6 @@
 import path from 'path';
-import { mkdir, writeFile, unlink } from 'fs/promises';
+import { mkdir, writeFile, unlink, rename } from 'fs/promises';
+import { execFile } from 'child_process';
 import { desktopCapturer } from 'electron';
 import type { App } from 'electron';
 import type { AudioSource } from '@shared/recording-types';
@@ -29,7 +30,29 @@ export function createRecordingService(app: App): RecordingService {
 
     const filePath = getRecordingPath(meetingId);
     await writeFile(filePath, buffer);
+
+    // Remux to fix WebM duration metadata. MediaRecorder doesn't write it,
+    // so browsers report Infinity. ffmpeg -c copy rewrites the container
+    // without re-encoding — nearly instant.
+    await remuxWebm(filePath);
+
     return filePath;
+  }
+
+  async function remuxWebm(filePath: string): Promise<void> {
+    const tmpPath = filePath + '.tmp.webm';
+    try {
+      await new Promise<void>((resolve, reject) => {
+        execFile('ffmpeg', ['-i', filePath, '-c', 'copy', '-y', tmpPath], {}, (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+      await rename(tmpPath, filePath);
+    } catch {
+      // ffmpeg not available — keep the original file as-is
+      await unlink(tmpPath).catch(() => {});
+    }
   }
 
   async function deleteRecording(audioPath: string): Promise<void> {
