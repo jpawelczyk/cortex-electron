@@ -2,7 +2,7 @@ import os from 'os';
 import path from 'path';
 import { execFile } from 'child_process';
 import type { ChildProcess } from 'child_process';
-import { unlink } from 'fs/promises';
+import { unlink, readFile } from 'fs/promises';
 import type { TranscriptSegment } from '@shared/recording-types';
 
 export interface TranscriptionResult {
@@ -106,29 +106,52 @@ export function createTranscriptionService(): TranscriptionService {
 
       onProgress?.(50);
 
-      // Step 2: run whisper, trying whisper-cpp first then whisper
-      let jsonOutput: string;
-      const whisperBin = whisperBinCache ?? 'whisper-cpp';
-      const whisperArgs = ['--model', model, '--language', 'auto', '--output-json', wavPath];
-      try {
-        jsonOutput = await runExecFile(whisperBin, whisperArgs);
-      } catch (err) {
-        if (whisperBin === 'whisper-cpp') {
-          jsonOutput = await runExecFile('whisper', whisperArgs);
-        } else {
-          throw err;
-        }
-      }
+      // Step 2: run whisper (whisper-cpp and OpenAI whisper have different CLIs)
+      const result = await runWhisper(wavPath, model);
 
       onProgress?.(100);
 
-      return parseWhisperOutput(jsonOutput);
+      return result;
     } finally {
       await unlink(wavPath).catch(() => {});
     }
   }
 
-  function parseWhisperOutput(raw: string): TranscriptionResult {
+  async function runWhisper(wavPath: string, model: string): Promise<TranscriptionResult> {
+    const bin = whisperBinCache ?? 'whisper-cpp';
+
+    if (bin === 'whisper') {
+      return runOpenAIWhisper(wavPath, model);
+    }
+
+    // Try whisper-cpp first
+    try {
+      const stdout = await runExecFile('whisper-cpp', [
+        '--model', model, '--language', 'auto', '--output-json', wavPath,
+      ]);
+      return parseWhisperCppOutput(stdout);
+    } catch {
+      // Fallback to OpenAI whisper
+      whisperBinCache = 'whisper';
+      return runOpenAIWhisper(wavPath, model);
+    }
+  }
+
+  async function runOpenAIWhisper(wavPath: string, model: string): Promise<TranscriptionResult> {
+    const outputDir = path.dirname(wavPath);
+    await runExecFile('whisper', [
+      wavPath, '--model', model, '--output_format', 'json', '--output_dir', outputDir,
+    ]);
+
+    // OpenAI whisper writes {input_basename}.json in the output dir
+    const jsonPath = wavPath.replace(/\.wav$/, '.json');
+    const jsonContent = await readFile(jsonPath, 'utf-8');
+    await unlink(jsonPath).catch(() => {});
+
+    return parseOpenAIWhisperOutput(jsonContent);
+  }
+
+  function parseWhisperCppOutput(raw: string): TranscriptionResult {
     const parsed = JSON.parse(raw) as {
       transcription: Array<{ offsets: { from: number; to: number }; text: string }>;
       result: { language: string };
@@ -142,6 +165,25 @@ export function createTranscriptionService(): TranscriptionService {
 
     const text = segments.map((s) => s.text).join(' ');
     const language = parsed.result?.language ?? 'unknown';
+
+    return { text, segments, language };
+  }
+
+  function parseOpenAIWhisperOutput(raw: string): TranscriptionResult {
+    const parsed = JSON.parse(raw) as {
+      text: string;
+      segments: Array<{ start: number; end: number; text: string }>;
+      language: string;
+    };
+
+    const segments: TranscriptSegment[] = parsed.segments.map((seg) => ({
+      start: seg.start,
+      end: seg.end,
+      text: seg.text.trim(),
+    }));
+
+    const text = segments.map((s) => s.text).join(' ');
+    const language = parsed.language ?? 'unknown';
 
     return { text, segments, language };
   }

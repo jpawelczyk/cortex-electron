@@ -9,6 +9,7 @@ vi.mock('child_process', () => ({
 // Mock fs/promises before importing the module under test
 vi.mock('fs/promises', () => ({
   unlink: vi.fn(),
+  readFile: vi.fn(),
 }));
 
 import * as childProcess from 'child_process';
@@ -24,6 +25,15 @@ function mockExecFileError(message: string) {
     },
   );
 }
+
+const OPENAI_WHISPER_JSON = JSON.stringify({
+  text: ' Hello world How are you',
+  segments: [
+    { id: 0, start: 0.0, end: 2.0, text: ' Hello world' },
+    { id: 1, start: 2.0, end: 5.0, text: ' How are you' },
+  ],
+  language: 'en',
+});
 
 const WHISPER_JSON_OUTPUT = JSON.stringify({
   transcription: [
@@ -303,6 +313,90 @@ describe('TranscriptionService', () => {
       await expect(service.transcribe('/tmp/meeting.webm')).rejects.toThrow(
         'ffmpeg: command not found',
       );
+    });
+  });
+
+  describe('transcribe with OpenAI whisper', () => {
+    beforeEach(async () => {
+      // Resolve whisperBinCache to 'whisper' by making whisper-cpp unavailable
+      vi.mocked(childProcess.execFile).mockImplementation(
+        (_cmd: unknown, args: unknown, _opts: unknown, callback: unknown) => {
+          const cb = callback as (err: Error | null, stdout?: string) => void;
+          const argArr = args as string[];
+          if (argArr[0] === 'whisper-cpp') {
+            process.nextTick(() => cb(new Error('not found')));
+          } else {
+            process.nextTick(() => cb(null, '/usr/local/bin/' + argArr[0]));
+          }
+          return { kill: vi.fn() } as unknown as ChildProcess;
+        },
+      );
+      await service.isAvailable();
+      vi.clearAllMocks();
+    });
+
+    it('uses --output_format json and omits --language for OpenAI whisper', async () => {
+      const calls: { cmd: string; args: string[] }[] = [];
+      vi.mocked(childProcess.execFile).mockImplementation(
+        (cmd: unknown, args: unknown, _opts: unknown, callback: unknown) => {
+          const cb = callback as (err: null, stdout: string, stderr: string) => void;
+          calls.push({ cmd: cmd as string, args: args as string[] });
+          process.nextTick(() => cb(null, '', ''));
+          return { kill: vi.fn() } as unknown as ChildProcess;
+        },
+      );
+      vi.mocked(fs.readFile).mockResolvedValue(OPENAI_WHISPER_JSON);
+      vi.mocked(fs.unlink).mockResolvedValue(undefined);
+
+      await service.transcribe('/tmp/meeting.webm');
+
+      const whisperCall = calls.find((c) => c.cmd === 'whisper');
+      expect(whisperCall).toBeDefined();
+      expect(whisperCall!.args).toContain('--output_format');
+      expect(whisperCall!.args).toContain('json');
+      expect(whisperCall!.args).toContain('--model');
+      expect(whisperCall!.args).not.toContain('--output-json');
+      expect(whisperCall!.args).not.toContain('--language');
+    });
+
+    it('reads and parses the output JSON file', async () => {
+      vi.mocked(childProcess.execFile).mockImplementation(
+        (_cmd: unknown, _args: unknown, _opts: unknown, callback: unknown) => {
+          const cb = callback as (err: null, stdout: string, stderr: string) => void;
+          process.nextTick(() => cb(null, '', ''));
+          return { kill: vi.fn() } as unknown as ChildProcess;
+        },
+      );
+      vi.mocked(fs.readFile).mockResolvedValue(OPENAI_WHISPER_JSON);
+      vi.mocked(fs.unlink).mockResolvedValue(undefined);
+
+      const result = await service.transcribe('/tmp/meeting.webm');
+
+      expect(fs.readFile).toHaveBeenCalledWith(expect.stringMatching(/\.json$/), 'utf-8');
+      expect(result.segments).toHaveLength(2);
+      expect(result.segments[0]).toEqual({ start: 0, end: 2, text: 'Hello world' });
+      expect(result.segments[1]).toEqual({ start: 2, end: 5, text: 'How are you' });
+      expect(result.text).toBe('Hello world How are you');
+      expect(result.language).toBe('en');
+    });
+
+    it('cleans up the output JSON file', async () => {
+      vi.mocked(childProcess.execFile).mockImplementation(
+        (_cmd: unknown, _args: unknown, _opts: unknown, callback: unknown) => {
+          const cb = callback as (err: null, stdout: string, stderr: string) => void;
+          process.nextTick(() => cb(null, '', ''));
+          return { kill: vi.fn() } as unknown as ChildProcess;
+        },
+      );
+      vi.mocked(fs.readFile).mockResolvedValue(OPENAI_WHISPER_JSON);
+      vi.mocked(fs.unlink).mockResolvedValue(undefined);
+
+      await service.transcribe('/tmp/meeting.webm');
+
+      // Should clean up both the wav file and the json output file
+      const unlinkCalls = vi.mocked(fs.unlink).mock.calls.map((c) => c[0] as string);
+      expect(unlinkCalls.some((p) => p.endsWith('.json'))).toBe(true);
+      expect(unlinkCalls.some((p) => p.endsWith('.wav'))).toBe(true);
     });
   });
 
