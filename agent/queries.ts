@@ -229,24 +229,13 @@ export async function deleteNote(id: string): Promise<boolean> {
   const db = getDatabase();
   const now = new Date().toISOString();
   
-  // Check if note exists and isn't already deleted
-  const existing = await db.getOptional<{ deleted_at: string | null }>(
-    'SELECT deleted_at FROM notes WHERE id = ?',
-    [id],
-  );
-  if (!existing || existing.deleted_at !== null) return false;
-  
-  await db.execute(
-    'UPDATE notes SET deleted_at = ?, updated_at = ? WHERE id = ?',
+  // Use RETURNING clause — rowsAffected is unreliable with PowerSync's JSON table views
+  // See: https://github.com/powersync-ja/powersync-js/issues/865
+  const result = await db.execute(
+    'UPDATE notes SET deleted_at = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL RETURNING id',
     [now, now, id],
   );
-  
-  // Verify deletion (don't trust rowsAffected — PowerSync bug)
-  const check = await db.getOptional<{ deleted_at: string | null }>(
-    'SELECT deleted_at FROM notes WHERE id = ?',
-    [id],
-  );
-  return check?.deleted_at !== null;
+  return (result.rows?.length ?? 0) > 0;
 }
 
 // --- Projects CRUD ---
@@ -299,24 +288,13 @@ export async function deleteProject(id: string): Promise<boolean> {
   const db = getDatabase();
   const now = new Date().toISOString();
   
-  // Check if project exists and isn't already deleted
-  const existing = await db.getOptional<{ deleted_at: string | null }>(
-    'SELECT deleted_at FROM projects WHERE id = ?',
-    [id],
-  );
-  if (!existing || existing.deleted_at !== null) return false;
-  
-  await db.execute(
-    'UPDATE projects SET deleted_at = ?, updated_at = ? WHERE id = ?',
+  // Use RETURNING clause — rowsAffected is unreliable with PowerSync's JSON table views
+  // See: https://github.com/powersync-ja/powersync-js/issues/865
+  const result = await db.execute(
+    'UPDATE projects SET deleted_at = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL RETURNING id',
     [now, now, id],
   );
-  
-  // Verify deletion (don't trust rowsAffected — PowerSync bug)
-  const check = await db.getOptional<{ deleted_at: string | null }>(
-    'SELECT deleted_at FROM projects WHERE id = ?',
-    [id],
-  );
-  return check?.deleted_at !== null;
+  return (result.rows?.length ?? 0) > 0;
 }
 
 // --- Tasks (delete) ---
@@ -325,24 +303,13 @@ export async function deleteTask(id: string): Promise<boolean> {
   const db = getDatabase();
   const now = new Date().toISOString();
   
-  // Check if task exists and isn't already deleted
-  const existing = await db.getOptional<{ deleted_at: string | null }>(
-    'SELECT deleted_at FROM tasks WHERE id = ?',
-    [id],
-  );
-  if (!existing || existing.deleted_at !== null) return false;
-  
-  await db.execute(
-    'UPDATE tasks SET deleted_at = ?, updated_at = ? WHERE id = ?',
+  // Use RETURNING clause — rowsAffected is unreliable with PowerSync's JSON table views
+  // See: https://github.com/powersync-ja/powersync-js/issues/865
+  const result = await db.execute(
+    'UPDATE tasks SET deleted_at = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL RETURNING id',
     [now, now, id],
   );
-  
-  // Verify deletion (don't trust rowsAffected — PowerSync bug)
-  const check = await db.getOptional<{ deleted_at: string | null }>(
-    'SELECT deleted_at FROM tasks WHERE id = ?',
-    [id],
-  );
-  return check?.deleted_at !== null;
+  return (result.rows?.length ?? 0) > 0;
 }
 
 // --- Context ---
