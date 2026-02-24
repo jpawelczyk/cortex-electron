@@ -18,15 +18,12 @@ interface CommandPaletteProps {
 
 interface ResultItem {
   id: string;
-  type: 'task' | 'project' | 'note' | 'action' | 'semantic';
+  type: 'task' | 'project' | 'note' | 'meeting' | 'stakeholder' | 'action' | 'semantic';
   title: string;
   preview?: string;
   entityType?: string;
   data?: unknown;
 }
-
-const matches = (text: string, query: string) =>
-  text.toLowerCase().includes(query.toLowerCase());
 
 export function CommandPalette({
   onNavigateToTask,
@@ -37,9 +34,6 @@ export function CommandPalette({
   onCreateProject,
   onCreateNote,
 }: CommandPaletteProps) {
-  const tasks = useStore((s) => s.tasks as Task[]);
-  const projects = useStore((s) => s.projects as { id: string; title: string; deleted_at: string | null }[]);
-  const notes = useStore((s) => s.notes as { id: string; title: string; deleted_at: string | null }[]);
   const open = useStore((s) => s.commandPaletteOpen as boolean);
   const closeCommandPalette = useStore((s) => s.closeCommandPalette as () => void);
   const searchResults = useStore((s) => s.searchResults);
@@ -69,29 +63,15 @@ export function CommandPalette({
     return () => clearTimeout(timer);
   }, [query, performSearch, clearSearch]);
 
-  const filteredTasks = useMemo(
-    () =>
-      query
-        ? tasks.filter((t) => !t.deleted_at && matches(t.title, query)).slice(0, 5)
-        : [],
-    [tasks, query]
-  );
-
-  const filteredProjects = useMemo(
-    () =>
-      query
-        ? projects.filter((p) => !p.deleted_at && matches(p.title, query)).slice(0, 5)
-        : [],
-    [projects, query]
-  );
-
-  const filteredNotes = useMemo(
-    () =>
-      query
-        ? notes.filter((n) => !n.deleted_at && matches(n.title, query)).slice(0, 5)
-        : [],
-    [notes, query]
-  );
+  const keywordItems: ResultItem[] = useMemo(() => {
+    if (!searchResults?.keyword?.length) return [];
+    return searchResults.keyword.map((r: SearchResult) => ({
+      id: r.entityId,
+      type: r.entityType as ResultItem['type'],
+      title: r.title,
+      data: r,
+    }));
+  }, [searchResults]);
 
   const semanticItems: ResultItem[] = useMemo(() => {
     if (!searchResults?.semantic?.length) return [];
@@ -108,9 +88,7 @@ export function CommandPalette({
   const allItems: ResultItem[] = useMemo(() => {
     if (query) {
       const items: ResultItem[] = [];
-      filteredTasks.forEach((t) => items.push({ id: t.id, type: 'task', title: t.title, data: t }));
-      filteredProjects.forEach((p) => items.push({ id: p.id, type: 'project', title: p.title }));
-      filteredNotes.forEach((n) => items.push({ id: n.id, type: 'note', title: n.title }));
+      keywordItems.forEach((k) => items.push(k));
       semanticItems.forEach((s) => items.push(s));
       return items;
     }
@@ -122,14 +100,14 @@ export function CommandPalette({
       { id: 'go-today', type: 'action' as const, title: 'Go to Today' },
       { id: 'go-upcoming', type: 'action' as const, title: 'Go to Upcoming' },
     ];
-  }, [query, filteredTasks, filteredProjects, filteredNotes, semanticItems]);
+  }, [query, keywordItems, semanticItems]);
 
   const handleSelect = useCallback(
     (item: ResultItem) => {
       closeCommandPalette();
       switch (item.type) {
         case 'task':
-          onNavigateToTask(item.data as Task);
+          onNavigateToTask({ id: item.id, title: item.title } as Task);
           break;
         case 'project':
           onNavigateToProject(item.id);
@@ -140,14 +118,12 @@ export function CommandPalette({
         case 'semantic': {
           const result = item.data as SearchResult;
           if (result.entityType === 'task') {
-            // Navigate using entityId — we only have id here, no full Task object
             onNavigateToTask({ id: result.entityId, title: result.title } as Task);
           } else if (result.entityType === 'project') {
             onNavigateToProject(result.entityId);
           } else if (result.entityType === 'note') {
             onNavigateToNote(result.entityId);
           }
-          // meeting and stakeholder: just close the palette for now
           break;
         }
         case 'action':
@@ -214,6 +190,10 @@ export function CommandPalette({
         return <FolderKanban className="size-4 text-muted-foreground" />;
       case 'note':
         return <FileText className="size-4 text-muted-foreground" />;
+      case 'meeting':
+        return <Calendar className="size-4 text-muted-foreground" />;
+      case 'stakeholder':
+        return <User className="size-4 text-muted-foreground" />;
       case 'action':
         return <ArrowRight className="size-4 text-muted-foreground" />;
       default:
@@ -224,10 +204,12 @@ export function CommandPalette({
   const taskResults = allItems.filter((i) => i.type === 'task');
   const projectResults = allItems.filter((i) => i.type === 'project');
   const noteResults = allItems.filter((i) => i.type === 'note');
+  const meetingResults = allItems.filter((i) => i.type === 'meeting');
+  const stakeholderResults = allItems.filter((i) => i.type === 'stakeholder');
   const actionResults = allItems.filter((i) => i.type === 'action');
 
-  // semanticItems are rendered separately — they follow in-memory items in keyboard order
-  const inMemoryCount = taskResults.length + projectResults.length + noteResults.length;
+  // semanticItems are rendered separately — they follow keyword items in keyboard order
+  const keywordCount = taskResults.length + projectResults.length + noteResults.length + meetingResults.length + stakeholderResults.length;
 
   let globalIndex = 0;
 
@@ -262,7 +244,7 @@ export function CommandPalette({
 
   const renderSemanticSection = () => {
     if (!searchLoading && semanticItems.length === 0) return null;
-    const startIdx = inMemoryCount;
+    const startIdx = keywordCount;
     return (
       <div>
         <div className="px-4 py-1.5 text-xs text-muted-foreground font-medium flex items-center gap-1.5">
@@ -320,6 +302,8 @@ export function CommandPalette({
               {renderGroup('Tasks', taskResults)}
               {renderGroup('Projects', projectResults)}
               {renderGroup('Notes', noteResults)}
+              {renderGroup('Meetings', meetingResults)}
+              {renderGroup('Stakeholders', stakeholderResults)}
               {renderSemanticSection()}
               {allItems.length === 0 && !searchLoading && (
                 <div className="px-4 py-8 text-center text-sm text-muted-foreground">

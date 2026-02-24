@@ -27,7 +27,7 @@ export class HybridSearchService {
     // keywordSearch is sync, wrap in Promise.resolve so allSettled catches throws
     const [keywordResults, semanticResults] = await Promise.allSettled([
       Promise.resolve().then(() => this.keywordSearch(query, limit)),
-      this.semanticSearch(query, limit, options.entityTypes),
+      this.semanticSearch(query, Math.min(limit, 5), options.entityTypes),
     ]);
 
     const keyword = keywordResults.status === 'fulfilled' ? keywordResults.value : [];
