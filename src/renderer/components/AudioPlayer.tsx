@@ -8,6 +8,7 @@ export interface AudioPlayerHandle {
 
 interface AudioPlayerProps {
   src: string;
+  fallbackDuration?: number | null;
   onTimeUpdate?: (currentTime: number) => void;
 }
 
@@ -19,7 +20,7 @@ function formatTime(seconds: number): string {
 }
 
 export const AudioPlayer = forwardRef<AudioPlayerHandle, AudioPlayerProps>(
-  function AudioPlayer({ src, onTimeUpdate }, ref) {
+  function AudioPlayer({ src, fallbackDuration, onTimeUpdate }, ref) {
     const audioRef = useRef<HTMLAudioElement>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
@@ -52,13 +53,18 @@ export const AudioPlayer = forwardRef<AudioPlayerHandle, AudioPlayerProps>(
       const audio = audioRef.current;
       if (!audio) return;
       setCurrentTime(audio.currentTime);
+      // WebM from MediaRecorder often resolves real duration during playback
+      if (isFinite(audio.duration) && audio.duration > 0) {
+        setDuration(audio.duration);
+      }
       onTimeUpdate?.(audio.currentTime);
     }
 
     function handleLoadedMetadata() {
       const audio = audioRef.current;
       if (!audio) return;
-      setDuration(audio.duration);
+      const d = audio.duration;
+      setDuration(isFinite(d) ? d : (fallbackDuration ?? 0));
     }
 
     function handleEnded() {
