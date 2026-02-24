@@ -1,5 +1,12 @@
 export type RecordingMode = 'system' | 'mic' | 'both';
 export type RecordingStatus = 'idle' | 'recording' | 'stopping';
+export type TranscriptionStatus = 'pending' | 'processing' | 'completed' | 'failed';
+
+export interface TranscriptSegment {
+  start: number;
+  end: number;
+  text: string;
+}
 
 export interface RecordingState {
   status: RecordingStatus;

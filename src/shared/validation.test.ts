@@ -20,6 +20,7 @@ import {
   NoteIdSchema,
   CreateAIAgentSchema,
   AIAgentIdSchema,
+  UpdateMeetingSchema,
 } from './validation';
 
 const VALID_UUID = '123e4567-e89b-12d3-a456-426614174000';
@@ -341,5 +342,48 @@ describe('AIAgentIdSchema', () => {
   });
   it('rejects a non-UUID', () => {
     expect(() => AIAgentIdSchema.parse('bad')).toThrow();
+  });
+});
+
+describe('UpdateMeetingSchema - transcription fields', () => {
+  it('accepts transcript as a string', () => {
+    const result = UpdateMeetingSchema.parse({ transcript: 'Hello world' });
+    expect(result.transcript).toBe('Hello world');
+  });
+
+  it('accepts transcript as null', () => {
+    const result = UpdateMeetingSchema.parse({ transcript: null });
+    expect(result.transcript).toBeNull();
+  });
+
+  it('accepts transcript_segments as a JSON string', () => {
+    const segments = JSON.stringify([{ start: 0, end: 5, text: 'Hi' }]);
+    const result = UpdateMeetingSchema.parse({ transcript_segments: segments });
+    expect(result.transcript_segments).toBe(segments);
+  });
+
+  it('accepts transcript_segments as null', () => {
+    const result = UpdateMeetingSchema.parse({ transcript_segments: null });
+    expect(result.transcript_segments).toBeNull();
+  });
+
+  it('accepts transcription_status as valid enum values', () => {
+    for (const status of ['pending', 'processing', 'completed', 'failed'] as const) {
+      const result = UpdateMeetingSchema.parse({ transcription_status: status });
+      expect(result.transcription_status).toBe(status);
+    }
+  });
+
+  it('accepts transcription_status as null', () => {
+    const result = UpdateMeetingSchema.parse({ transcription_status: null });
+    expect(result.transcription_status).toBeNull();
+  });
+
+  it('rejects invalid transcription_status', () => {
+    expect(() => UpdateMeetingSchema.parse({ transcription_status: 'unknown' })).toThrow();
+  });
+
+  it('accepts empty object (all fields optional)', () => {
+    expect(() => UpdateMeetingSchema.parse({})).not.toThrow();
   });
 });

@@ -37,6 +37,9 @@ export function createMeetingService(ctx: DbContext): MeetingService {
         notes: null,
         audio_path: null,
         recording_duration: null,
+        transcript: null,
+        transcript_segments: null,
+        transcription_status: null,
         created_at: now,
         updated_at: now,
         deleted_at: null,
@@ -94,13 +97,17 @@ export function createMeetingService(ctx: DbContext): MeetingService {
           title = ?, description = ?, start_time = ?, end_time = ?,
           is_all_day = ?, location = ?, meeting_url = ?, status = ?,
           context_id = ?, project_id = ?, notes = ?,
-          audio_path = ?, recording_duration = ?, updated_at = ?
+          audio_path = ?, recording_duration = ?,
+          transcript = ?, transcript_segments = ?, transcription_status = ?,
+          updated_at = ?
         WHERE id = ?
       `, [
         updated.title, updated.description, updated.start_time, updated.end_time,
         updated.is_all_day ? 1 : 0, updated.location, updated.meeting_url, updated.status,
         updated.context_id, updated.project_id, updated.notes,
-        updated.audio_path, updated.recording_duration, updated.updated_at,
+        updated.audio_path, updated.recording_duration,
+        updated.transcript, updated.transcript_segments, updated.transcription_status,
+        updated.updated_at,
         id,
       ]);
 

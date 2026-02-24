@@ -13,8 +13,9 @@ import { FileAuthStorage } from './sync/auth-storage.js';
 import { getSyncConfig } from '../shared/config.js';
 import { SearchService } from './search/search-service.js';
 import { registerSearchHandlers } from './ipc/search-handlers.js';
-import { createRecordingService } from './recording/index.js';
+import { createRecordingService, createTranscriptionService } from './recording/index.js';
 import { registerRecordingHandlers } from './ipc/recording-handlers.js';
+import { registerTranscriptionHandlers } from './ipc/transcription-handlers.js';
 import type { DbContext } from './db/types.js';
 
 process.on('uncaughtException', (err) => {
@@ -214,6 +215,10 @@ app.whenReady().then(async () => {
     // Initialize recording service
     const recordingService = createRecordingService(app);
     registerRecordingHandlers(recordingService);
+
+    // Initialize transcription service
+    const transcriptionService = createTranscriptionService();
+    registerTranscriptionHandlers(transcriptionService, { db }, () => mainWindow);
 
     // Initialize search service (non-blocking — model loads in background)
     searchService = new SearchService();

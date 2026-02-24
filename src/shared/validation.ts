@@ -135,6 +135,9 @@ export const UpdateMeetingSchema = z.object({
   notes: z.string().nullable().optional(),
   audio_path: z.string().nullable().optional(),
   recording_duration: z.number().int().nullable().optional(),
+  transcript: z.string().nullable().optional(),
+  transcript_segments: z.string().nullable().optional(),
+  transcription_status: z.enum(['pending', 'processing', 'completed', 'failed']).nullable().optional(),
 });
 
 export const MeetingIdSchema = uuid;

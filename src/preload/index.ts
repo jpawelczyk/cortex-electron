@@ -171,6 +171,18 @@ const api = {
     delete: (audioPath: string): Promise<void> => ipcRenderer.invoke('recording:delete', audioPath),
     openSystemPrefs: (): Promise<void> => ipcRenderer.invoke('recording:open-system-prefs'),
   },
+
+  transcription: {
+    check: (): Promise<{ whisper: boolean; ffmpeg: boolean }> => ipcRenderer.invoke('transcription:check'),
+    start: (meetingId: string): Promise<{ text: string; segments: unknown[]; language: string }> =>
+      ipcRenderer.invoke('transcription:start', meetingId),
+    cancel: (): Promise<void> => ipcRenderer.invoke('transcription:cancel'),
+    onProgress: (callback: (data: { meetingId: string; progress: number }) => void) => {
+      const handler = (_event: unknown, data: { meetingId: string; progress: number }) => callback(data);
+      ipcRenderer.on('transcription:progress', handler);
+      return () => { ipcRenderer.removeListener('transcription:progress', handler); };
+    },
+  },
 };
 
 contextBridge.exposeInMainWorld('cortex', api);

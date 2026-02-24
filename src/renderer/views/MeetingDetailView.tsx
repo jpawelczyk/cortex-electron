@@ -6,8 +6,11 @@ import { useDebouncedCallback } from '../hooks/useDebouncedCallback';
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
 import { StakeholderPicker } from '../components/StakeholderPicker';
 import { RecordingControls } from '../components/RecordingControls';
+import { AudioPlayer, type AudioPlayerHandle } from '../components/AudioPlayer';
+import { TranscriptView } from '../components/TranscriptView';
 import { DatePickerButton } from '../components/DatePickerButton';
 import { TimePickerButton } from '../components/TimePickerButton';
+import type { TranscriptSegment } from '@shared/recording-types';
 
 type MeetingStatus = 'scheduled' | 'completed' | 'cancelled';
 
@@ -44,6 +47,7 @@ export function MeetingDetailView({ meetingId }: MeetingDetailViewProps) {
   const [meetingUrl, setMeetingUrl] = useState(meeting?.meeting_url ?? '');
   const titleRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<MarkdownEditorHandle>(null);
+  const audioPlayerRef = useRef<AudioPlayerHandle>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [contextOpen, setContextOpen] = useState(false);
   const [projectOpen, setProjectOpen] = useState(false);
@@ -376,13 +380,48 @@ export function MeetingDetailView({ meetingId }: MeetingDetailViewProps) {
         </div>
 
         {/* Recording */}
-        <div className="mb-6">
+        <div className="mb-4">
           <RecordingControls
             meetingId={meetingId}
             audioPath={meeting.audio_path}
             onRecordingComplete={fetchMeetings}
           />
         </div>
+
+        {/* Audio player */}
+        {meeting.audio_path && (
+          <div className="mb-4">
+            <AudioPlayer
+              ref={audioPlayerRef}
+              src={`file://${meeting.audio_path}`}
+            />
+          </div>
+        )}
+
+        {/* Transcript */}
+        {(() => {
+          let segments: TranscriptSegment[] | null = null;
+          if (meeting.transcript_segments) {
+            try {
+              segments = JSON.parse(meeting.transcript_segments) as TranscriptSegment[];
+            } catch {
+              segments = null;
+            }
+          }
+          return (
+            <div className="mb-6">
+              <TranscriptView
+                meetingId={meetingId}
+                audioPath={meeting.audio_path}
+                transcript={meeting.transcript}
+                transcriptSegments={segments}
+                transcriptionStatus={meeting.transcription_status}
+                onSeekTo={(seconds) => audioPlayerRef.current?.seekTo(seconds)}
+                onTranscriptionComplete={fetchMeetings}
+              />
+            </div>
+          );
+        })()}
 
         {/* Editor */}
         <MarkdownEditor

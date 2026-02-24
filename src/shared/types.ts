@@ -222,6 +222,9 @@ export interface Meeting {
   notes: string | null;
   audio_path: string | null;
   recording_duration: number | null;
+  transcript: string | null;
+  transcript_segments: string | null;
+  transcription_status: 'pending' | 'processing' | 'completed' | 'failed' | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -253,6 +256,9 @@ export interface UpdateMeetingInput {
   notes?: string | null;
   audio_path?: string | null;
   recording_duration?: number | null;
+  transcript?: string | null;
+  transcript_segments?: string | null;
+  transcription_status?: 'pending' | 'processing' | 'completed' | 'failed' | null;
 }
 
 export interface MeetingAttendee {

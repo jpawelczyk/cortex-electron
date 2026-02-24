@@ -41,7 +41,7 @@ export function getEmbeddableText(entity: AnyEntity, entityType: SearchableEntit
     }
     case 'meeting': {
       const e = entity as Meeting;
-      fields = [e.title, e.location, cleanText(e.notes)];
+      fields = [e.title, e.location, cleanText(e.notes), e.transcript];
       break;
     }
     case 'project': {

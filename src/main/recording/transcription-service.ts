@@ -1,0 +1,154 @@
+import os from 'os';
+import path from 'path';
+import { execFile } from 'child_process';
+import type { ChildProcess } from 'child_process';
+import { unlink } from 'fs/promises';
+import type { TranscriptSegment } from '@shared/recording-types';
+
+export interface TranscriptionResult {
+  text: string;
+  segments: TranscriptSegment[];
+  language: string;
+}
+
+export interface TranscriptionService {
+  isAvailable(): Promise<{ whisper: boolean; ffmpeg: boolean }>;
+  transcribe(
+    audioPath: string,
+    options?: { model?: string; onProgress?: (pct: number) => void },
+  ): Promise<TranscriptionResult>;
+  cancel(): void;
+}
+
+function execFilePromise(
+  cmd: string,
+  args: string[],
+  onProcess?: (proc: ChildProcess) => void,
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const proc = execFile(cmd, args, {}, (err, stdout) => {
+      if (err) reject(err);
+      else resolve(stdout);
+    });
+    onProcess?.(proc);
+  });
+}
+
+function which(binary: string): Promise<string> {
+  return execFilePromise('which', [binary]);
+}
+
+export function createTranscriptionService(): TranscriptionService {
+  let currentProcess: ChildProcess | null = null;
+
+  // Cache the resolved whisper binary name across calls
+  let whisperBinCache: string | null = null;
+
+  async function resolveWhisperBin(): Promise<string> {
+    if (whisperBinCache) return whisperBinCache;
+    try {
+      await which('whisper-cpp');
+      whisperBinCache = 'whisper-cpp';
+    } catch {
+      await which('whisper'); // throws if not found
+      whisperBinCache = 'whisper';
+    }
+    return whisperBinCache;
+  }
+
+  async function isAvailable(): Promise<{ whisper: boolean; ffmpeg: boolean }> {
+    const [whisper, ffmpeg] = await Promise.all([
+      resolveWhisperBin().then(
+        () => true,
+        () => false,
+      ),
+      which('ffmpeg').then(
+        () => true,
+        () => false,
+      ),
+    ]);
+    return { whisper, ffmpeg };
+  }
+
+  function runExecFile(cmd: string, args: string[]): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const proc = execFile(cmd, args, {}, (err, stdout) => {
+        currentProcess = null;
+        if (err) reject(err);
+        else resolve(stdout);
+      });
+      currentProcess = proc;
+    });
+  }
+
+  async function transcribe(
+    audioPath: string,
+    options: { model?: string; onProgress?: (pct: number) => void } = {},
+  ): Promise<TranscriptionResult> {
+    const { model = 'base', onProgress } = options;
+
+    const wavPath = path.join(
+      os.tmpdir(),
+      path.basename(audioPath, path.extname(audioPath)) + '_' + Date.now() + '.wav',
+    );
+
+    onProgress?.(0);
+
+    try {
+      // Step 1: convert WebM → WAV 16kHz mono
+      await runExecFile('ffmpeg', [
+        '-i', audioPath,
+        '-ar', '16000',
+        '-ac', '1',
+        '-f', 'wav',
+        wavPath,
+      ]);
+
+      onProgress?.(50);
+
+      // Step 2: run whisper, trying whisper-cpp first then whisper
+      let jsonOutput: string;
+      const whisperBin = whisperBinCache ?? 'whisper-cpp';
+      const whisperArgs = ['--model', model, '--language', 'auto', '--output-json', wavPath];
+      try {
+        jsonOutput = await runExecFile(whisperBin, whisperArgs);
+      } catch (err) {
+        if (whisperBin === 'whisper-cpp') {
+          jsonOutput = await runExecFile('whisper', whisperArgs);
+        } else {
+          throw err;
+        }
+      }
+
+      onProgress?.(100);
+
+      return parseWhisperOutput(jsonOutput);
+    } finally {
+      await unlink(wavPath).catch(() => {});
+    }
+  }
+
+  function parseWhisperOutput(raw: string): TranscriptionResult {
+    const parsed = JSON.parse(raw) as {
+      transcription: Array<{ offsets: { from: number; to: number }; text: string }>;
+      result: { language: string };
+    };
+
+    const segments: TranscriptSegment[] = parsed.transcription.map((seg) => ({
+      start: seg.offsets.from / 1000,
+      end: seg.offsets.to / 1000,
+      text: seg.text.trim(),
+    }));
+
+    const text = segments.map((s) => s.text).join(' ');
+    const language = parsed.result?.language ?? 'unknown';
+
+    return { text, segments, language };
+  }
+
+  function cancel(): void {
+    currentProcess?.kill();
+  }
+
+  return { isAvailable, transcribe, cancel };
+}
