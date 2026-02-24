@@ -161,13 +161,13 @@ describe('AppSchema', () => {
   describe('meetings table', () => {
     it('has the correct number of columns', () => {
       const cols: Column[] = AppSchema.props.meetings.columns;
-      expect(cols).toHaveLength(18);
+      expect(cols).toHaveLength(20);
     });
 
-    it('has TEXT columns for title, description, start_time, end_time, context_id, project_id, notes, created_at, updated_at, deleted_at', () => {
+    it('has TEXT columns for title, description, start_time, end_time, context_id, project_id, notes, created_at, updated_at, deleted_at, audio_path', () => {
       const cols: Column[] = AppSchema.props.meetings.columns;
       const colMap = Object.fromEntries(cols.map(c => [c.name, c]));
-      const textCols = ['title', 'description', 'start_time', 'end_time', 'context_id', 'project_id', 'notes', 'created_at', 'updated_at', 'deleted_at'];
+      const textCols = ['title', 'description', 'start_time', 'end_time', 'context_id', 'project_id', 'notes', 'created_at', 'updated_at', 'deleted_at', 'audio_path'];
       for (const name of textCols) {
         expect(colMap[name], `${name} should be TEXT`).toBeDefined();
         expect(colMap[name].type).toBe(ColumnType.TEXT);
@@ -178,6 +178,12 @@ describe('AppSchema', () => {
       const cols: Column[] = AppSchema.props.meetings.columns;
       const colMap = Object.fromEntries(cols.map(c => [c.name, c]));
       expect(colMap['is_all_day'].type).toBe(ColumnType.INTEGER);
+    });
+
+    it('has INTEGER column for recording_duration', () => {
+      const cols: Column[] = AppSchema.props.meetings.columns;
+      const colMap = Object.fromEntries(cols.map(c => [c.name, c]));
+      expect(colMap['recording_duration'].type).toBe(ColumnType.INTEGER);
     });
   });
 

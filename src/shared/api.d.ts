@@ -7,6 +7,7 @@ import type {
   Meeting, CreateMeetingInput, UpdateMeetingInput, MeetingAttendee,
 } from './types';
 import type { HybridSearchResult, SearchStatus, SearchableEntityType } from './search-types';
+import type { AudioSource } from './recording-types';
 
 declare global {
   interface Window {
@@ -117,6 +118,11 @@ declare global {
         importData(filePath: string): Promise<void>;
         getSettings(): Promise<unknown>;
         setSettings(settings: unknown): Promise<void>;
+      };
+      recording: {
+        getSources(): Promise<AudioSource[]>;
+        save(meetingId: string, data: ArrayBuffer): Promise<string>;
+        delete(audioPath: string): Promise<void>;
       };
     };
   }

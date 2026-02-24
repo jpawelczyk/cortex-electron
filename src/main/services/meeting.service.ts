@@ -35,6 +35,8 @@ export function createMeetingService(ctx: DbContext): MeetingService {
         context_id: input.context_id ?? null,
         project_id: input.project_id ?? null,
         notes: null,
+        audio_path: null,
+        recording_duration: null,
         created_at: now,
         updated_at: now,
         deleted_at: null,
@@ -44,13 +46,14 @@ export function createMeetingService(ctx: DbContext): MeetingService {
         INSERT INTO meetings (
           id, title, description, start_time, end_time, is_all_day,
           location, meeting_url, status, context_id, project_id, notes,
-          created_at, updated_at, deleted_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          audio_path, recording_duration, created_at, updated_at, deleted_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
         meeting.id, meeting.title, meeting.description,
         meeting.start_time, meeting.end_time, meeting.is_all_day ? 1 : 0,
         meeting.location, meeting.meeting_url, meeting.status,
         meeting.context_id, meeting.project_id, meeting.notes,
+        meeting.audio_path, meeting.recording_duration,
         meeting.created_at, meeting.updated_at, meeting.deleted_at,
       ]);
 
@@ -90,12 +93,14 @@ export function createMeetingService(ctx: DbContext): MeetingService {
         UPDATE meetings SET
           title = ?, description = ?, start_time = ?, end_time = ?,
           is_all_day = ?, location = ?, meeting_url = ?, status = ?,
-          context_id = ?, project_id = ?, notes = ?, updated_at = ?
+          context_id = ?, project_id = ?, notes = ?,
+          audio_path = ?, recording_duration = ?, updated_at = ?
         WHERE id = ?
       `, [
         updated.title, updated.description, updated.start_time, updated.end_time,
         updated.is_all_day ? 1 : 0, updated.location, updated.meeting_url, updated.status,
-        updated.context_id, updated.project_id, updated.notes, updated.updated_at,
+        updated.context_id, updated.project_id, updated.notes,
+        updated.audio_path, updated.recording_duration, updated.updated_at,
         id,
       ]);
 

@@ -11,6 +11,7 @@ import type {
   Meeting, CreateMeetingInput, UpdateMeetingInput, MeetingAttendee,
 } from '../shared/types';
 import type { HybridSearchResult, SearchStatus, SearchableEntityType } from '../shared/search-types';
+import type { AudioSource } from '../shared/recording-types';
 
 interface DailyNote {
   date: string;
@@ -161,6 +162,12 @@ const api = {
     importData: (filePath: string): Promise<void> => ipcRenderer.invoke('system:import', filePath),
     getSettings: (): Promise<unknown> => ipcRenderer.invoke('system:settings:get'),
     setSettings: (settings: unknown): Promise<void> => ipcRenderer.invoke('system:settings:set', settings),
+  },
+
+  recording: {
+    getSources: (): Promise<AudioSource[]> => ipcRenderer.invoke('recording:get-sources'),
+    save: (meetingId: string, data: ArrayBuffer): Promise<string> => ipcRenderer.invoke('recording:save', meetingId, data),
+    delete: (audioPath: string): Promise<void> => ipcRenderer.invoke('recording:delete', audioPath),
   },
 };
 

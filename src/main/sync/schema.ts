@@ -112,6 +112,8 @@ const meetings = new Table({
   context_id: column.text,
   project_id: column.text,
   notes: column.text,
+  audio_path: column.text,
+  recording_duration: column.integer,
   created_at: column.text,
   updated_at: column.text,
   deleted_at: column.text,

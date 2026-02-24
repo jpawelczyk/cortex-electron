@@ -220,6 +220,8 @@ export interface Meeting {
   context_id: string | null;
   project_id: string | null;
   notes: string | null;
+  audio_path: string | null;
+  recording_duration: number | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -249,6 +251,8 @@ export interface UpdateMeetingInput {
   context_id?: string | null;
   project_id?: string | null;
   notes?: string | null;
+  audio_path?: string | null;
+  recording_duration?: number | null;
 }
 
 export interface MeetingAttendee {

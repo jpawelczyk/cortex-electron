@@ -5,6 +5,7 @@ import { MarkdownEditor, type MarkdownEditorHandle } from '../components/Markdow
 import { useDebouncedCallback } from '../hooks/useDebouncedCallback';
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
 import { StakeholderPicker } from '../components/StakeholderPicker';
+import { RecordingControls } from '../components/RecordingControls';
 
 interface MeetingDetailViewProps {
   meetingId: string;
@@ -13,6 +14,7 @@ interface MeetingDetailViewProps {
 export function MeetingDetailView({ meetingId }: MeetingDetailViewProps) {
   const meetings = useStore((s) => s.meetings);
   const updateMeeting = useStore((s) => s.updateMeeting);
+  const fetchMeetings = useStore((s) => s.fetchMeetings);
   const deleteMeeting = useStore((s) => s.deleteMeeting);
   const deselectMeeting = useStore((s) => s.deselectMeeting);
   const contexts = useStore((s) => s.contexts);
@@ -194,6 +196,13 @@ export function MeetingDetailView({ meetingId }: MeetingDetailViewProps) {
           }}
           className="w-full text-2xl font-bold bg-transparent border-0 outline-none mb-4 text-foreground placeholder:text-muted-foreground/50"
           placeholder="Meeting title"
+        />
+
+        {/* Recording controls */}
+        <RecordingControls
+          meetingId={meetingId}
+          audioPath={meeting.audio_path}
+          onRecordingComplete={fetchMeetings}
         />
 
         {/* Date/Time row */}

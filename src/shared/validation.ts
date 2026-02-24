@@ -133,6 +133,8 @@ export const UpdateMeetingSchema = z.object({
   context_id: uuidOrNull,
   project_id: uuidOrNull,
   notes: z.string().nullable().optional(),
+  audio_path: z.string().nullable().optional(),
+  recording_duration: z.number().int().nullable().optional(),
 });
 
 export const MeetingIdSchema = uuid;

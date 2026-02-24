@@ -53,6 +53,8 @@ const baseMeeting: Meeting = {
   context_id: null,
   project_id: null,
   notes: null,
+  audio_path: null,
+  recording_duration: null,
   created_at: '2024-01-01T00:00:00Z',
   updated_at: '2024-01-01T00:00:00Z',
   deleted_at: null,
