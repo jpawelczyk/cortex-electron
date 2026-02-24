@@ -121,6 +121,7 @@ declare global {
       };
       recording: {
         getSources(): Promise<AudioSource[]>;
+        selectSource(sourceId: string): Promise<void>;
         save(meetingId: string, data: ArrayBuffer): Promise<string>;
         delete(audioPath: string): Promise<void>;
       };

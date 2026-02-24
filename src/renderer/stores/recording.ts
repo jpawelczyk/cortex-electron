@@ -26,15 +26,18 @@ async function getMicStream(): Promise<MediaStream> {
 }
 
 async function getSystemStream(sourceId: string): Promise<MediaStream> {
-  return navigator.mediaDevices.getUserMedia({
-    audio: {
-      mandatory: {
-        chromeMediaSource: 'desktop',
-        chromeMediaSourceId: sourceId,
-      },
-    } as MediaTrackConstraints,
-    video: false,
+  // Tell the main process which source to grant before triggering getDisplayMedia
+  await window.cortex.recording.selectSource(sourceId);
+  const stream = await navigator.mediaDevices.getDisplayMedia({
+    audio: true,
+    video: { width: 1, height: 1 }, // Required by Chromium; discarded immediately
   });
+  // Remove video tracks — we only need audio
+  for (const track of stream.getVideoTracks()) {
+    track.stop();
+    stream.removeTrack(track);
+  }
+  return stream;
 }
 
 async function getMergedStream(sourceId: string): Promise<MediaStream> {

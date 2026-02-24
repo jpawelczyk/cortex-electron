@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { app, BrowserWindow, dialog, ipcMain, nativeImage, session } from 'electron';
+import { app, BrowserWindow, desktopCapturer, dialog, ipcMain, nativeImage, session } from 'electron';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import { initDatabase, closeDatabase, getPowerSyncDatabase } from './db/index.js';
@@ -143,6 +143,32 @@ app.whenReady().then(async () => {
 
     createWindow();
     registerGlobalShortcuts(mainWindow!);
+
+    // Register display media handler so the renderer can capture system audio
+    // via getDisplayMedia(). Without this, Electron kills the renderer (bad IPC).
+    let pendingSourceId: string | null = null;
+    ipcMain.handle('recording:select-source', (_, sourceId: unknown) => {
+      if (typeof sourceId === 'string' && sourceId.length > 0) {
+        pendingSourceId = sourceId;
+      }
+    });
+    mainWindow!.webContents.session.setDisplayMediaRequestHandler(async (_request, callback) => {
+      try {
+        const sources = await desktopCapturer.getSources({ types: ['screen', 'window'] });
+        const source = pendingSourceId
+          ? sources.find((s) => s.id === pendingSourceId) ?? sources[0]
+          : sources[0];
+        pendingSourceId = null;
+        if (source) {
+          callback({ video: source, audio: 'loopback' });
+        } else {
+          callback({});
+        }
+      } catch {
+        pendingSourceId = null;
+        callback({});
+      }
+    });
 
     const ctx: DbContext = { db };
 

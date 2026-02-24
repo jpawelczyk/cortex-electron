@@ -27,6 +27,7 @@ function createStore(overrides?: Partial<RecordingSlice>): RecordingSlice {
 const mockCortex = {
   recording: {
     getSources: vi.fn(),
+    selectSource: vi.fn().mockResolvedValue(undefined),
     save: vi.fn(),
     delete: vi.fn(),
   },
@@ -52,18 +53,29 @@ const MockMediaRecorder = vi.fn().mockImplementation(() => mockMediaRecorder);
 
 // Mock navigator.mediaDevices
 const mockGetUserMedia = vi.fn();
+const mockGetDisplayMedia = vi.fn();
 Object.defineProperty(globalThis, 'navigator', {
-  value: { mediaDevices: { getUserMedia: mockGetUserMedia } },
+  value: { mediaDevices: { getUserMedia: mockGetUserMedia, getDisplayMedia: mockGetDisplayMedia } },
   writable: true,
   configurable: true,
 });
 
+const mockVideoTrack = { stop: vi.fn(), kind: 'video' };
+const mockAudioTrack = { stop: vi.fn(), kind: 'audio' };
 const mockStream = { getTracks: () => [{ stop: vi.fn() }] };
+const mockDisplayStream = {
+  getTracks: () => [mockAudioTrack, mockVideoTrack],
+  getVideoTracks: () => [mockVideoTrack],
+  getAudioTracks: () => [mockAudioTrack],
+  removeTrack: vi.fn(),
+};
 
 describe('RecordingSlice', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockGetUserMedia.mockResolvedValue(mockStream);
+    mockGetDisplayMedia.mockResolvedValue(mockDisplayStream);
+    mockCortex.recording.selectSource.mockResolvedValue(undefined);
     mockCortex.recording.save.mockResolvedValue('/recordings/meeting-1.webm');
     mockCortex.meetings.update.mockResolvedValue({});
   });
@@ -115,18 +127,21 @@ describe('RecordingSlice', () => {
       expect(mockGetUserMedia).toHaveBeenCalledWith({ audio: true, video: false });
     });
 
-    it('calls getUserMedia with desktop source for system mode', async () => {
+    it('calls selectSource then getDisplayMedia for system mode', async () => {
       const store = createStore();
       await store.startRecording('meeting-1', 'system', 'screen:1');
-      expect(mockGetUserMedia).toHaveBeenCalledWith({
-        audio: {
-          mandatory: {
-            chromeMediaSource: 'desktop',
-            chromeMediaSourceId: 'screen:1',
-          },
-        },
-        video: false,
+      expect(mockCortex.recording.selectSource).toHaveBeenCalledWith('screen:1');
+      expect(mockGetDisplayMedia).toHaveBeenCalledWith({
+        audio: true,
+        video: { width: 1, height: 1 },
       });
+    });
+
+    it('removes video tracks from display media stream', async () => {
+      const store = createStore();
+      await store.startRecording('meeting-1', 'system', 'screen:1');
+      expect(mockVideoTrack.stop).toHaveBeenCalled();
+      expect(mockDisplayStream.removeTrack).toHaveBeenCalledWith(mockVideoTrack);
     });
 
     it('resets duration to 0 on start', async () => {

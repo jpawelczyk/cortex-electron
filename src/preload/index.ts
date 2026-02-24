@@ -166,6 +166,7 @@ const api = {
 
   recording: {
     getSources: (): Promise<AudioSource[]> => ipcRenderer.invoke('recording:get-sources'),
+    selectSource: (sourceId: string): Promise<void> => ipcRenderer.invoke('recording:select-source', sourceId),
     save: (meetingId: string, data: ArrayBuffer): Promise<string> => ipcRenderer.invoke('recording:save', meetingId, data),
     delete: (audioPath: string): Promise<void> => ipcRenderer.invoke('recording:delete', audioPath),
   },
