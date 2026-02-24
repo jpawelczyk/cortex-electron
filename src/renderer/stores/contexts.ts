@@ -75,14 +75,9 @@ export const createContextSlice: StateCreator<ContextSlice> = (set, get) => ({
   },
 
   toggleContext: (id) => {
-    set((state) => {
-      const has = state.activeContextIds.includes(id);
-      return {
-        activeContextIds: has
-          ? state.activeContextIds.filter((cid) => cid !== id)
-          : [...state.activeContextIds, id],
-      };
-    });
+    set((state) => ({
+      activeContextIds: state.activeContextIds.includes(id) ? [] : [id],
+    }));
   },
 
   setActiveContexts: (ids) => set({ activeContextIds: ids }),

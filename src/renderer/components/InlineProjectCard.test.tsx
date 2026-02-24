@@ -5,11 +5,13 @@ import '@testing-library/jest-dom/vitest';
 import { InlineProjectCard } from './InlineProjectCard';
 
 const mockCreateProject = vi.fn();
+let mockActiveContextIds: string[] = [];
 
 vi.mock('../stores', () => ({
   useStore: (selector: (state: Record<string, unknown>) => unknown) => {
     const state = {
       createProject: mockCreateProject,
+      activeContextIds: mockActiveContextIds,
     };
     return selector(state);
   },
@@ -20,6 +22,7 @@ describe('InlineProjectCard', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockActiveContextIds = [];
     mockCreateProject.mockResolvedValue({
       id: 'new-proj',
       title: 'Test',
@@ -133,5 +136,36 @@ describe('InlineProjectCard', () => {
     fireEvent.mouseDown(screen.getByTestId('inline-project-card'));
 
     expect(mockOnClose).not.toHaveBeenCalled();
+  });
+
+  // --- Auto-apply context from filter ---
+
+  it('auto-applies context_id when single context filter is active', async () => {
+    mockActiveContextIds = ['ctx-1'];
+    render(<InlineProjectCard onClose={mockOnClose} />);
+    const input = screen.getByPlaceholderText('New project');
+
+    fireEvent.change(input, { target: { value: 'Filtered project' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(mockCreateProject).toHaveBeenCalledWith({
+      title: 'Filtered project',
+      status: 'planned',
+      context_id: 'ctx-1',
+    });
+  });
+
+  it('does not auto-apply context_id when filter is empty', () => {
+    mockActiveContextIds = [];
+    render(<InlineProjectCard onClose={mockOnClose} />);
+    const input = screen.getByPlaceholderText('New project');
+
+    fireEvent.change(input, { target: { value: 'Unfiltered project' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(mockCreateProject).toHaveBeenCalledWith({
+      title: 'Unfiltered project',
+      status: 'planned',
+    });
   });
 });

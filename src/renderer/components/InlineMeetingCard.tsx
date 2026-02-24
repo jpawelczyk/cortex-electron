@@ -9,6 +9,7 @@ interface InlineMeetingCardProps {
 export function InlineMeetingCard({ onClose }: InlineMeetingCardProps) {
   const createMeeting = useStore((s) => s.createMeeting);
   const selectMeeting = useStore((s) => s.selectMeeting);
+  const activeContextIds = useStore((s) => s.activeContextIds);
   const [title, setTitle] = useState('');
   const cardRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef(title);
@@ -17,16 +18,20 @@ export function InlineMeetingCard({ onClose }: InlineMeetingCardProps) {
   const saveAndClose = useCallback(async () => {
     const trimmed = titleRef.current.trim();
     if (trimmed) {
-      const created = await createMeeting({
+      const input: { title: string; start_time: string; context_id?: string } = {
         title: trimmed,
         start_time: new Date().toISOString(),
-      });
+      };
+      if (activeContextIds.length === 1) {
+        input.context_id = activeContextIds[0];
+      }
+      const created = await createMeeting(input);
       if (created?.id) {
         selectMeeting(created.id);
       }
     }
     onClose();
-  }, [createMeeting, selectMeeting, onClose]);
+  }, [createMeeting, selectMeeting, onClose, activeContextIds]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {

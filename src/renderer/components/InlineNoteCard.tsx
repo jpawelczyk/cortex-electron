@@ -9,6 +9,7 @@ interface InlineNoteCardProps {
 export function InlineNoteCard({ onClose }: InlineNoteCardProps) {
   const createNote = useStore((s) => s.createNote);
   const selectNote = useStore((s) => s.selectNote);
+  const activeContextIds = useStore((s) => s.activeContextIds);
 
   const [title, setTitle] = useState('');
   const cardRef = useRef<HTMLDivElement>(null);
@@ -18,11 +19,15 @@ export function InlineNoteCard({ onClose }: InlineNoteCardProps) {
   const saveAndClose = useCallback(async () => {
     const trimmed = titleRef.current.trim();
     if (trimmed) {
-      const note = await createNote({ title: trimmed });
+      const input: { title: string; context_id?: string } = { title: trimmed };
+      if (activeContextIds.length === 1) {
+        input.context_id = activeContextIds[0];
+      }
+      const note = await createNote(input);
       selectNote(note.id);
     }
     onClose();
-  }, [createNote, selectNote, onClose]);
+  }, [createNote, selectNote, onClose, activeContextIds]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {

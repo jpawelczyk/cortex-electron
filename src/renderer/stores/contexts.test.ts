@@ -179,9 +179,15 @@ describe('ContextSlice', () => {
       expect(store.activeContextIds).toContain('ctx-1');
     });
 
-    it('removes id when already present', () => {
-      const store = createStore({ activeContextIds: ['ctx-1', 'ctx-2'] });
+    it('clears filter when toggling the only active id', () => {
+      const store = createStore({ activeContextIds: ['ctx-1'] });
       store.toggleContext('ctx-1');
+      expect(store.activeContextIds).toEqual([]);
+    });
+
+    it('replaces active id instead of adding when toggling a different id', () => {
+      const store = createStore({ activeContextIds: ['ctx-1'] });
+      store.toggleContext('ctx-2');
       expect(store.activeContextIds).toEqual(['ctx-2']);
     });
   });

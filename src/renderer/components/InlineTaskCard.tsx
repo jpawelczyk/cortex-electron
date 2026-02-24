@@ -41,6 +41,7 @@ export function InlineTaskCard() {
   const contexts = useStore((s) => s.contexts);
   const projects = useStore((s) => s.projects);
   const inlineCreateDefaults = useStore((s) => s.inlineCreateDefaults);
+  const activeContextIds = useStore((s) => s.activeContextIds);
 
   const [title, setTitle] = useState('');
   const [notes, setNotes] = useState('');
@@ -140,6 +141,8 @@ export function InlineTaskCard() {
 
     if (parsedAtSave.contextId) {
       input.context_id = parsedAtSave.contextId;
+    } else if (activeContextIds.length === 1) {
+      input.context_id = activeContextIds[0];
     }
 
     const task = await createTask(input);
@@ -150,7 +153,7 @@ export function InlineTaskCard() {
     }
 
     cancelInlineCreate();
-  }, [createTask, cancelInlineCreate, createChecklistItem, contexts, projects]);
+  }, [createTask, cancelInlineCreate, createChecklistItem, contexts, projects, activeContextIds]);
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;

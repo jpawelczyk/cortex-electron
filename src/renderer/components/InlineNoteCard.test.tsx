@@ -7,12 +7,14 @@ import { InlineNoteCard } from './InlineNoteCard';
 const mockCreateNote = vi.fn();
 const mockSelectNote = vi.fn();
 const mockOnClose = vi.fn();
+let mockActiveContextIds: string[] = [];
 
 vi.mock('../stores', () => ({
   useStore: (selector: (state: Record<string, unknown>) => unknown) => {
     const state = {
       createNote: mockCreateNote,
       selectNote: mockSelectNote,
+      activeContextIds: mockActiveContextIds,
     };
     return selector(state);
   },
@@ -21,6 +23,7 @@ vi.mock('../stores', () => ({
 describe('InlineNoteCard', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockActiveContextIds = [];
     mockCreateNote.mockResolvedValue({
       id: 'new-note',
       title: 'Test',
@@ -132,5 +135,29 @@ describe('InlineNoteCard', () => {
     fireEvent.mouseDown(screen.getByTestId('inline-note-card'));
 
     expect(mockOnClose).not.toHaveBeenCalled();
+  });
+
+  // --- Auto-apply context from filter ---
+
+  it('auto-applies context_id when single context filter is active', async () => {
+    mockActiveContextIds = ['ctx-1'];
+    render(<InlineNoteCard onClose={mockOnClose} />);
+    const input = screen.getByPlaceholderText('New note');
+
+    fireEvent.change(input, { target: { value: 'Filtered note' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(mockCreateNote).toHaveBeenCalledWith({ title: 'Filtered note', context_id: 'ctx-1' });
+  });
+
+  it('does not auto-apply context_id when filter is empty', () => {
+    mockActiveContextIds = [];
+    render(<InlineNoteCard onClose={mockOnClose} />);
+    const input = screen.getByPlaceholderText('New note');
+
+    fireEvent.change(input, { target: { value: 'Unfiltered note' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(mockCreateNote).toHaveBeenCalledWith({ title: 'Unfiltered note' });
   });
 });

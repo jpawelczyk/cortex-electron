@@ -18,6 +18,7 @@ const mockProjects = [
 ];
 
 let mockInlineCreateDefaults: Record<string, unknown> | null = null;
+let mockActiveContextIds: string[] = [];
 
 vi.mock('../stores', () => ({
   useStore: (selector: (state: Record<string, unknown>) => unknown) => {
@@ -28,6 +29,7 @@ vi.mock('../stores', () => ({
       contexts: mockContexts,
       projects: mockProjects,
       inlineCreateDefaults: mockInlineCreateDefaults,
+      activeContextIds: mockActiveContextIds,
     };
     return selector(state);
   },
@@ -54,6 +56,7 @@ describe('InlineTaskCard', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockInlineCreateDefaults = null;
+    mockActiveContextIds = [];
     mockCreateTask.mockResolvedValue({
       id: 'new-1',
       title: 'Test',
@@ -500,6 +503,49 @@ describe('InlineTaskCard', () => {
         expect(dropdown).not.toHaveTextContent('Personal');
       }
     });
+  });
+
+  // --- Auto-apply context from filter ---
+
+  it('auto-applies context_id when single context filter is active', async () => {
+    mockActiveContextIds = ['ctx-1'];
+    render(<InlineTaskCard />);
+    const input = screen.getByPlaceholderText('New task');
+
+    fireEvent.change(input, { target: { value: 'Filtered task' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    await waitFor(() => {
+      expect(mockCreateTask).toHaveBeenCalledWith(
+        expect.objectContaining({ title: 'Filtered task', context_id: 'ctx-1' })
+      );
+    });
+  });
+
+  it('explicit #token context takes priority over active filter context', async () => {
+    mockActiveContextIds = ['ctx-2'];
+    render(<InlineTaskCard />);
+    const input = screen.getByPlaceholderText('New task');
+
+    fireEvent.change(input, { target: { value: 'Task #Work' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    await waitFor(() => {
+      expect(mockCreateTask).toHaveBeenCalledWith(
+        expect.objectContaining({ title: 'Task', context_id: 'ctx-1' })
+      );
+    });
+  });
+
+  it('does not auto-apply context_id when filter is empty', () => {
+    mockActiveContextIds = [];
+    render(<InlineTaskCard />);
+    const input = screen.getByPlaceholderText('New task');
+
+    fireEvent.change(input, { target: { value: 'No context task' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(mockCreateTask).toHaveBeenCalledWith({ title: 'No context task' });
   });
 
   it('selecting autocomplete option replaces token in input', async () => {

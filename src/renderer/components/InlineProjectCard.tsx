@@ -8,6 +8,7 @@ interface InlineProjectCardProps {
 
 export function InlineProjectCard({ onClose }: InlineProjectCardProps) {
   const createProject = useStore((s) => s.createProject);
+  const activeContextIds = useStore((s) => s.activeContextIds);
   const [title, setTitle] = useState('');
   const cardRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef(title);
@@ -16,10 +17,17 @@ export function InlineProjectCard({ onClose }: InlineProjectCardProps) {
   const saveAndClose = useCallback(async () => {
     const trimmed = titleRef.current.trim();
     if (trimmed) {
-      await createProject({ title: trimmed, status: 'planned' });
+      const input: { title: string; status: 'planned'; context_id?: string } = {
+        title: trimmed,
+        status: 'planned',
+      };
+      if (activeContextIds.length === 1) {
+        input.context_id = activeContextIds[0];
+      }
+      await createProject(input);
     }
     onClose();
-  }, [createProject, onClose]);
+  }, [createProject, onClose, activeContextIds]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
