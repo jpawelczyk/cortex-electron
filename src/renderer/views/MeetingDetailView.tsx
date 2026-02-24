@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { ArrowLeft, Trash2, Check, X, MapPin, Link, Video } from 'lucide-react';
+import { ArrowLeft, Trash2, Check, X, MapPin, Link } from 'lucide-react';
 import { useStore } from '../stores';
 import { MarkdownEditor, type MarkdownEditorHandle } from '../components/MarkdownEditor';
 import { useDebouncedCallback } from '../hooks/useDebouncedCallback';
