@@ -86,7 +86,11 @@
   "build": {
     "appId": "com.cortex.app",
     "productName": "Cortex",
-    "asar": false,
+    "asar": true,
+    "asarUnpack": [
+      "node_modules/better-sqlite3/**/*.node",
+      "node_modules/@powersync/node/lib/**/*.{dylib,so,dll}"
+    ],
     "directories": {
       "output": "release"
     },
