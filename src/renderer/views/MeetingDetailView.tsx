@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { ArrowLeft, Trash2, Check, X, MapPin, Link, Calendar, Clock } from 'lucide-react';
+import { ArrowLeft, Trash2, Check, X, MapPin, Link, Calendar } from 'lucide-react';
 import { useStore } from '../stores';
 import { MarkdownEditor, type MarkdownEditorHandle } from '../components/MarkdownEditor';
 import { useDebouncedCallback } from '../hooks/useDebouncedCallback';
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
 import { StakeholderPicker } from '../components/StakeholderPicker';
 import { RecordingControls } from '../components/RecordingControls';
+import { DatePickerButton } from '../components/DatePickerButton';
+import { TimePickerButton } from '../components/TimePickerButton';
 
 type MeetingStatus = 'scheduled' | 'completed' | 'cancelled';
 
@@ -298,56 +300,22 @@ export function MeetingDetailView({ meetingId }: MeetingDetailViewProps) {
           />
         </div>
 
-        {/* Schedule + details row */}
-        <div className="flex items-center gap-4 text-sm text-muted-foreground mb-6 flex-wrap">
-          <div className="flex items-center gap-1.5">
-            <Calendar className="size-3.5 shrink-0" />
-            <input
-              type="date"
-              value={startDateStr}
-              data-testid="meeting-date-input"
-              onChange={(e) => {
-                const newDate = e.target.value;
-                if (!newDate) return;
-                const time = meeting.is_all_day ? '00:00:00' : startTimeStr + ':00';
-                updateMeeting(meetingId, { start_time: `${newDate}T${time}` });
-              }}
-              className="bg-transparent text-sm text-foreground border-0 outline-none focus:ring-0 p-0 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer relative"
-            />
-          </div>
-          {!meeting.is_all_day && (
-            <div className="flex items-center gap-1.5">
-              <Clock className="size-3.5 shrink-0" />
-              <input
-                type="time"
-                value={startTimeStr}
-                data-testid="meeting-start-time-input"
-                onChange={(e) => {
-                  const time = e.target.value;
-                  if (!time) return;
-                  updateMeeting(meetingId, { start_time: `${startDateStr}T${time}:00` });
-                }}
-                className="bg-transparent text-sm text-foreground border-0 outline-none focus:ring-0 p-0 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer relative"
-              />
-              <span>–</span>
-              <input
-                type="time"
-                value={endTimeStr}
-                data-testid="meeting-end-time-input"
-                onChange={(e) => {
-                  const time = e.target.value;
-                  if (!time) return;
-                  updateMeeting(meetingId, { end_time: `${startDateStr}T${time}:00` });
-                }}
-                className="bg-transparent text-sm text-foreground border-0 outline-none focus:ring-0 p-0 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer relative"
-                placeholder="End"
-              />
-            </div>
-          )}
+        {/* Schedule row */}
+        <div className="flex items-center gap-1 text-sm text-muted-foreground mb-6">
+          <DatePickerButton
+            value={startDateStr}
+            onChange={(date) => {
+              if (!date) return;
+              const time = meeting.is_all_day ? '00:00:00' : startTimeStr + ':00';
+              updateMeeting(meetingId, { start_time: `${date}T${time}` });
+            }}
+            icon={<Calendar className="size-3.5" />}
+            label="Meeting date"
+          />
           <button
             data-testid="meeting-all-day-toggle"
             onClick={() => updateMeeting(meetingId, { is_all_day: !meeting.is_all_day })}
-            className={`text-xs px-2 py-0.5 rounded-full transition-colors cursor-default ${
+            className={`text-xs px-2 py-1 rounded-md transition-colors cursor-default ${
               meeting.is_all_day
                 ? 'bg-primary/15 text-primary font-medium'
                 : 'text-muted-foreground hover:bg-accent/50'
@@ -355,6 +323,22 @@ export function MeetingDetailView({ meetingId }: MeetingDetailViewProps) {
           >
             All day
           </button>
+          {!meeting.is_all_day && (
+            <>
+              <TimePickerButton
+                value={startTimeStr}
+                data-testid="meeting-start-time-input"
+                onChange={(time) => updateMeeting(meetingId, { start_time: `${startDateStr}T${time}:00` })}
+              />
+              <span className="text-muted-foreground/50">–</span>
+              <TimePickerButton
+                value={endTimeStr}
+                data-testid="meeting-end-time-input"
+                onChange={(time) => updateMeeting(meetingId, { end_time: `${startDateStr}T${time}:00` })}
+                placeholder="End"
+              />
+            </>
+          )}
         </div>
 
         {/* Details */}
