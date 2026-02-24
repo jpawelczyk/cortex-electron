@@ -267,7 +267,7 @@ function AuthenticatedApp() {
           </button>
         </header>
 
-        {activeView === 'home' && <HomeView />}
+        {activeView === 'home' && <HomeView onNavigate={handleViewChange} />}
         {activeView === 'daily' && <PlaceholderView title="Daily" />}
         {activeView === 'inbox' && <InboxView />}
         {activeView === 'today' && <TodayView />}

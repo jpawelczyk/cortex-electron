@@ -1,10 +1,15 @@
 import { useMemo, useState, useCallback, useRef, useEffect } from 'react';
 import { format, parseISO, isToday } from 'date-fns';
-import { CloudSun, CheckCircle2, Video } from 'lucide-react';
+import { CloudSun, CheckCircle2, Video, Plus } from 'lucide-react';
 import { useStore } from '../stores';
 import { useWeather } from '../hooks/useWeather';
 import { TaskList } from '../components/TaskList';
 import type { Meeting } from '../../shared/types';
+import type { SidebarView } from '../components/Sidebar';
+
+interface HomeViewProps {
+  onNavigate: (view: SidebarView) => void;
+}
 
 function formatMeetingTime(meeting: Meeting): string {
   if (meeting.is_all_day) return 'All day';
@@ -43,7 +48,7 @@ function getSubtitle(todayCount: number, overdueCount: number): string {
   return `Busy day — ${todayCount} tasks lined up.`;
 }
 
-export function HomeView() {
+export function HomeView({ onNavigate }: HomeViewProps) {
   const now = useMemo(() => new Date(), []);
   const dayOfWeek = format(now, 'EEEE').toUpperCase();
   const monthDay = format(now, 'MMMM d').toUpperCase();
@@ -56,7 +61,9 @@ export function HomeView() {
   const selectTask = useStore((s) => s.selectTask);
   const selectedTaskId = useStore((s) => s.selectedTaskId);
   const meetings = useStore((s) => s.meetings);
+  const createMeeting = useStore((s) => s.createMeeting);
   const selectMeeting = useStore((s) => s.selectMeeting);
+  const setAutoFocusMeetingTitle = useStore((s) => s.setAutoFocusMeetingTitle);
   const weather = useWeather(weatherCity);
 
   const today = format(now, 'yyyy-MM-dd');
@@ -124,6 +131,18 @@ export function HomeView() {
       .filter((m) => !m.deleted_at && m.status !== 'cancelled' && isToday(parseISO(m.start_time)))
       .sort((a, b) => parseISO(a.start_time).getTime() - parseISO(b.start_time).getTime());
   }, [meetings]);
+
+  const handleAddMeeting = useCallback(async () => {
+    const meeting = await createMeeting({
+      title: 'New Meeting',
+      start_time: new Date().toISOString(),
+    });
+    if (meeting?.id) {
+      setAutoFocusMeetingTitle(true);
+      onNavigate('meetings');
+      selectMeeting(meeting.id);
+    }
+  }, [createMeeting, selectMeeting, setAutoFocusMeetingTitle, onNavigate]);
 
   const subtitle = getSubtitle(todayCount, overdueCount);
   const displayName = firstName || 'there';
@@ -258,14 +277,22 @@ export function HomeView() {
             {todayMeetings.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
                 <Video className="size-8 mb-2 opacity-20" strokeWidth={1.25} />
-                <p className="text-sm">No meetings today</p>
+                <p className="text-sm mb-3">No meetings today</p>
+                <button
+                  type="button"
+                  onClick={handleAddMeeting}
+                  className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground/70 hover:text-foreground transition-colors cursor-pointer"
+                >
+                  <Plus className="size-3.5" />
+                  Add Meeting
+                </button>
               </div>
             ) : (
               <div className="flex flex-col">
                 {todayMeetings.map((m) => (
                   <div
                     key={m.id}
-                    onClick={() => selectMeeting(m.id)}
+                    onClick={() => { onNavigate('meetings'); selectMeeting(m.id); }}
                     className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-accent/40 cursor-default transition-colors"
                   >
                     <Video className="size-4 text-muted-foreground shrink-0" strokeWidth={1.5} />
