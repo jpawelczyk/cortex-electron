@@ -216,8 +216,7 @@ function AuthenticatedApp() {
       return t.status === 'today' || t.when_date === today;
     }).length;
 
-    // Inbox is always unfiltered (per CONTEXTS.md — inbox tasks need triage regardless of context)
-    const inboxCount = tasks.filter((t) => t.status === 'inbox' && !t.when_date).length;
+    const inboxCount = filtered.filter((t) => t.status === 'inbox' && !t.when_date).length;
 
     return {
       inbox: inboxCount + overdueCount,
