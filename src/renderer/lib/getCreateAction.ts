@@ -17,6 +17,7 @@ export type CreateAction =
   | { type: 'project' }
   | { type: 'note' }
   | { type: 'stakeholder' }
+  | { type: 'meeting' }
   | { type: 'none' };
 
 export function getCreateAction(input: CreateActionInput): CreateAction {
@@ -40,6 +41,8 @@ export function getCreateAction(input: CreateActionInput): CreateAction {
       return { type: 'note' };
     case 'stakeholders':
       return { type: 'stakeholder' };
+    case 'meetings':
+      return { type: 'meeting' };
     default:
       return { type: 'none' };
   }

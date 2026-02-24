@@ -4,6 +4,7 @@ import type {
   Context, CreateContextInput, UpdateContextInput,
   ChecklistItem, CreateChecklistItemInput, UpdateChecklistItemInput,
   AIAgent, CreateAIAgentInput,
+  Meeting, CreateMeetingInput, UpdateMeetingInput, MeetingAttendee,
 } from './types';
 
 declare global {
@@ -42,11 +43,17 @@ declare global {
         delete(id: string): Promise<void>;
       };
       meetings: {
-        list(): Promise<unknown[]>;
-        get(id: string): Promise<unknown>;
-        create(input: unknown): Promise<unknown>;
-        update(id: string, input: unknown): Promise<unknown>;
+        list(): Promise<Meeting[]>;
+        get(id: string): Promise<Meeting | null>;
+        create(input: CreateMeetingInput): Promise<Meeting>;
+        update(id: string, input: UpdateMeetingInput): Promise<Meeting>;
         delete(id: string): Promise<void>;
+      };
+      meetingAttendees: {
+        list: (meetingId: string) => Promise<MeetingAttendee[]>;
+        listByStakeholder: (stakeholderId: string) => Promise<MeetingAttendee[]>;
+        link: (input: { meeting_id: string; stakeholder_id: string }) => Promise<MeetingAttendee>;
+        unlink: (input: { meeting_id: string; stakeholder_id: string }) => Promise<void>;
       };
       checklists: {
         list(taskId: string): Promise<ChecklistItem[]>;

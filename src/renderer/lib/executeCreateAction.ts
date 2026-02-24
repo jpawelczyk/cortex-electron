@@ -8,6 +8,7 @@ export interface CreateDispatchers {
   startInlineProjectCreate: () => void;
   startInlineNoteCreate: () => void;
   startInlineStakeholderCreate: () => void;
+  startInlineMeetingCreate: () => void;
 }
 
 export function executeCreateAction(action: CreateAction, dispatchers: CreateDispatchers): void {
@@ -23,6 +24,9 @@ export function executeCreateAction(action: CreateAction, dispatchers: CreateDis
       break;
     case 'stakeholder':
       dispatchers.startInlineStakeholderCreate();
+      break;
+    case 'meeting':
+      dispatchers.startInlineMeetingCreate();
       break;
     case 'none':
       dispatchers.setActiveView('inbox');

@@ -205,6 +205,55 @@ export interface NoteStakeholder {
   stakeholder_id: string;
 }
 
+export interface Meeting {
+  id: string;
+  title: string;
+  description: string | null;
+  start_time: string;
+  end_time: string | null;
+  is_all_day: boolean;
+  location: string | null;
+  meeting_url: string | null;
+  status: 'scheduled' | 'completed' | 'cancelled';
+  context_id: string | null;
+  project_id: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+export interface CreateMeetingInput {
+  title: string;
+  description?: string;
+  start_time: string;
+  end_time?: string;
+  is_all_day?: boolean;
+  location?: string;
+  meeting_url?: string;
+  context_id?: string;
+  project_id?: string;
+}
+
+export interface UpdateMeetingInput {
+  title?: string;
+  description?: string | null;
+  start_time?: string;
+  end_time?: string | null;
+  is_all_day?: boolean;
+  location?: string | null;
+  meeting_url?: string | null;
+  status?: 'scheduled' | 'completed' | 'cancelled';
+  context_id?: string | null;
+  project_id?: string | null;
+  notes?: string | null;
+}
+
+export interface MeetingAttendee {
+  meeting_id: string;
+  stakeholder_id: string;
+}
+
 export interface ChecklistItem {
   id: string;
   task_id: string;

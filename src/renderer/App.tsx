@@ -23,6 +23,8 @@ import { NotesOverviewView } from './views/NotesOverviewView';
 import { NoteDetailView } from './views/NoteDetailView';
 import { StakeholdersOverviewView } from './views/StakeholdersOverviewView';
 import { StakeholderDetailView } from './views/StakeholderDetailView';
+import { MeetingsOverviewView } from './views/MeetingsOverviewView';
+import { MeetingDetailView } from './views/MeetingDetailView';
 import { SettingsView } from './views/SettingsView';
 import { HomeView } from './views/HomeView';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
@@ -86,6 +88,10 @@ function AuthenticatedApp() {
   const deselectNote = useStore((s) => s.deselectNote);
   const selectedStakeholderId = useStore((s) => s.selectedStakeholderId);
   const deselectStakeholder = useStore((s) => s.deselectStakeholder);
+  const selectedMeetingId = useStore((s) => s.selectedMeetingId);
+  const deselectMeeting = useStore((s) => s.deselectMeeting);
+  const fetchMeetings = useStore((s) => s.fetchMeetings);
+  const startInlineMeetingCreate = useStore((s) => s.startInlineMeetingCreate);
   const selectTask = useStore((s) => s.selectTask);
   const selectProject = useStore((s) => s.selectProject);
   const selectNote = useStore((s) => s.selectNote);
@@ -102,8 +108,11 @@ function AuthenticatedApp() {
     if (selectedStakeholderId) {
       deselectStakeholder();
     }
+    if (selectedMeetingId) {
+      deselectMeeting();
+    }
     setActiveView(view);
-  }, [deselectProject, deselectNote, deselectStakeholder, setActiveView, selectedProjectId, selectedNoteId, selectedStakeholderId]);
+  }, [deselectProject, deselectNote, deselectStakeholder, deselectMeeting, setActiveView, selectedProjectId, selectedNoteId, selectedStakeholderId, selectedMeetingId]);
 
   const fetchTasksRef = useRef(fetchTasks);
   fetchTasksRef.current = fetchTasks;
@@ -117,6 +126,8 @@ function AuthenticatedApp() {
   fetchNotesRef.current = fetchNotes;
   const fetchStakeholdersRef = useRef(fetchStakeholders);
   fetchStakeholdersRef.current = fetchStakeholders;
+  const fetchMeetingsRef = useRef(fetchMeetings);
+  fetchMeetingsRef.current = fetchMeetings;
   const isFetchingRef = useRef(false);
 
   const today = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
@@ -129,8 +140,9 @@ function AuthenticatedApp() {
       startInlineProjectCreate,
       startInlineNoteCreate,
       startInlineStakeholderCreate,
+      startInlineMeetingCreate,
     });
-  }, [activeView, selectedProjectId, today, handleViewChange, startInlineCreate, startInlineProjectCreate, startInlineNoteCreate, startInlineStakeholderCreate]);
+  }, [activeView, selectedProjectId, today, handleViewChange, startInlineCreate, startInlineProjectCreate, startInlineNoteCreate, startInlineStakeholderCreate, startInlineMeetingCreate]);
 
   useKeyboardShortcuts({ setActiveView: handleViewChange, deselectTask, performContextCreate, toggleCommandPalette });
   useGlobalShortcuts({ setActiveView: handleViewChange, startInlineCreate, startInlineProjectCreate, activeView, selectedProjectId });
@@ -146,6 +158,7 @@ function AuthenticatedApp() {
     fetchContextsRef.current();
     fetchNotesRef.current();
     fetchStakeholdersRef.current();
+    fetchMeetingsRef.current();
     isFetchingRef.current = false;
   }, []);
 
@@ -165,9 +178,10 @@ function AuthenticatedApp() {
         if (pendingTables.has('contexts')) fetchContextsRef.current();
         if (pendingTables.has('notes')) fetchNotesRef.current();
         if (pendingTables.has('stakeholders')) fetchStakeholdersRef.current();
-        if (pendingTables.has('project_stakeholders') || pendingTables.has('note_stakeholders')) {
+        if (pendingTables.has('meetings')) fetchMeetingsRef.current();
+        if (pendingTables.has('project_stakeholders') || pendingTables.has('note_stakeholders') || pendingTables.has('meeting_attendees')) {
           // Clear cached junction links so open detail views re-fetch
-          useStore.setState({ projectStakeholderLinks: [], noteStakeholderLinks: [] });
+          useStore.setState({ projectStakeholderLinks: [], noteStakeholderLinks: [], meetingAttendeeLinks: [] });
         }
         pendingTables.clear();
       }, 100);
@@ -266,7 +280,11 @@ function AuthenticatedApp() {
         {activeView === 'trash' && <TrashView />}
         {activeView === 'projects' && !selectedProjectId && <ProjectsOverviewView />}
         {activeView === 'projects' && selectedProjectId && <ProjectDetailView projectId={selectedProjectId} />}
-        {activeView === 'meetings' && <PlaceholderView title="Meetings" />}
+        {activeView === 'meetings' && (
+          selectedMeetingId
+            ? <MeetingDetailView meetingId={selectedMeetingId} />
+            : <MeetingsOverviewView />
+        )}
         {activeView === 'notes' && (
           selectedNoteId
             ? <NoteDetailView noteId={selectedNoteId} />

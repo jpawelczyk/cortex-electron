@@ -8,6 +8,8 @@ import { createStakeholderService } from '../services/stakeholder.service';
 import { createChecklistService } from '../services/checklist.service';
 import { createNoteService } from '../services/note.service';
 import { createAIAgentService } from '../services/ai-agent.service';
+import { createMeetingService } from '../services/meeting.service';
+import { createMeetingAttendeeService } from '../services/meeting-attendee.service';
 import type { AsyncDatabase } from '../db/types';
 import type { DbContext } from '../db/types';
 import {
@@ -19,6 +21,7 @@ import {
   CreateStakeholderSchema, UpdateStakeholderSchema, StakeholderIdSchema,
   CreateChecklistItemSchema, UpdateChecklistItemSchema, ChecklistItemIdSchema,
   LinkProjectStakeholderSchema, LinkNoteStakeholderSchema,
+  CreateMeetingSchema, UpdateMeetingSchema, MeetingIdSchema, LinkMeetingAttendeeSchema,
 } from '@shared/validation';
 
 export type NotifyChangeFn = (tables: string[]) => void;
@@ -65,6 +68,8 @@ export function registerHandlers(db: AsyncDatabase, notify: NotifyChangeFn): voi
   const checklistService = createChecklistService(ctx);
   const noteService = createNoteService(ctx);
   const agentService = createAIAgentService(ctx);
+  const meetingService = createMeetingService(ctx);
+  const meetingAttendeeService = createMeetingAttendeeService(ctx);
 
   // Tasks — reads
   ipcMain.handle('tasks:list', async () => { try { return await taskService.list(); } catch (err) { console.error('[IPC tasks:list]', err instanceof Error ? err.message : String(err)); throw toIpcError(err); } });
@@ -146,4 +151,21 @@ export function registerHandlers(db: AsyncDatabase, notify: NotifyChangeFn): voi
   // AI Agents — writes
   handleWrite('agents:create', ['ai_agents'], (input) => agentService.create(CreateAIAgentSchema.parse(input)), notify);
   handleWrite('agents:revoke', ['ai_agents'], (id) => agentService.revoke(AIAgentIdSchema.parse(id as string)), notify);
+
+  // Meetings — reads
+  ipcMain.handle('meetings:list', async () => { try { return await meetingService.list(); } catch (err) { console.error('[IPC meetings:list]', err instanceof Error ? err.message : String(err)); throw toIpcError(err); } });
+  ipcMain.handle('meetings:get', async (_, id: string) => { try { return await meetingService.get(MeetingIdSchema.parse(id)); } catch (err) { console.error('[IPC meetings:get]', err instanceof Error ? err.message : String(err)); throw toIpcError(err); } });
+
+  // Meetings — writes
+  handleWrite('meetings:create', ['meetings'], (input) => meetingService.create(CreateMeetingSchema.parse(input)), notify);
+  handleWrite('meetings:update', ['meetings'], (id, input) => meetingService.update(MeetingIdSchema.parse(id as string), UpdateMeetingSchema.parse(input)), notify);
+  handleWrite('meetings:delete', ['meetings'], (id) => meetingService.delete(MeetingIdSchema.parse(id as string)), notify);
+
+  // Meeting Attendees — reads
+  ipcMain.handle('meetingAttendees:list', async (_, meetingId: string) => { try { return await meetingAttendeeService.listByMeeting(MeetingIdSchema.parse(meetingId)); } catch (err) { console.error('[IPC meetingAttendees:list]', err instanceof Error ? err.message : String(err)); throw toIpcError(err); } });
+  ipcMain.handle('meetingAttendees:listByStakeholder', async (_, stakeholderId: string) => { try { return await meetingAttendeeService.listByStakeholder(StakeholderIdSchema.parse(stakeholderId)); } catch (err) { console.error('[IPC meetingAttendees:listByStakeholder]', err instanceof Error ? err.message : String(err)); throw toIpcError(err); } });
+
+  // Meeting Attendees — writes
+  handleWrite('meetingAttendees:link', ['meeting_attendees'], (input) => { const parsed = LinkMeetingAttendeeSchema.parse(input); return meetingAttendeeService.link(parsed.meeting_id, parsed.stakeholder_id); }, notify);
+  handleWrite('meetingAttendees:unlink', ['meeting_attendees'], (input) => { const parsed = LinkMeetingAttendeeSchema.parse(input); return meetingAttendeeService.unlink(parsed.meeting_id, parsed.stakeholder_id); }, notify);
 }

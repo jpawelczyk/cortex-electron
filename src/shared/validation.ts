@@ -106,6 +106,42 @@ export const LinkNoteStakeholderSchema = z.object({
   stakeholder_id: z.string().uuid(),
 });
 
+// Meetings
+const meetingStatusSchema = z.enum(['scheduled', 'completed', 'cancelled']);
+
+export const CreateMeetingSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().optional(),
+  start_time: z.string().min(1),
+  end_time: z.string().optional(),
+  is_all_day: z.boolean().optional(),
+  location: z.string().optional(),
+  meeting_url: z.string().optional(),
+  context_id: z.string().uuid().optional(),
+  project_id: z.string().uuid().optional(),
+});
+
+export const UpdateMeetingSchema = z.object({
+  title: z.string().min(1).optional(),
+  description: z.string().nullable().optional(),
+  start_time: z.string().min(1).optional(),
+  end_time: z.string().nullable().optional(),
+  is_all_day: z.boolean().optional(),
+  location: z.string().nullable().optional(),
+  meeting_url: z.string().nullable().optional(),
+  status: meetingStatusSchema.optional(),
+  context_id: uuidOrNull,
+  project_id: uuidOrNull,
+  notes: z.string().nullable().optional(),
+});
+
+export const MeetingIdSchema = uuid;
+
+export const LinkMeetingAttendeeSchema = z.object({
+  meeting_id: z.string().uuid(),
+  stakeholder_id: z.string().uuid(),
+});
+
 // Checklists
 export const CreateChecklistItemSchema = z.object({
   task_id: z.string().uuid(),

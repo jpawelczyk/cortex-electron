@@ -161,7 +161,7 @@ describe('AppSchema', () => {
   describe('meetings table', () => {
     it('has the correct number of columns', () => {
       const cols: Column[] = AppSchema.props.meetings.columns;
-      expect(cols).toHaveLength(15);
+      expect(cols).toHaveLength(18);
     });
 
     it('has TEXT columns for title, description, start_time, end_time, context_id, project_id, notes, created_at, updated_at, deleted_at', () => {

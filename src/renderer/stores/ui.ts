@@ -48,6 +48,10 @@ export interface UISlice {
   startInlineStakeholderCreate: () => void;
   cancelInlineStakeholderCreate: () => void;
 
+  isInlineMeetingCreating: boolean;
+  startInlineMeetingCreate: () => void;
+  cancelInlineMeetingCreate: () => void;
+
   commandPaletteOpen: boolean;
   openCommandPalette: () => void;
   closeCommandPalette: () => void;
@@ -106,6 +110,13 @@ export const createUISlice: StateCreator<UISlice> = (set, get) => ({
     set({ isInlineStakeholderCreating: true });
   },
   cancelInlineStakeholderCreate: () => set({ isInlineStakeholderCreating: false }),
+
+  isInlineMeetingCreating: false,
+  startInlineMeetingCreate: () => {
+    if (get().isInlineMeetingCreating) return;
+    set({ isInlineMeetingCreating: true });
+  },
+  cancelInlineMeetingCreate: () => set({ isInlineMeetingCreating: false }),
 
   commandPaletteOpen: false,
   openCommandPalette: () => set({ commandPaletteOpen: true }),

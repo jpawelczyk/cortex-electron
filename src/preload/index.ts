@@ -8,6 +8,7 @@ import type {
   Stakeholder, CreateStakeholderInput, UpdateStakeholderInput,
   AIAgent, CreateAIAgentInput,
   ProjectStakeholder, NoteStakeholder,
+  Meeting, CreateMeetingInput, UpdateMeetingInput, MeetingAttendee,
 } from '../shared/types';
 
 interface DailyNote {
@@ -53,11 +54,18 @@ const api = {
   },
 
   meetings: {
-    list: (): Promise<unknown[]> => ipcRenderer.invoke('meetings:list'),
-    get: (id: string): Promise<unknown> => ipcRenderer.invoke('meetings:get', id),
-    create: (input: unknown): Promise<unknown> => ipcRenderer.invoke('meetings:create', input),
-    update: (id: string, input: unknown): Promise<unknown> => ipcRenderer.invoke('meetings:update', id, input),
+    list: (): Promise<Meeting[]> => ipcRenderer.invoke('meetings:list'),
+    get: (id: string): Promise<Meeting | null> => ipcRenderer.invoke('meetings:get', id),
+    create: (input: CreateMeetingInput): Promise<Meeting> => ipcRenderer.invoke('meetings:create', input),
+    update: (id: string, input: UpdateMeetingInput): Promise<Meeting> => ipcRenderer.invoke('meetings:update', id, input),
     delete: (id: string): Promise<void> => ipcRenderer.invoke('meetings:delete', id),
+  },
+
+  meetingAttendees: {
+    list: (meetingId: string): Promise<MeetingAttendee[]> => ipcRenderer.invoke('meetingAttendees:list', meetingId),
+    listByStakeholder: (stakeholderId: string): Promise<MeetingAttendee[]> => ipcRenderer.invoke('meetingAttendees:listByStakeholder', stakeholderId),
+    link: (input: { meeting_id: string; stakeholder_id: string }): Promise<MeetingAttendee> => ipcRenderer.invoke('meetingAttendees:link', input),
+    unlink: (input: { meeting_id: string; stakeholder_id: string }): Promise<void> => ipcRenderer.invoke('meetingAttendees:unlink', input),
   },
 
   checklists: {
