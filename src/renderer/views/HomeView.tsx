@@ -1,11 +1,20 @@
 import { useMemo, useState, useCallback, useRef, useEffect } from 'react';
 import { format, parseISO, isToday } from 'date-fns';
-import { CloudSun, CheckCircle2, Video, Plus } from 'lucide-react';
+import { CloudSun, CheckCircle2, Video, Plus, FolderKanban, Briefcase, Home as HomeIcon, FlaskConical, type LucideIcon } from 'lucide-react';
 import { useStore } from '../stores';
 import { useWeather } from '../hooks/useWeather';
 import { TaskList } from '../components/TaskList';
 import type { Meeting } from '../../shared/types';
+
+const ICON_MAP: Record<string, LucideIcon> = {
+  Briefcase,
+  Home: HomeIcon,
+  FlaskConical,
+};
 import type { SidebarView } from '../components/Sidebar';
+
+const MAX_HOME_PROJECTS = 6;
+
 
 interface HomeViewProps {
   onNavigate: (view: SidebarView) => void;
@@ -64,6 +73,9 @@ export function HomeView({ onNavigate }: HomeViewProps) {
   const createMeeting = useStore((s) => s.createMeeting);
   const selectMeeting = useStore((s) => s.selectMeeting);
   const setAutoFocusMeetingTitle = useStore((s) => s.setAutoFocusMeetingTitle);
+  const projects = useStore((s) => s.projects);
+  const contexts = useStore((s) => s.contexts);
+  const selectProject = useStore((s) => s.selectProject);
   const weather = useWeather(weatherCity);
 
   const today = format(now, 'yyyy-MM-dd');
@@ -125,6 +137,13 @@ export function HomeView({ onNavigate }: HomeViewProps) {
     },
     [updateTask],
   );
+
+  const activeProjects = useMemo(() => {
+    return projects
+      .filter((p) => p.status === 'active' && !p.deleted_at)
+      .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+      .slice(0, MAX_HOME_PROJECTS);
+  }, [projects]);
 
   const todayMeetings = useMemo(() => {
     return meetings
@@ -305,6 +324,65 @@ export function HomeView({ onNavigate }: HomeViewProps) {
                     )}
                   </div>
                 ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Active Projects */}
+        <div
+          className="mt-6 rounded-xl border border-[oklch(1_0_0/6%)] overflow-hidden"
+          style={{
+            background: 'oklch(0.17 0.015 265 / 50%)',
+            backdropFilter: 'blur(20px) saturate(1.5)',
+            boxShadow: '0 1px 2px oklch(0 0 0 / 20%)',
+          }}
+        >
+          <div className="flex items-center gap-3 px-6 py-4 border-b border-[oklch(1_0_0/6%)]">
+            <h2 className="text-sm font-semibold text-foreground">Active Projects</h2>
+            {activeProjects.length > 0 && (
+              <span className="text-xs tabular-nums text-muted-foreground/60">{activeProjects.length}</span>
+            )}
+          </div>
+
+          <div className="p-4">
+            {activeProjects.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
+                <FolderKanban className="size-8 mb-2 opacity-20" strokeWidth={1.25} />
+                <p className="text-sm">No active projects</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                {activeProjects.map((p) => {
+                  const ctx = p.context_id ? contexts.find((c) => c.id === p.context_id) ?? null : null;
+                  const CtxIcon = ctx?.icon ? ICON_MAP[ctx.icon] : null;
+                  const isEmoji = ctx?.icon && !CtxIcon;
+                  return (
+                    <div
+                      key={p.id}
+                      onClick={() => { onNavigate('projects'); selectProject(p.id); }}
+                      className="rounded-lg border border-[oklch(1_0_0/6%)] px-4 py-3.5 cursor-default transition-all duration-200 hover:border-[oklch(1_0_0/12%)] hover:translate-y-[-1px]"
+                      style={{ background: 'oklch(0.15 0.01 265 / 50%)' }}
+                    >
+                      <div className="flex flex-col gap-1.5">
+                        <div className="flex items-center gap-2.5">
+                          <FolderKanban className="size-4 text-muted-foreground/60 shrink-0" strokeWidth={1.5} />
+                          <span className="font-medium text-sm truncate">{p.title}</span>
+                        </div>
+                        {ctx ? (
+                          <div className="flex items-center gap-1.5 ml-[26px]">
+                            <span className="size-1.5 rounded-full shrink-0 mr-0.5" style={{ backgroundColor: ctx.color ?? undefined }} />
+                            {CtxIcon && <CtxIcon className="size-3 text-muted-foreground/60" />}
+                            {isEmoji && <span className="text-[10px]">{ctx.icon}</span>}
+                            <span className="text-xs text-muted-foreground/60">{ctx.name}</span>
+                          </div>
+                        ) : (
+                          <div className="h-4" />
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
