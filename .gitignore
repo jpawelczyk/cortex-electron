@@ -5,7 +5,7 @@ node_modules/
 dist/
 release/
 out/
-index.js
+/index.js
 
 # IDE
 .idea/

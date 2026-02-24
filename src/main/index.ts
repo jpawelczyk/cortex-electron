@@ -128,10 +128,9 @@ app.whenReady().then(async () => {
   }
   ipcMain.handle('auth:is-configured', () => !!syncConfig);
 
-  createWindow();
-  registerGlobalShortcuts(mainWindow!);
-
   try {
+    // Initialize database and register IPC handlers BEFORE creating the window.
+    // This prevents the renderer from making IPC calls before handlers exist.
     const db = await initDatabase();
     const notifyRenderer = (tables: string[]) => {
       if (mainWindow && !mainWindow.isDestroyed()) {
@@ -139,6 +138,9 @@ app.whenReady().then(async () => {
       }
     };
     registerHandlers(db, notifyRenderer);
+
+    createWindow();
+    registerGlobalShortcuts(mainWindow!);
 
     const ctx: DbContext = { db };
 
@@ -185,6 +187,10 @@ app.whenReady().then(async () => {
       }).catch(() => {});
     });
   } catch (err) {
+    // Show the window even on DB failure so the user sees something
+    if (!mainWindow) {
+      createWindow();
+    }
     dialog.showErrorBox(
       'Database initialization failed',
       `Cortex could not start its database.\n\n${err instanceof Error ? err.message : String(err)}`,
