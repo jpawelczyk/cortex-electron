@@ -18,6 +18,7 @@
     "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
+    "@huggingface/transformers": "^3.8.1",
     "@powersync/common": "^1.47.0",
     "@powersync/node": "^0.17.1",
     "@radix-ui/react-popover": "^1.1.15",

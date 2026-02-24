@@ -11,6 +11,8 @@ import { seedDefaultContexts } from './services/context.service.js';
 import { SupabaseConnector } from './sync/connector.js';
 import { FileAuthStorage } from './sync/auth-storage.js';
 import { getSyncConfig } from '../shared/config.js';
+import { SearchService } from './search/search-service.js';
+import { registerSearchHandlers } from './ipc/search-handlers.js';
 import type { DbContext } from './db/types.js';
 
 process.on('uncaughtException', (err) => {
@@ -50,6 +52,7 @@ if (!gotTheLock) {
 
 let mainWindow: BrowserWindow | null = null;
 let disposeTableWatcher: (() => void) | null = null;
+let searchService: SearchService | null = null;
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -137,6 +140,13 @@ app.whenReady().then(async () => {
     // Mark stale tasks on startup
     taskService.markStaleTasks(5).catch(() => {});
 
+    // Initialize search service (non-blocking — model loads in background)
+    searchService = new SearchService();
+    registerSearchHandlers(searchService, db, () => mainWindow);
+    searchService.initialize().catch((err) => {
+      console.error('[Search] Failed to initialize:', err instanceof Error ? err.message : String(err));
+    });
+
     // Watch for PowerSync table changes and notify the renderer
     const psDb = getPowerSyncDatabase();
     disposeTableWatcher = psDb.onChange(
@@ -197,5 +207,6 @@ app.on('window-all-closed', () => {
 app.on('before-quit', () => {
   disposeTableWatcher?.();
   unregisterGlobalShortcuts();
+  searchService?.shutdown();
   closeDatabase().catch(() => {});
 });

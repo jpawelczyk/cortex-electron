@@ -1,9 +1,10 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import { Search, CheckSquare, FolderKanban, FileText, ArrowRight } from 'lucide-react';
+import { Search, CheckSquare, FolderKanban, FileText, ArrowRight, Brain, Calendar, User, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@renderer/components/ui/dialog';
 import { useStore } from '../stores';
 import type { Task } from '@shared/types';
 import type { SidebarView } from './Sidebar';
+import type { SearchResult } from '@shared/search-types';
 
 interface CommandPaletteProps {
   onNavigateToTask: (task: Task) => void;
@@ -17,8 +18,10 @@ interface CommandPaletteProps {
 
 interface ResultItem {
   id: string;
-  type: 'task' | 'project' | 'note' | 'action';
+  type: 'task' | 'project' | 'note' | 'action' | 'semantic';
   title: string;
+  preview?: string;
+  entityType?: string;
   data?: unknown;
 }
 
@@ -39,6 +42,10 @@ export function CommandPalette({
   const notes = useStore((s) => s.notes as { id: string; title: string; deleted_at: string | null }[]);
   const open = useStore((s) => s.commandPaletteOpen as boolean);
   const closeCommandPalette = useStore((s) => s.closeCommandPalette as () => void);
+  const searchResults = useStore((s) => s.searchResults);
+  const searchLoading = useStore((s) => s.searchLoading);
+  const performSearch = useStore((s) => s.performSearch);
+  const clearSearch = useStore((s) => s.clearSearch);
 
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -50,6 +57,17 @@ export function CommandPalette({
       setSelectedIndex(0);
     }
   }, [open]);
+
+  useEffect(() => {
+    if (!query || query.length < 2) {
+      clearSearch();
+      return;
+    }
+    const timer = setTimeout(() => {
+      performSearch(query);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [query, performSearch, clearSearch]);
 
   const filteredTasks = useMemo(
     () =>
@@ -75,12 +93,25 @@ export function CommandPalette({
     [notes, query]
   );
 
+  const semanticItems: ResultItem[] = useMemo(() => {
+    if (!searchResults?.semantic?.length) return [];
+    return searchResults.semantic.map((r: SearchResult) => ({
+      id: `semantic-${r.entityId}`,
+      type: 'semantic' as const,
+      title: r.title,
+      preview: r.preview,
+      entityType: r.entityType,
+      data: r,
+    }));
+  }, [searchResults]);
+
   const allItems: ResultItem[] = useMemo(() => {
     if (query) {
       const items: ResultItem[] = [];
       filteredTasks.forEach((t) => items.push({ id: t.id, type: 'task', title: t.title, data: t }));
       filteredProjects.forEach((p) => items.push({ id: p.id, type: 'project', title: p.title }));
       filteredNotes.forEach((n) => items.push({ id: n.id, type: 'note', title: n.title }));
+      semanticItems.forEach((s) => items.push(s));
       return items;
     }
     return [
@@ -91,7 +122,7 @@ export function CommandPalette({
       { id: 'go-today', type: 'action' as const, title: 'Go to Today' },
       { id: 'go-upcoming', type: 'action' as const, title: 'Go to Upcoming' },
     ];
-  }, [query, filteredTasks, filteredProjects, filteredNotes]);
+  }, [query, filteredTasks, filteredProjects, filteredNotes, semanticItems]);
 
   const handleSelect = useCallback(
     (item: ResultItem) => {
@@ -106,6 +137,19 @@ export function CommandPalette({
         case 'note':
           onNavigateToNote(item.id);
           break;
+        case 'semantic': {
+          const result = item.data as SearchResult;
+          if (result.entityType === 'task') {
+            // Navigate using entityId — we only have id here, no full Task object
+            onNavigateToTask({ id: result.entityId, title: result.title } as Task);
+          } else if (result.entityType === 'project') {
+            onNavigateToProject(result.entityId);
+          } else if (result.entityType === 'note') {
+            onNavigateToNote(result.entityId);
+          }
+          // meeting and stakeholder: just close the palette for now
+          break;
+        }
         case 'action':
           if (item.id === 'new-task') onCreateTask();
           else if (item.id === 'new-project') onCreateProject();
@@ -151,6 +195,17 @@ export function CommandPalette({
 
   if (!open) return null;
 
+  const iconForEntityType = (entityType: string) => {
+    switch (entityType) {
+      case 'task': return <CheckSquare className="size-4 text-muted-foreground shrink-0" />;
+      case 'project': return <FolderKanban className="size-4 text-muted-foreground shrink-0" />;
+      case 'note': return <FileText className="size-4 text-muted-foreground shrink-0" />;
+      case 'meeting': return <Calendar className="size-4 text-muted-foreground shrink-0" />;
+      case 'stakeholder': return <User className="size-4 text-muted-foreground shrink-0" />;
+      default: return null;
+    }
+  };
+
   const iconForType = (type: string) => {
     switch (type) {
       case 'task':
@@ -170,6 +225,9 @@ export function CommandPalette({
   const projectResults = allItems.filter((i) => i.type === 'project');
   const noteResults = allItems.filter((i) => i.type === 'note');
   const actionResults = allItems.filter((i) => i.type === 'action');
+
+  // semanticItems are rendered separately — they follow in-memory items in keyboard order
+  const inMemoryCount = taskResults.length + projectResults.length + noteResults.length;
 
   let globalIndex = 0;
 
@@ -202,6 +260,43 @@ export function CommandPalette({
     );
   };
 
+  const renderSemanticSection = () => {
+    if (!searchLoading && semanticItems.length === 0) return null;
+    const startIdx = inMemoryCount;
+    return (
+      <div>
+        <div className="px-4 py-1.5 text-xs text-muted-foreground font-medium flex items-center gap-1.5">
+          <Brain className="size-3" />
+          <span>Semantic Matches</span>
+          {searchLoading && <Loader2 className="size-3 animate-spin ml-1" />}
+        </div>
+        {semanticItems.map((item, i) => {
+          const idx = startIdx + i;
+          const isSelected = idx === selectedIndex;
+          return (
+            <button
+              key={item.id}
+              data-selected={isSelected || undefined}
+              className={`flex items-start gap-3 w-full px-4 py-2 text-sm text-left transition-colors duration-75 cursor-default ${
+                isSelected ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-accent/40'
+              }`}
+              onClick={() => handleSelect(item)}
+              onMouseEnter={() => setSelectedIndex(idx)}
+            >
+              {iconForEntityType(item.entityType ?? '')}
+              <div className="min-w-0 flex-1">
+                <div className="truncate">{item.title}</div>
+                {item.preview && (
+                  <div className="truncate text-xs text-muted-foreground mt-0.5">{item.preview}</div>
+                )}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    );
+  };
+
   return (
     <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) closeCommandPalette(); }}>
       <DialogContent className="p-0 gap-0 max-w-lg border-border/50 bg-card/80 backdrop-blur-xl shadow-2xl" showCloseButton={false}>
@@ -225,7 +320,8 @@ export function CommandPalette({
               {renderGroup('Tasks', taskResults)}
               {renderGroup('Projects', projectResults)}
               {renderGroup('Notes', noteResults)}
-              {allItems.length === 0 && (
+              {renderSemanticSection()}
+              {allItems.length === 0 && !searchLoading && (
                 <div className="px-4 py-8 text-center text-sm text-muted-foreground">
                   No results found
                 </div>

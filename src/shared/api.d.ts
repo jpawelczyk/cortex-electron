@@ -6,6 +6,7 @@ import type {
   AIAgent, CreateAIAgentInput,
   Meeting, CreateMeetingInput, UpdateMeetingInput, MeetingAttendee,
 } from './types';
+import type { HybridSearchResult, SearchStatus, SearchableEntityType } from './search-types';
 
 declare global {
   interface Window {
@@ -104,6 +105,12 @@ declare global {
         connect(): Promise<unknown>;
         disconnect(): Promise<unknown>;
         onTablesUpdated(callback: (tables: string[]) => void): () => void;
+      };
+      search: {
+        query(params: { query: string; limit?: number; entityTypes?: SearchableEntityType[] }): Promise<HybridSearchResult>;
+        reindex(): Promise<void>;
+        onReindexProgress(callback: (pct: number) => void): () => void;
+        status(): Promise<SearchStatus>;
       };
       system: {
         exportData(): Promise<unknown>;

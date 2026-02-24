@@ -10,6 +10,7 @@ import type {
   ProjectStakeholder, NoteStakeholder,
   Meeting, CreateMeetingInput, UpdateMeetingInput, MeetingAttendee,
 } from '../shared/types';
+import type { HybridSearchResult, SearchStatus, SearchableEntityType } from '../shared/search-types';
 
 interface DailyNote {
   date: string;
@@ -141,6 +142,18 @@ const api = {
       ipcRenderer.on('powersync:tables-updated', handler);
       return () => { ipcRenderer.removeListener('powersync:tables-updated', handler); };
     },
+  },
+
+  search: {
+    query: (params: { query: string; limit?: number; entityTypes?: SearchableEntityType[] }): Promise<HybridSearchResult> =>
+      ipcRenderer.invoke('search:query', params),
+    reindex: (): Promise<void> => ipcRenderer.invoke('search:reindex'),
+    onReindexProgress: (callback: (pct: number) => void) => {
+      const handler = (_event: unknown, pct: number) => callback(pct);
+      ipcRenderer.on('search:reindex-progress', handler);
+      return () => { ipcRenderer.removeListener('search:reindex-progress', handler); };
+    },
+    status: (): Promise<SearchStatus> => ipcRenderer.invoke('search:status'),
   },
 
   system: {
