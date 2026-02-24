@@ -116,8 +116,7 @@ export function HomeView() {
           style={{
             background: 'oklch(0.17 0.015 265 / 50%)',
             backdropFilter: 'blur(20px) saturate(1.5)',
-            boxShadow:
-              '0 0 40px oklch(0.78 0.15 195 / 6%), 0 0 80px oklch(0.65 0.20 295 / 4%), 0 1px 2px oklch(0 0 0 / 20%)',
+            boxShadow: '0 1px 2px oklch(0 0 0 / 20%)',
           }}
         >
           {/* Subtle grid pattern */}
@@ -128,29 +127,6 @@ export function HomeView() {
                 'linear-gradient(oklch(1 0 0 / 4%) 1px, transparent 1px), linear-gradient(90deg, oklch(1 0 0 / 4%) 1px, transparent 1px)',
               backgroundSize: '32px 32px',
               maskImage: 'radial-gradient(ellipse 80% 70% at 50% 50%, black 20%, transparent 100%)',
-            }}
-          />
-
-          {/* Ambient gradient orbs */}
-          <div
-            className="absolute -top-20 -left-20 w-60 h-60 rounded-full pointer-events-none"
-            style={{
-              background:
-                'radial-gradient(circle, oklch(0.78 0.15 195 / 10%) 0%, transparent 70%)',
-            }}
-          />
-          <div
-            className="absolute -bottom-16 -right-16 w-72 h-72 rounded-full pointer-events-none"
-            style={{
-              background:
-                'radial-gradient(circle, oklch(0.65 0.20 295 / 8%) 0%, transparent 70%)',
-            }}
-          />
-          <div
-            className="absolute top-0 right-1/4 w-40 h-40 rounded-full pointer-events-none"
-            style={{
-              background:
-                'radial-gradient(circle, oklch(0.78 0.15 195 / 5%) 0%, transparent 70%)',
             }}
           />
 
