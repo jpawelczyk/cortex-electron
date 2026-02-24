@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { app, BrowserWindow, desktopCapturer, dialog, ipcMain, nativeImage, session, shell } from 'electron';
+import { app, BrowserWindow, desktopCapturer, dialog, ipcMain, nativeImage, net, protocol, session, shell } from 'electron';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import { initDatabase, closeDatabase, getPowerSyncDatabase } from './db/index.js';
@@ -43,6 +43,12 @@ app.commandLine.appendSwitch(
   'disable-features',
   'MacCatapLoopbackAudioForScreenShare',
 );
+
+// Register custom protocol for serving local audio files to the sandboxed renderer.
+// Must be called before app.whenReady().
+protocol.registerSchemesAsPrivileged([
+  { scheme: 'cortex-audio', privileges: { stream: true, supportFetchAPI: true } },
+]);
 
 // Ensure consistent userData path across dev and packaged builds
 app.setName('cortex');
@@ -129,10 +135,22 @@ app.whenReady().then(async () => {
       responseHeaders: {
         ...details.responseHeaders,
         'Content-Security-Policy': [
-          `default-src 'self'; style-src 'self' 'unsafe-inline'; ${scriptSrc}; img-src 'self' data:; font-src 'self' data:; connect-src 'self' https://api.open-meteo.com https://geocoding-api.open-meteo.com${isDev ? ' ws:' : ''};`,
+          `default-src 'self'; style-src 'self' 'unsafe-inline'; ${scriptSrc}; img-src 'self' data:; font-src 'self' data:; media-src 'self' cortex-audio:; connect-src 'self' https://api.open-meteo.com https://geocoding-api.open-meteo.com${isDev ? ' ws:' : ''};`,
         ],
       },
     });
+  });
+
+  // Serve local audio files via cortex-audio:// protocol.
+  // The renderer sandbox blocks file:// URLs, so audio playback needs this.
+  protocol.handle('cortex-audio', (request) => {
+    const filePath = decodeURIComponent(request.url.slice('cortex-audio://'.length));
+    const recordingsDir = path.join(app.getPath('userData'), 'recordings');
+    const resolved = path.resolve(filePath);
+    if (!resolved.startsWith(recordingsDir + path.sep) && resolved !== recordingsDir) {
+      return new Response('Forbidden', { status: 403 });
+    }
+    return net.fetch(`file://${resolved}`);
   });
 
   // Register auth handlers BEFORE initDatabase() — the renderer can show

@@ -393,7 +393,7 @@ export function MeetingDetailView({ meetingId }: MeetingDetailViewProps) {
           <div className="mb-4">
             <AudioPlayer
               ref={audioPlayerRef}
-              src={`file://${meeting.audio_path}`}
+              src={`cortex-audio://${meeting.audio_path}`}
             />
           </div>
         )}
