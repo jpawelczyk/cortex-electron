@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Mic, Square, Trash2, MonitorSpeaker, ChevronDown, Loader2 } from 'lucide-react';
+import { Mic, Square, Trash2, MonitorSpeaker, ChevronDown, Loader2, ExternalLink } from 'lucide-react';
 import { useStore } from '../stores';
 import { Button } from './ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
@@ -32,6 +32,7 @@ export function RecordingControls({ meetingId, audioPath, onRecordingComplete }:
   const [sourceOpen, setSourceOpen] = useState(false);
   const [pendingMode, setPendingMode] = useState<RecordingMode | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [permissionError, setPermissionError] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const isRecordingThisMeeting = recordingStatus === 'recording' && recordingMeetingId === meetingId;
@@ -58,20 +59,29 @@ export function RecordingControls({ meetingId, audioPath, onRecordingComplete }:
 
   async function handleModeSelect(mode: RecordingMode) {
     setModeOpen(false);
-    if (mode === 'mic') {
-      await startRecording(meetingId, 'mic');
-    } else {
-      setPendingMode(mode);
-      await fetchAudioSources();
-      setSourceOpen(true);
+    setPermissionError(false);
+    try {
+      if (mode === 'mic') {
+        await startRecording(meetingId, 'mic');
+      } else {
+        setPendingMode(mode);
+        await fetchAudioSources();
+        setSourceOpen(true);
+      }
+    } catch {
+      setPermissionError(true);
     }
   }
 
   async function handleSourceSelect(sourceId: string) {
     setSourceOpen(false);
-    if (pendingMode) {
-      await startRecording(meetingId, pendingMode, sourceId);
-      setPendingMode(null);
+    try {
+      if (pendingMode) {
+        await startRecording(meetingId, pendingMode, sourceId);
+        setPendingMode(null);
+      }
+    } catch {
+      setPermissionError(true);
     }
   }
 
@@ -170,7 +180,21 @@ export function RecordingControls({ meetingId, audioPath, onRecordingComplete }:
 
   // Idle — no recording
   return (
-    <div className="flex items-center gap-2 py-2">
+    <div className="flex flex-col gap-2 py-2">
+      {permissionError && (
+        <div className="flex flex-col gap-1.5 text-xs text-destructive bg-destructive/10 rounded-md px-3 py-2">
+          <span>System audio requires "Screen & System Audio Recording" permission.</span>
+          <button
+            onClick={() => window.cortex.recording.openSystemPrefs()}
+            className="inline-flex items-center gap-1 font-medium underline underline-offset-2 hover:text-destructive/80 self-start"
+          >
+            Open Settings & reveal Electron.app
+            <ExternalLink className="size-3" />
+          </button>
+          <span className="text-muted-foreground">Drag Electron.app from Finder into the settings list, then restart.</span>
+        </div>
+      )}
+      <div className="flex items-center gap-2">
       <Popover open={modeOpen} onOpenChange={setModeOpen}>
         <PopoverTrigger asChild>
           <Button variant="outline" size="sm" className="gap-1.5" aria-label="Start recording">
@@ -229,6 +253,7 @@ export function RecordingControls({ meetingId, audioPath, onRecordingComplete }:
           )}
         </PopoverContent>
       </Popover>
+      </div>
     </div>
   );
 }

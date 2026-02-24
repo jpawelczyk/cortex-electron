@@ -30,12 +30,17 @@ async function getSystemStream(sourceId: string): Promise<MediaStream> {
   await window.cortex.recording.selectSource(sourceId);
   const stream = await navigator.mediaDevices.getDisplayMedia({
     audio: true,
-    video: { width: 1, height: 1 }, // Required by Chromium; discarded immediately
+    video: true, // Required — getDisplayMedia rejects video: false
   });
-  // Remove video tracks — we only need audio
+  // Strip any video tracks that Chromium may still include
   for (const track of stream.getVideoTracks()) {
     track.stop();
     stream.removeTrack(track);
+  }
+  if (stream.getAudioTracks().length === 0) {
+    throw new Error(
+      'No system audio track available. Grant "Screen & System Audio Recording" permission in System Settings > Privacy & Security.',
+    );
   }
   return stream;
 }
@@ -67,15 +72,25 @@ export const createRecordingSlice: StateCreator<RecordingSlice> = (set, get) => 
     if (get().recordingStatus !== 'idle') return;
     let stream: MediaStream;
 
-    if (mode === 'mic') {
-      stream = await getMicStream();
-      activeStreams = [stream];
-    } else if (mode === 'system') {
-      stream = await getSystemStream(sourceId ?? '');
-      activeStreams = [stream];
-    } else {
-      // 'both'
-      stream = await getMergedStream(sourceId ?? '');
+    try {
+      if (mode === 'mic') {
+        stream = await getMicStream();
+        activeStreams = [stream];
+      } else if (mode === 'system') {
+        stream = await getSystemStream(sourceId ?? '');
+        activeStreams = [stream];
+      } else {
+        // 'both'
+        stream = await getMergedStream(sourceId ?? '');
+      }
+    } catch (err) {
+      console.error('[RecordingSlice] Failed to acquire audio stream:', err);
+      // Clean up any partially-acquired streams
+      for (const s of activeStreams) {
+        for (const track of s.getTracks()) track.stop();
+      }
+      activeStreams = [];
+      throw err;
     }
 
     recordingChunks = [];

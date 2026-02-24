@@ -124,6 +124,7 @@ declare global {
         selectSource(sourceId: string): Promise<void>;
         save(meetingId: string, data: ArrayBuffer): Promise<string>;
         delete(audioPath: string): Promise<void>;
+        openSystemPrefs(): Promise<void>;
       };
     };
   }

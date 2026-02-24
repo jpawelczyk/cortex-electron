@@ -133,7 +133,7 @@ describe('RecordingSlice', () => {
       expect(mockCortex.recording.selectSource).toHaveBeenCalledWith('screen:1');
       expect(mockGetDisplayMedia).toHaveBeenCalledWith({
         audio: true,
-        video: { width: 1, height: 1 },
+        video: true,
       });
     });
 

@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { app, BrowserWindow, desktopCapturer, dialog, ipcMain, nativeImage, session } from 'electron';
+import { app, BrowserWindow, desktopCapturer, dialog, ipcMain, nativeImage, session, shell } from 'electron';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import { initDatabase, closeDatabase, getPowerSyncDatabase } from './db/index.js';
@@ -26,6 +26,22 @@ process.on('unhandledRejection', (reason) => {
 });
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Enable system audio loopback for screen capture on macOS.
+// MacLoopbackAudioForScreenShare: master enable for loopback audio
+// MacSckSystemAudioLoopbackOverride: use ScreenCaptureKit for loopback
+// Disable MacCatapLoopbackAudioForScreenShare (CoreAudio Tap, default in Electron 39+)
+// because it requires the separate "System Audio Recording Only" macOS permission.
+// The SCK path uses the broader "Screen & System Audio Recording" permission instead.
+// Must be set before app.whenReady().
+app.commandLine.appendSwitch(
+  'enable-features',
+  'MacLoopbackAudioForScreenShare,MacSckSystemAudioLoopbackOverride',
+);
+app.commandLine.appendSwitch(
+  'disable-features',
+  'MacCatapLoopbackAudioForScreenShare',
+);
 
 // Ensure consistent userData path across dev and packaged builds
 app.setName('cortex');
@@ -146,6 +162,7 @@ app.whenReady().then(async () => {
 
     // Register display media handler so the renderer can capture system audio
     // via getDisplayMedia(). Without this, Electron kills the renderer (bad IPC).
+    // audio: 'loopback' works on all platforms when the Chromium flags are enabled.
     let pendingSourceId: string | null = null;
     ipcMain.handle('recording:select-source', (_, sourceId: unknown) => {
       if (typeof sourceId === 'string' && sourceId.length > 0) {
@@ -167,6 +184,18 @@ app.whenReady().then(async () => {
       } catch {
         pendingSourceId = null;
         callback({});
+      }
+    });
+
+    ipcMain.handle('recording:open-system-prefs', () => {
+      if (process.platform === 'darwin') {
+        shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture');
+        // In dev mode, reveal Electron.app in Finder so the user can drag it
+        // into the Screen & System Audio Recording permission list.
+        const appBundle = process.execPath.replace(/\.app\/Contents\/MacOS\/.+$/, '.app');
+        if (appBundle.endsWith('.app')) {
+          shell.showItemInFolder(appBundle);
+        }
       }
     });
 

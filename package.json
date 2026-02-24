@@ -15,7 +15,8 @@
     "test:e2e": "playwright test",
     "lint": "eslint . && tsc --noEmit",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "postinstall": "bash scripts/patch-electron-plist.sh"
   },
   "dependencies": {
     "@huggingface/transformers": "^3.8.1",
@@ -104,7 +105,11 @@
     },
     "mac": {
       "category": "public.app-category.productivity",
-      "icon": "build/icon.icns"
+      "icon": "build/icon.icns",
+      "extendInfo": {
+        "NSAudioCaptureUsageDescription": "Cortex needs access to system audio for meeting recording",
+        "NSScreenCaptureUsageDescription": "Cortex needs screen access for system audio capture"
+      }
     },
     "win": {
       "icon": "build/icon.png"
