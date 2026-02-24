@@ -13,7 +13,7 @@ vi.mock('zod', async (importOriginal) => {
   return importOriginal();
 });
 
-import { ipcMain, BrowserWindow } from 'electron';
+import { ipcMain } from 'electron';
 import type { TranscriptionService } from '../../recording/transcription-service';
 import type { AsyncDatabase } from '../../db/types';
 import { registerTranscriptionHandlers } from '../transcription-handlers';

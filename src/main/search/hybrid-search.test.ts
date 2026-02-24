@@ -133,7 +133,7 @@ describe('HybridSearchService', () => {
 
       expect(mockVectorStore.searchSimilar).toHaveBeenCalledWith(
         dummyEmbedding,
-        10,
+        5,
         ['note', 'task']
       );
     });

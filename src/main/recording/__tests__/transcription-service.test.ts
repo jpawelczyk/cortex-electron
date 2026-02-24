@@ -15,17 +15,6 @@ import * as childProcess from 'child_process';
 import * as fs from 'fs/promises';
 import { createTranscriptionService } from '../transcription-service';
 
-// Helper to create a mock execFile that resolves with stdout
-function mockExecFileSuccess(stdout: string) {
-  vi.mocked(childProcess.execFile).mockImplementation(
-    (_cmd: unknown, _args: unknown, _opts: unknown, callback: unknown) => {
-      const cb = callback as (err: null, stdout: string, stderr: string) => void;
-      process.nextTick(() => cb(null, stdout, ''));
-      return { kill: vi.fn() } as unknown as ChildProcess;
-    },
-  );
-}
-
 function mockExecFileError(message: string) {
   vi.mocked(childProcess.execFile).mockImplementation(
     (_cmd: unknown, _args: unknown, _opts: unknown, callback: unknown) => {
@@ -101,12 +90,10 @@ describe('TranscriptionService', () => {
     });
 
     it('returns false for ffmpeg when not found', async () => {
-      let callCount = 0;
       vi.mocked(childProcess.execFile).mockImplementation(
         (_cmd: unknown, args: unknown, _opts: unknown, callback: unknown) => {
           const cb = callback as (err: Error | null, stdout?: string) => void;
           const argArr = args as string[];
-          callCount++;
           if (argArr[0] === 'ffmpeg') {
             process.nextTick(() => cb(new Error('not found')));
           } else {
@@ -350,7 +337,7 @@ describe('TranscriptionService', () => {
       expect(mockKill).toHaveBeenCalled();
 
       // Resolve whisper so the promise settles
-      if (resolveSecond) resolveSecond();
+      (resolveSecond as (() => void) | null)?.();
       await transcribePromise.catch(() => {});
     });
 

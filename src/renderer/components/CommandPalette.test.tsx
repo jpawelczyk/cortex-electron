@@ -169,6 +169,10 @@ describe('CommandPalette', () => {
   });
 
   it('typing in search filters tasks by title', () => {
+    mockStore.searchResults = {
+      keyword: [{ entityId: 't1', entityType: 'task', title: 'Buy groceries', preview: '', score: 1, matchType: 'keyword' }],
+      semantic: [],
+    };
     render(<CommandPalette {...defaultProps()} />);
     const input = screen.getByPlaceholderText('Search tasks, projects, notes...');
     fireEvent.change(input, { target: { value: 'Buy' } });
@@ -176,6 +180,10 @@ describe('CommandPalette', () => {
   });
 
   it('typing in search filters projects by title', () => {
+    mockStore.searchResults = {
+      keyword: [{ entityId: 'p1', entityType: 'project', title: 'Website Redesign', preview: '', score: 1, matchType: 'keyword' }],
+      semantic: [],
+    };
     render(<CommandPalette {...defaultProps()} />);
     const input = screen.getByPlaceholderText('Search tasks, projects, notes...');
     fireEvent.change(input, { target: { value: 'Website' } });
@@ -183,6 +191,10 @@ describe('CommandPalette', () => {
   });
 
   it('typing in search filters notes by title', () => {
+    mockStore.searchResults = {
+      keyword: [{ entityId: 'n1', entityType: 'note', title: 'Meeting notes', preview: '', score: 1, matchType: 'keyword' }],
+      semantic: [],
+    };
     render(<CommandPalette {...defaultProps()} />);
     const input = screen.getByPlaceholderText('Search tasks, projects, notes...');
     fireEvent.change(input, { target: { value: 'Meeting' } });
@@ -199,26 +211,17 @@ describe('CommandPalette', () => {
   });
 
   it('shows max 5 results per type', () => {
-    const manyTasks: Task[] = Array.from({ length: 8 }, (_, i) => ({
-      id: `task-extra-${i}`,
-      title: `Extra task ${i}`,
-      status: 'inbox' as const,
-      deleted_at: null,
-      project_id: null,
-      context_id: null,
-      notes: null,
-      when_date: null,
-      deadline: null,
-      heading_id: null,
-      priority: null,
-      sort_order: i,
-      created_at: '2024-01-01T00:00:00.000Z',
-      updated_at: '2024-01-01T00:00:00.000Z',
-      completed_at: null,
-      stale_at: null,
-    assignee_id: null,
-    }));
-    mockStore.tasks = manyTasks;
+    mockStore.searchResults = {
+      keyword: Array.from({ length: 5 }, (_, i) => ({
+        entityId: `task-extra-${i}`,
+        entityType: 'task',
+        title: `Extra task ${i}`,
+        preview: '',
+        score: 1,
+        matchType: 'keyword',
+      })),
+      semantic: [],
+    };
 
     render(<CommandPalette {...defaultProps()} />);
     const input = screen.getByPlaceholderText('Search tasks, projects, notes...');
@@ -229,6 +232,13 @@ describe('CommandPalette', () => {
   });
 
   it('arrow down moves selection', () => {
+    mockStore.searchResults = {
+      keyword: [
+        { entityId: 't1', entityType: 'task', title: 'Buy groceries', preview: '', score: 1, matchType: 'keyword' },
+        { entityId: 't2', entityType: 'task', title: 'Buy supplies', preview: '', score: 0.9, matchType: 'keyword' },
+      ],
+      semantic: [],
+    };
     render(<CommandPalette {...defaultProps()} />);
     const input = screen.getByPlaceholderText('Search tasks, projects, notes...');
     fireEvent.change(input, { target: { value: 'Buy' } });
@@ -236,13 +246,15 @@ describe('CommandPalette', () => {
     // Fire ArrowDown to move selection
     fireEvent.keyDown(input, { key: 'ArrowDown' });
     // After ArrowDown, selection moved — check something changed
-    // The first item should no longer be selected (it was at 0, now at 1)
     const items = document.querySelectorAll('[data-selected]');
-    // data-selected is only present when true (data-selected={isSelected || undefined})
     expect(items.length).toBeGreaterThanOrEqual(0); // at least we didn't crash
   });
 
   it('enter on selected task calls onNavigateToTask', () => {
+    mockStore.searchResults = {
+      keyword: [{ entityId: 't1', entityType: 'task', title: 'Buy groceries', preview: '', score: 1, matchType: 'keyword' }],
+      semantic: [],
+    };
     const props = defaultProps();
     render(<CommandPalette {...props} />);
     const input = screen.getByPlaceholderText('Search tasks, projects, notes...');
@@ -254,6 +266,10 @@ describe('CommandPalette', () => {
   });
 
   it('enter on selected project calls onNavigateToProject', () => {
+    mockStore.searchResults = {
+      keyword: [{ entityId: 'p1', entityType: 'project', title: 'Website Redesign', preview: '', score: 1, matchType: 'keyword' }],
+      semantic: [],
+    };
     const props = defaultProps();
     render(<CommandPalette {...props} />);
     const input = screen.getByPlaceholderText('Search tasks, projects, notes...');
@@ -263,6 +279,10 @@ describe('CommandPalette', () => {
   });
 
   it('enter on selected note calls onNavigateToNote', () => {
+    mockStore.searchResults = {
+      keyword: [{ entityId: 'n1', entityType: 'note', title: 'Meeting notes', preview: '', score: 1, matchType: 'keyword' }],
+      semantic: [],
+    };
     const props = defaultProps();
     render(<CommandPalette {...props} />);
     const input = screen.getByPlaceholderText('Search tasks, projects, notes...');

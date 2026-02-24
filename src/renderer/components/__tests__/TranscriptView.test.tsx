@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { TranscriptView } from '../TranscriptView';
-import type { TranscriptSegment, TranscriptionStatus } from '@shared/recording-types';
+import type { TranscriptSegment } from '@shared/recording-types';
 
 // Mock window.cortex
 const mockTranscriptionStart = vi.fn();
