@@ -32,13 +32,19 @@ Read `docs/MEETING_RECORDING.md` thoroughly. It covers:
 
 ## Implementation Phases
 
-### Phase 1: Basic Recording (Start Here)
+### Phase 1: Recording with Mic + System Audio (Start Here)
 1. Create `src/main/recording/recording-service.ts`
 2. Implement microphone capture using MediaRecorder
-3. Save recordings as WebM to `{userData}/recordings/`
-4. Add IPC handlers for start/stop/status
-5. Add `RecordingControls` component to `MeetingDetailView`
-6. Store `audio_path` in meeting entity
+3. Implement system audio capture using `desktopCapturer`
+4. Add source selection UI (which screen/window to capture)
+5. Merge system + mic streams for combined capture
+6. Handle macOS Screen Recording permission:
+   - Detect if permission granted
+   - Show guidance to enable if missing
+7. Save recordings as WebM to `{userData}/recordings/`
+8. Add IPC handlers for start/stop/status
+9. Add `RecordingControls` component to `MeetingDetailView`
+10. Store `audio_path` in meeting entity
 
 **Schema migration:**
 ```sql
@@ -48,10 +54,11 @@ ALTER TABLE meetings ADD COLUMN recording_duration INTEGER;
 
 ### Phase 2: Transcription
 1. Create `src/main/recording/transcription-service.ts`
-2. Integrate Whisper.cpp CLI or use OpenAI API as fallback
-3. Add transcription status to meeting (`pending`, `processing`, `completed`, `failed`)
-4. Background processing with progress updates via IPC
-5. Store transcript text and timestamped segments
+2. Integrate Whisper.cpp CLI (user must install via `brew install whisper-cpp`)
+3. Manual "Transcribe" button (no auto-transcription for MVP)
+4. Add transcription status to meeting (`pending`, `processing`, `completed`, `failed`)
+5. Background processing with progress updates via IPC
+6. Store transcript text and timestamped segments
 
 **Schema migration:**
 ```sql
@@ -70,11 +77,6 @@ ALTER TABLE meetings ADD COLUMN transcription_status TEXT;
 1. Update `content-extractor.ts` to include `meeting.transcript`
 2. Transcripts will be chunked automatically (they're long)
 3. Test: record a meeting, transcribe, search for phrases from transcript
-
-### Phase 5: System Audio (Stretch)
-1. Use `desktopCapturer` to capture system audio
-2. Add source selection UI
-3. Merge system + mic streams for full capture
 
 ## Technical Notes
 

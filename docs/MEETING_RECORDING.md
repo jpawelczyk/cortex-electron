@@ -494,49 +494,82 @@ src/
 
 ## Implementation Plan
 
-### Phase 1: Basic Recording
+### Phase 1: Recording (Mic + System Audio)
 - [ ] Set up recording service with MediaRecorder
-- [ ] Implement mic capture (simplest)
+- [ ] Implement mic capture
+- [ ] Implement system audio capture via desktopCapturer
+- [ ] Source selection UI (which screen/window to capture)
+- [ ] Merge system + mic streams for combined capture
+- [ ] Handle macOS Screen Recording permission (detect, guide user)
 - [ ] Save recordings to app data folder
 - [ ] Add recording controls to MeetingDetailView
 - [ ] Display recording duration
 - [ ] Link audio_path to meeting entity
 
 ### Phase 2: Transcription
-- [ ] Integrate Whisper.cpp (or start with OpenAI API for speed)
+- [ ] Integrate Whisper.cpp CLI (require user install via brew)
+- [ ] Manual "Transcribe" button trigger
 - [ ] Background transcription with progress
 - [ ] Store transcript and segments in meeting
 - [ ] Display timestamped transcript
 - [ ] Basic audio playback
 
-### Phase 3: System Audio
-- [ ] Implement desktopCapturer for system audio
-- [ ] Source selection UI
-- [ ] Merge system + mic streams
-
-### Phase 4: Search Integration
+### Phase 3: Search Integration
 - [ ] Update content extractor to include transcripts
 - [ ] Ensure chunking handles long transcripts
 - [ ] Test semantic search on transcript content
 
-### Phase 5: Polish
+### Phase 4: Polish
 - [ ] Recording retention / cleanup
-- [ ] Settings UI
+- [ ] Settings UI (Whisper model, retention period)
 - [ ] Audio player with seek-to-timestamp
-- [ ] Error handling (permissions, disk space)
+- [ ] Error handling (permissions, disk space, Whisper not installed)
 
 ### Stretch
 - [ ] Speaker diarization
 - [ ] Action item extraction
 - [ ] Auto-summarization
+- [ ] OpenAI Whisper API as alternative engine
+- [ ] Bundle Whisper binary for zero-setup
 
-## Open Questions
+## Design Decisions
 
-1. **Whisper distribution** — Bundle whisper.cpp binary, or require user install?
-2. **Model download** — Download on first use, or bundle with app?
-3. **Permissions** — macOS requires screen recording permission for system audio — how to guide user?
-4. **Sync** — Should transcripts sync to Supabase, or stay local-only like recordings?
-5. **File format** — WebM (native), or convert to MP3 for compatibility?
+### Whisper Distribution
+**Decision:** Require user install for MVP.
+```bash
+brew install whisper-cpp  # macOS
+```
+Bundling the binary adds complexity (multi-platform builds, +100MB app size). Start simple, consider bundling or OpenAI API fallback later.
+
+### Audio Capture Scope
+**Decision:** Include both mic AND system audio in MVP.
+Mic-only is marginally useful — most meetings are remote (Teams, Zoom). System audio capture is essential for the core use case.
+
+**macOS permissions:** System audio requires Screen Recording permission. Guide user through:
+```
+"To capture meeting audio, Cortex needs Screen Recording permission."
+[Open System Preferences] → Privacy & Security → Screen Recording → Enable Cortex
+```
+
+### Sync Strategy
+**Decision:** Transcripts sync, audio stays local.
+
+| Data | Syncs to Cloud | Reason |
+|------|----------------|--------|
+| `transcript` | ✅ Yes | Small text, searchable everywhere |
+| `transcript_segments` | ✅ Yes | Timestamps work on all devices |
+| `audio_path` | ❌ No | Local file reference only |
+| Audio files | ❌ No | Too large, stay in local `recordings/` |
+
+On other devices, show transcript but indicate audio is on original device.
+
+### Transcription Trigger
+**Decision:** Manual trigger only for MVP.
+User clicks "Transcribe" after recording. Auto-transcription can be added later as a setting.
+
+### Chunk Interval
+**Decision:** 1 second chunks during recording.
+Conservative and safe — minimal data loss on crash, smooth progress indication.
 
 ---
 
