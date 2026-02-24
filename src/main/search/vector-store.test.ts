@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import Database from 'better-sqlite3';
 import { VectorStore, cosineSimilarity, bufferToFloat32 } from './vector-store';
-import type { SearchableEntityType } from '@shared/search-types';
 
 function makeFloat32(values: number[]): Float32Array {
   return new Float32Array(values);

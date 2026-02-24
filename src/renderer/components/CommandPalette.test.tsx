@@ -330,7 +330,7 @@ describe('CommandPalette', () => {
     fireEvent.change(input, { target: { value: 'notes' } });
     // Find the semantic result (may appear as duplicate with in-memory; click the one in semantic section)
     // The semantic section title is 'Semantic Matches', the result is under it
-    const semanticTitle = screen.getByText('Semantic Matches');
+    screen.getByText('Semantic Matches');
     // Navigate to the semantic result — find it near the section heading
     const allNoteTitles = screen.getAllByText('Meeting notes');
     // Click the last one (semantic one)

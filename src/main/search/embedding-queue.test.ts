@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { EmbeddingQueue } from './embedding-queue';
+import type { EmbeddingService } from './embedding-service';
+import type { VectorStore } from './vector-store';
 
 // Mock content-extractor
 vi.mock('./content-extractor', () => ({
@@ -52,8 +54,8 @@ describe('EmbeddingQueue', () => {
 
   it('enqueue does not process immediately', () => {
     const queue = new EmbeddingQueue(
-      mockEmbeddingService as any,
-      mockVectorStore as any
+      mockEmbeddingService as unknown as EmbeddingService,
+      mockVectorStore as unknown as VectorStore
     );
 
     queue.enqueue('entity-1', 'task', 'some text');
@@ -66,8 +68,8 @@ describe('EmbeddingQueue', () => {
 
   it('enqueue processes after debounce delay', async () => {
     const queue = new EmbeddingQueue(
-      mockEmbeddingService as any,
-      mockVectorStore as any,
+      mockEmbeddingService as unknown as EmbeddingService,
+      mockVectorStore as unknown as VectorStore,
       { debounceMs: 2000 }
     );
 
@@ -84,8 +86,8 @@ describe('EmbeddingQueue', () => {
 
   it('multiple rapid enqueues for same entity only process once', async () => {
     const queue = new EmbeddingQueue(
-      mockEmbeddingService as any,
-      mockVectorStore as any,
+      mockEmbeddingService as unknown as EmbeddingService,
+      mockVectorStore as unknown as VectorStore,
       { debounceMs: 2000 }
     );
 
@@ -103,8 +105,8 @@ describe('EmbeddingQueue', () => {
 
   it('skips re-embedding when content hash matches', async () => {
     const queue = new EmbeddingQueue(
-      mockEmbeddingService as any,
-      mockVectorStore as any,
+      mockEmbeddingService as unknown as EmbeddingService,
+      mockVectorStore as unknown as VectorStore,
       { debounceMs: 2000 }
     );
 
@@ -122,8 +124,8 @@ describe('EmbeddingQueue', () => {
 
   it('re-embeds when content hash differs', async () => {
     const queue = new EmbeddingQueue(
-      mockEmbeddingService as any,
-      mockVectorStore as any,
+      mockEmbeddingService as unknown as EmbeddingService,
+      mockVectorStore as unknown as VectorStore,
       { debounceMs: 2000 }
     );
 
@@ -141,8 +143,8 @@ describe('EmbeddingQueue', () => {
 
   it('long text is chunked into multiple embeddings', async () => {
     const queue = new EmbeddingQueue(
-      mockEmbeddingService as any,
-      mockVectorStore as any,
+      mockEmbeddingService as unknown as EmbeddingService,
+      mockVectorStore as unknown as VectorStore,
       { debounceMs: 2000 }
     );
 
@@ -166,8 +168,8 @@ describe('EmbeddingQueue', () => {
 
   it('short text is embedded as single chunk', async () => {
     const queue = new EmbeddingQueue(
-      mockEmbeddingService as any,
-      mockVectorStore as any,
+      mockEmbeddingService as unknown as EmbeddingService,
+      mockVectorStore as unknown as VectorStore,
       { debounceMs: 2000 }
     );
 
@@ -187,8 +189,8 @@ describe('EmbeddingQueue', () => {
 
   it('removeEntity deletes embeddings from vector store', () => {
     const queue = new EmbeddingQueue(
-      mockEmbeddingService as any,
-      mockVectorStore as any
+      mockEmbeddingService as unknown as EmbeddingService,
+      mockVectorStore as unknown as VectorStore
     );
 
     queue.removeEntity('entity-1');
@@ -201,8 +203,8 @@ describe('EmbeddingQueue', () => {
 
   it('flush processes all pending items immediately', async () => {
     const queue = new EmbeddingQueue(
-      mockEmbeddingService as any,
-      mockVectorStore as any,
+      mockEmbeddingService as unknown as EmbeddingService,
+      mockVectorStore as unknown as VectorStore,
       { debounceMs: 10000 }
     );
 
@@ -222,8 +224,8 @@ describe('EmbeddingQueue', () => {
 
   it('getQueueSize returns number of pending items', () => {
     const queue = new EmbeddingQueue(
-      mockEmbeddingService as any,
-      mockVectorStore as any,
+      mockEmbeddingService as unknown as EmbeddingService,
+      mockVectorStore as unknown as VectorStore,
       { debounceMs: 10000 }
     );
 
@@ -244,8 +246,8 @@ describe('EmbeddingQueue', () => {
 
   it('destroy clears all pending timers', async () => {
     const queue = new EmbeddingQueue(
-      mockEmbeddingService as any,
-      mockVectorStore as any,
+      mockEmbeddingService as unknown as EmbeddingService,
+      mockVectorStore as unknown as VectorStore,
       { debounceMs: 2000 }
     );
 
@@ -265,8 +267,8 @@ describe('EmbeddingQueue', () => {
 
   it('error in embedding does not crash the queue', async () => {
     const queue = new EmbeddingQueue(
-      mockEmbeddingService as any,
-      mockVectorStore as any,
+      mockEmbeddingService as unknown as EmbeddingService,
+      mockVectorStore as unknown as VectorStore,
       { debounceMs: 2000 }
     );
 
@@ -291,8 +293,8 @@ describe('EmbeddingQueue', () => {
 
   it('upsertEmbedding is called with correct contentHash', async () => {
     const queue = new EmbeddingQueue(
-      mockEmbeddingService as any,
-      mockVectorStore as any,
+      mockEmbeddingService as unknown as EmbeddingService,
+      mockVectorStore as unknown as VectorStore,
       { debounceMs: 2000 }
     );
 
@@ -307,8 +309,8 @@ describe('EmbeddingQueue', () => {
 
   it('deleteByEntityId is called before upserting new embeddings', async () => {
     const queue = new EmbeddingQueue(
-      mockEmbeddingService as any,
-      mockVectorStore as any,
+      mockEmbeddingService as unknown as EmbeddingService,
+      mockVectorStore as unknown as VectorStore,
       { debounceMs: 2000 }
     );
 

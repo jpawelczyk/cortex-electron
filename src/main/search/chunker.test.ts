@@ -73,7 +73,6 @@ describe('chunkText', () => {
   it('filters out chunks smaller than minChunkSize', () => {
     const options = { ...DEFAULT_CHUNK_OPTIONS, minChunkSize: 100 };
     const maxChars = options.maxTokens * 4;
-    const overlapChars = options.overlapTokens * 4;
     // Create text where last chunk would be tiny
     const text = 'a'.repeat(maxChars) + 'b'.repeat(10);
     const result = chunkText(text, options);

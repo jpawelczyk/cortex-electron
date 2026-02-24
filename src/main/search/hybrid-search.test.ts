@@ -1,5 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import { HybridSearchService } from './hybrid-search';
+import type { FtsIndex } from './fts-index';
+import type { VectorStore } from './vector-store';
+import type { EmbeddingService } from './embedding-service';
 import type { SearchResult } from '@shared/search-types';
 
 // Mock dependencies
@@ -40,9 +43,9 @@ function makeSemanticSimilarityResult(entityId: string, textPreview: string) {
 }
 
 describe('HybridSearchService', () => {
-  let mockFtsIndex: { search: ReturnType<typeof vi.fn> };
-  let mockVectorStore: { searchSimilar: ReturnType<typeof vi.fn> };
-  let mockEmbeddingService: { embed: ReturnType<typeof vi.fn> };
+  let mockFtsIndex: { search: Mock };
+  let mockVectorStore: { searchSimilar: Mock };
+  let mockEmbeddingService: { embed: Mock };
   let service: HybridSearchService;
 
   const dummyEmbedding = new Float32Array([0.1, 0.2, 0.3]);
@@ -53,9 +56,9 @@ describe('HybridSearchService', () => {
     mockEmbeddingService = { embed: vi.fn().mockResolvedValue(dummyEmbedding) };
 
     service = new HybridSearchService(
-      mockFtsIndex as any,
-      mockVectorStore as any,
-      mockEmbeddingService as any
+      mockFtsIndex as unknown as FtsIndex,
+      mockVectorStore as unknown as VectorStore,
+      mockEmbeddingService as unknown as EmbeddingService
     );
   });
 
