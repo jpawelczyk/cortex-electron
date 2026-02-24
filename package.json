@@ -86,6 +86,7 @@
   "build": {
     "appId": "com.cortex.app",
     "productName": "Cortex",
+    "asar": false,
     "directories": {
       "output": "release"
     },

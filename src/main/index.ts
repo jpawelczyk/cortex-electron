@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { app, BrowserWindow, ipcMain, nativeImage, session } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, nativeImage, session } from 'electron';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import { initDatabase, closeDatabase, getPowerSyncDatabase } from './db/index.js';
@@ -113,54 +113,61 @@ app.whenReady().then(async () => {
     });
   });
 
-  const db = await initDatabase();
-  const notifyRenderer = (tables: string[]) => {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('powersync:tables-updated', tables);
-    }
-  };
-  registerHandlers(db, notifyRenderer);
-
-  const ctx: DbContext = { db };
-
-  // Seed default contexts on first run
-  seedDefaultContexts(ctx).catch(() => {});
-
-  // Auto-purge trash items older than 30 days
-  const taskService = createTaskService(ctx);
-  taskService.purgeExpiredTrash(30).catch(() => {});
-
-  // Mark stale tasks on startup
-  taskService.markStaleTasks(5).catch(() => {});
-
   createWindow();
   registerGlobalShortcuts(mainWindow!);
 
-  // Watch for PowerSync table changes and notify the renderer
-  const psDb = getPowerSyncDatabase();
-  disposeTableWatcher = psDb.onChange(
-    {
-      onChange: (event) => {
-        if (mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.webContents.send('powersync:tables-updated', event.changedTables);
-        }
-      },
-    },
-    { throttleMs: 50 },
-  );
-
-  // Re-check stale tasks on window focus (handles long-running sessions)
-  let lastStaleCheck = 0;
-  mainWindow!.on('focus', () => {
-    const now = Date.now();
-    if (now - lastStaleCheck < 60_000) return;
-    lastStaleCheck = now;
-    taskService.markStaleTasks(5).then((count) => {
-      if (count > 0) {
-        mainWindow?.webContents.send('tasks:stale-check-complete');
+  try {
+    const db = await initDatabase();
+    const notifyRenderer = (tables: string[]) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('powersync:tables-updated', tables);
       }
-    }).catch(() => {});
-  });
+    };
+    registerHandlers(db, notifyRenderer);
+
+    const ctx: DbContext = { db };
+
+    // Seed default contexts on first run
+    seedDefaultContexts(ctx).catch(() => {});
+
+    // Auto-purge trash items older than 30 days
+    const taskService = createTaskService(ctx);
+    taskService.purgeExpiredTrash(30).catch(() => {});
+
+    // Mark stale tasks on startup
+    taskService.markStaleTasks(5).catch(() => {});
+
+    // Watch for PowerSync table changes and notify the renderer
+    const psDb = getPowerSyncDatabase();
+    disposeTableWatcher = psDb.onChange(
+      {
+        onChange: (event) => {
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('powersync:tables-updated', event.changedTables);
+          }
+        },
+      },
+      { throttleMs: 50 },
+    );
+
+    // Re-check stale tasks on window focus (handles long-running sessions)
+    let lastStaleCheck = 0;
+    mainWindow!.on('focus', () => {
+      const now = Date.now();
+      if (now - lastStaleCheck < 60_000) return;
+      lastStaleCheck = now;
+      taskService.markStaleTasks(5).then((count) => {
+        if (count > 0) {
+          mainWindow?.webContents.send('tasks:stale-check-complete');
+        }
+      }).catch(() => {});
+    });
+  } catch (err) {
+    dialog.showErrorBox(
+      'Database initialization failed',
+      `Cortex could not start its database.\n\n${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
 
   // Register auth handlers if sync is configured
   // Sync connection is now driven by the renderer after successful auth
