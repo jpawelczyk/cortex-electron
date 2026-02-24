@@ -27,12 +27,17 @@ export function createProjectStakeholderService(ctx: DbContext): ProjectStakehol
     },
 
     async link(projectId: string, stakeholderId: string): Promise<ProjectStakeholder> {
+      const id = crypto.randomUUID();
       const now = new Date().toISOString();
       await db.execute(
-        'INSERT OR IGNORE INTO project_stakeholders (project_id, stakeholder_id, created_at) VALUES (?, ?, ?)',
-        [projectId, stakeholderId, now]
+        'INSERT OR IGNORE INTO project_stakeholders (id, project_id, stakeholder_id, created_at) VALUES (?, ?, ?, ?)',
+        [id, projectId, stakeholderId, now]
       );
-      return { project_id: projectId, stakeholder_id: stakeholderId, created_at: now };
+      const row = await db.getOptional<ProjectStakeholder>(
+        'SELECT * FROM project_stakeholders WHERE project_id = ? AND stakeholder_id = ?',
+        [projectId, stakeholderId]
+      );
+      return row!;
     },
 
     async unlink(projectId: string, stakeholderId: string): Promise<void> {

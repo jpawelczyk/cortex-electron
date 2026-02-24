@@ -27,11 +27,16 @@ export function createMeetingAttendeeService(ctx: DbContext): MeetingAttendeeSer
     },
 
     async link(meetingId: string, stakeholderId: string): Promise<MeetingAttendee> {
+      const id = crypto.randomUUID();
       await db.execute(
-        'INSERT OR IGNORE INTO meeting_attendees (meeting_id, stakeholder_id) VALUES (?, ?)',
+        'INSERT OR IGNORE INTO meeting_attendees (id, meeting_id, stakeholder_id) VALUES (?, ?, ?)',
+        [id, meetingId, stakeholderId]
+      );
+      const row = await db.getOptional<MeetingAttendee>(
+        'SELECT * FROM meeting_attendees WHERE meeting_id = ? AND stakeholder_id = ?',
         [meetingId, stakeholderId]
       );
-      return { meeting_id: meetingId, stakeholder_id: stakeholderId };
+      return row!;
     },
 
     async unlink(meetingId: string, stakeholderId: string): Promise<void> {

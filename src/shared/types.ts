@@ -195,12 +195,14 @@ export interface UpdateNoteInput {
 }
 
 export interface ProjectStakeholder {
+  id: string;
   project_id: string;
   stakeholder_id: string;
   created_at: string;
 }
 
 export interface NoteStakeholder {
+  id: string;
   note_id: string;
   stakeholder_id: string;
 }
@@ -250,6 +252,7 @@ export interface UpdateMeetingInput {
 }
 
 export interface MeetingAttendee {
+  id: string;
   meeting_id: string;
   stakeholder_id: string;
 }

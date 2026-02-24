@@ -27,11 +27,16 @@ export function createNoteStakeholderService(ctx: DbContext): NoteStakeholderSer
     },
 
     async link(noteId: string, stakeholderId: string): Promise<NoteStakeholder> {
+      const id = crypto.randomUUID();
       await db.execute(
-        'INSERT OR IGNORE INTO note_stakeholders (note_id, stakeholder_id) VALUES (?, ?)',
+        'INSERT OR IGNORE INTO note_stakeholders (id, note_id, stakeholder_id) VALUES (?, ?, ?)',
+        [id, noteId, stakeholderId]
+      );
+      const row = await db.getOptional<NoteStakeholder>(
+        'SELECT * FROM note_stakeholders WHERE note_id = ? AND stakeholder_id = ?',
         [noteId, stakeholderId]
       );
-      return { note_id: noteId, stakeholder_id: stakeholderId };
+      return row!;
     },
 
     async unlink(noteId: string, stakeholderId: string): Promise<void> {
