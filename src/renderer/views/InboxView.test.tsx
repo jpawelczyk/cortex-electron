@@ -227,6 +227,19 @@ describe('InboxView', () => {
       render(<InboxView />);
       expect(screen.queryByText('Overdue')).not.toBeInTheDocument();
     });
+
+    it('sorts overdue tasks by deadline ascending (most overdue first)', () => {
+      mockTasks = [
+        fakeTask({ id: '1', title: 'Due yesterday', status: 'today', deadline: '2026-02-24' }),
+        fakeTask({ id: '2', title: 'Due last week', status: 'today', deadline: '2026-02-18' }),
+        fakeTask({ id: '3', title: 'Due last month', status: 'today', deadline: '2026-01-15' }),
+      ];
+      render(<InboxView />);
+      const items = screen.getAllByTestId('task-item');
+      expect(items[0]).toHaveTextContent('Due last month');
+      expect(items[1]).toHaveTextContent('Due last week');
+      expect(items[2]).toHaveTextContent('Due yesterday');
+    });
   });
 
   describe('completed tasks', () => {
@@ -364,6 +377,158 @@ describe('InboxView', () => {
       expect(screen.getByText('Inbox task')).toBeInTheDocument();
 
       vi.useRealTimers();
+    });
+  });
+
+  describe('needs rescheduling', () => {
+    it('shows section for tasks with past when_date and no deadline', () => {
+      mockTasks = [
+        fakeTask({ id: '1', title: 'Past when', status: 'today', when_date: '2026-02-20' }),
+      ];
+      render(<InboxView />);
+      expect(screen.getByText('Needs Rescheduling')).toBeInTheDocument();
+    });
+
+    it('shows tasks with past when_date and future deadline', () => {
+      mockTasks = [
+        fakeTask({ id: '1', title: 'Reschedule me', status: 'today', when_date: '2026-02-20', deadline: '2026-12-31' }),
+      ];
+      render(<InboxView />);
+      expect(screen.getByText('Needs Rescheduling')).toBeInTheDocument();
+    });
+
+    it('does NOT show tasks with past when_date AND past deadline (goes to overdue)', () => {
+      mockTasks = [
+        fakeTask({ id: '1', title: 'Both past', status: 'today', when_date: '2026-02-10', deadline: '2026-02-15' }),
+      ];
+      render(<InboxView />);
+      expect(screen.getByText('Overdue')).toBeInTheDocument();
+      expect(screen.queryByText('Needs Rescheduling')).not.toBeInTheDocument();
+    });
+
+    it('excludes deleted tasks', () => {
+      mockTasks = [
+        fakeTask({ id: '1', title: 'Deleted', status: 'today', when_date: '2026-02-20', deleted_at: '2026-02-21T00:00:00.000Z' }),
+      ];
+      render(<InboxView />);
+      expect(screen.queryByText('Needs Rescheduling')).not.toBeInTheDocument();
+    });
+
+    it('excludes completed tasks', () => {
+      mockTasks = [
+        fakeTask({ id: '1', title: 'Done', status: 'logbook', when_date: '2026-02-20', completed_at: '2026-02-21T00:00:00.000Z' }),
+      ];
+      render(<InboxView />);
+      expect(screen.queryByText('Needs Rescheduling')).not.toBeInTheDocument();
+    });
+
+    it('excludes cancelled tasks', () => {
+      mockTasks = [
+        fakeTask({ id: '1', title: 'Cancelled', status: 'cancelled', when_date: '2026-02-20' }),
+      ];
+      render(<InboxView />);
+      expect(screen.queryByText('Needs Rescheduling')).not.toBeInTheDocument();
+    });
+
+    it('does not show section when no tasks need rescheduling', () => {
+      mockTasks = [
+        fakeTask({ id: '1', title: 'Normal inbox', status: 'inbox' }),
+      ];
+      render(<InboxView />);
+      expect(screen.queryByText('Needs Rescheduling')).not.toBeInTheDocument();
+    });
+
+    it('sorts by when_date ascending', () => {
+      mockTasks = [
+        fakeTask({ id: '1', title: 'Recent past', status: 'today', when_date: '2026-02-23' }),
+        fakeTask({ id: '2', title: 'Oldest past', status: 'today', when_date: '2026-01-15' }),
+        fakeTask({ id: '3', title: 'Middle past', status: 'today', when_date: '2026-02-10' }),
+      ];
+      render(<InboxView />);
+      act(() => { screen.getByText('Needs Rescheduling').click(); });
+      const items = screen.getAllByTestId('task-item');
+      expect(items[0]).toHaveTextContent('Oldest past');
+      expect(items[1]).toHaveTextContent('Middle past');
+      expect(items[2]).toHaveTextContent('Recent past');
+    });
+
+    it('filters by context', () => {
+      const workCtx = 'ctx-work';
+      const personalCtx = 'ctx-personal';
+      mockState.activeContextIds = [workCtx];
+      mockState.projects = [
+        { id: 'proj-work', context_id: workCtx },
+        { id: 'proj-personal', context_id: personalCtx },
+      ];
+      mockTasks = [
+        fakeTask({ id: '1', title: 'Work reschedule', status: 'today', when_date: '2026-02-20', project_id: 'proj-work' }),
+        fakeTask({ id: '2', title: 'Personal reschedule', status: 'today', when_date: '2026-02-20', project_id: 'proj-personal' }),
+      ];
+      render(<InboxView />);
+      act(() => { screen.getByText('Needs Rescheduling').click(); });
+      expect(screen.getByText('Work reschedule')).toBeInTheDocument();
+      expect(screen.queryByText('Personal reschedule')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('needs rescheduling collapsibility', () => {
+    it('is collapsed by default (tasks not visible)', () => {
+      mockTasks = [
+        fakeTask({ id: '1', title: 'Reschedule me', status: 'today', when_date: '2026-02-20' }),
+      ];
+      render(<InboxView />);
+      expect(screen.getByText('Needs Rescheduling')).toBeInTheDocument();
+      expect(screen.queryByText('Reschedule me')).not.toBeInTheDocument();
+    });
+
+    it('expands on click to reveal tasks', () => {
+      mockTasks = [
+        fakeTask({ id: '1', title: 'Reschedule me', status: 'today', when_date: '2026-02-20' }),
+      ];
+      render(<InboxView />);
+      act(() => { screen.getByText('Needs Rescheduling').click(); });
+      expect(screen.getByText('Reschedule me')).toBeInTheDocument();
+    });
+
+    it('has correct aria-expanded attribute', () => {
+      mockTasks = [
+        fakeTask({ id: '1', title: 'Reschedule me', status: 'today', when_date: '2026-02-20' }),
+      ];
+      render(<InboxView />);
+      const button = screen.getByText('Needs Rescheduling').closest('button')!;
+      expect(button).toHaveAttribute('aria-expanded', 'false');
+      act(() => { button.click(); });
+      expect(button).toHaveAttribute('aria-expanded', 'true');
+    });
+  });
+
+  describe('section ordering', () => {
+    it('renders Overdue above Needs Rescheduling above Inbox', () => {
+      mockTasks = [
+        fakeTask({ id: '1', title: 'Overdue task', status: 'today', deadline: '2026-02-15' }),
+        fakeTask({ id: '2', title: 'Reschedule task', status: 'today', when_date: '2026-02-20' }),
+        fakeTask({ id: '3', title: 'Inbox task', status: 'inbox' }),
+      ];
+      render(<InboxView />);
+      const overdueHeader = screen.getByText('Overdue');
+      const rescheduleHeader = screen.getByText('Needs Rescheduling');
+      const inboxHeader = screen.getByText('Inbox', { selector: 'h3' });
+      expect(overdueHeader.compareDocumentPosition(rescheduleHeader)).toBe(
+        Node.DOCUMENT_POSITION_FOLLOWING,
+      );
+      expect(rescheduleHeader.compareDocumentPosition(inboxHeader)).toBe(
+        Node.DOCUMENT_POSITION_FOLLOWING,
+      );
+    });
+  });
+
+  describe('empty state', () => {
+    it('does not show empty state when only needs rescheduling tasks exist', () => {
+      mockTasks = [
+        fakeTask({ id: '1', title: 'Reschedule me', status: 'today', when_date: '2026-02-20' }),
+      ];
+      render(<InboxView />);
+      expect(screen.queryByText(/no tasks in your inbox/i)).not.toBeInTheDocument();
     });
   });
 });

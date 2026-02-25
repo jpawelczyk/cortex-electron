@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { Inbox, AlertTriangle } from 'lucide-react';
+import { Inbox, AlertTriangle, ChevronRight, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { useStore } from '../stores';
 import { TaskList } from '../components/TaskList';
@@ -24,6 +24,7 @@ export function InboxView() {
   // Toggle signal: which tasks are currently completed from the UI's perspective.
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
+  const [rescheduleOpen, setRescheduleOpen] = useState(false);
   // Filter signal: keeps logbook tasks visible during the async IPC window
   // after uncomplete (when completedIds no longer has the id but the store
   // hasn't updated to inbox yet).
@@ -78,7 +79,22 @@ export function InboxView() {
         !t.deleted_at &&
         !t.completed_at,
     );
+    overdue.sort((a, b) => (a.deadline! < b.deadline! ? -1 : 1));
     return filterTasksByContext(overdue, activeContextIds, projects);
+  }, [tasks, today, activeContextIds, projects]);
+
+  const needsReschedulingTasks = useMemo(() => {
+    const reschedule = tasks.filter(
+      (t) =>
+        t.when_date &&
+        t.when_date < today &&
+        (!t.deadline || t.deadline >= today) &&
+        !['logbook', 'cancelled'].includes(t.status) &&
+        !t.deleted_at &&
+        !t.completed_at,
+    );
+    reschedule.sort((a, b) => (a.when_date! < b.when_date! ? -1 : 1));
+    return filterTasksByContext(reschedule, activeContextIds, projects);
   }, [tasks, today, activeContextIds, projects]);
 
   const inboxTasks = useMemo(() => {
@@ -134,6 +150,8 @@ export function InboxView() {
     [updateTask],
   );
 
+  const hasAboveSections = overdueTasks.length > 0 || needsReschedulingTasks.length > 0;
+
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-5xl mx-auto px-8 py-8">
@@ -154,17 +172,48 @@ export function InboxView() {
               selectedTaskId={selectedTaskId}
               completedIds={completedIds}
             />
-            {inboxTasks.length > 0 && (
-              <div className="mt-6 mb-3">
-                <h3 className="text-sm font-medium text-muted-foreground">Inbox</h3>
-              </div>
-            )}
           </>
+        )}
+
+        {needsReschedulingTasks.length > 0 && (
+          <div className={overdueTasks.length > 0 ? 'mt-6' : ''}>
+            <button
+              onClick={() => setRescheduleOpen(!rescheduleOpen)}
+              className="flex items-center gap-2 mb-3"
+              aria-expanded={rescheduleOpen}
+            >
+              <ChevronRight
+                className={`size-3.5 text-amber-500 transition-transform ${rescheduleOpen ? 'rotate-90' : ''}`}
+              />
+              <Clock className="size-4 text-amber-500" strokeWidth={1.75} />
+              <h3 className="text-sm font-medium text-amber-500">
+                Needs Rescheduling
+              </h3>
+              <span className="text-xs tabular-nums text-amber-500/60">
+                {needsReschedulingTasks.length}
+              </span>
+            </button>
+            {rescheduleOpen && (
+              <TaskList
+                tasks={needsReschedulingTasks}
+                onCompleteTask={handleComplete}
+                onSelectTask={selectTask}
+                selectedTaskId={selectedTaskId}
+                completedIds={completedIds}
+              />
+            )}
+          </div>
+        )}
+
+        {hasAboveSections && inboxTasks.length > 0 && (
+          <div className="mt-6 mb-3">
+            <h3 className="text-sm font-medium text-muted-foreground">Inbox</h3>
+          </div>
         )}
 
         {isInlineCreating && <InlineTaskCard />}
 
-        {!isInlineCreating && inboxTasks.length === 0 && overdueTasks.length === 0 ? (
+        {!isInlineCreating && inboxTasks.length === 0 && !hasAboveSections ? (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
             <Inbox className="size-10 mb-3 opacity-30" strokeWidth={1.25} />
             <p className="text-sm">No tasks in your inbox</p>
