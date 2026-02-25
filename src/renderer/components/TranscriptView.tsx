@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Loader2, AlertCircle, FileText } from 'lucide-react';
+import { Loader2, AlertCircle, FileText, ChevronRight } from 'lucide-react';
 import { Button } from './ui/button';
 import { useStore } from '../stores';
 import type { TranscriptSegment, TranscriptionStatus } from '@shared/recording-types';
@@ -18,6 +18,27 @@ function formatTime(seconds: number): string {
   const mm = Math.floor(seconds / 60).toString().padStart(2, '0');
   const ss = Math.floor(seconds % 60).toString().padStart(2, '0');
   return `${mm}:${ss}`;
+}
+
+function CollapsibleTranscript({ label, children }: { label: string; children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div>
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-2"
+        aria-expanded={open}
+      >
+        <ChevronRight className={`size-3.5 transition-transform ${open ? 'rotate-90' : ''}`} />
+        {label}
+      </button>
+      {open && (
+        <div className="max-h-64 overflow-y-auto rounded-md border border-border/50 p-3">
+          {children}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export interface TranscriptViewProps {
@@ -154,29 +175,33 @@ export function TranscriptView({
   // Completed with segments
   if (transcriptionStatus === 'completed' && transcriptSegments && transcriptSegments.length > 0) {
     return (
-      <div className="space-y-1">
-        {transcriptSegments.map((seg, i) => (
-          <div key={i} className="flex items-start gap-3 group">
-            <button
-              onClick={() => onSeekTo?.(seg.start)}
-              className="text-xs font-mono text-muted-foreground/60 hover:text-primary transition-colors tabular-nums pt-0.5 shrink-0 w-10 text-left"
-              aria-label={`Seek to ${formatTime(seg.start)}`}
-            >
-              {formatTime(seg.start)}
-            </button>
-            <p className="text-sm text-foreground leading-relaxed">{seg.text}</p>
-          </div>
-        ))}
-      </div>
+      <CollapsibleTranscript label={`Transcript (${transcriptSegments.length} segments)`}>
+        <div className="space-y-1">
+          {transcriptSegments.map((seg, i) => (
+            <div key={i} className="flex items-start gap-3 group">
+              <button
+                onClick={() => onSeekTo?.(seg.start)}
+                className="text-xs font-mono text-muted-foreground/60 hover:text-primary transition-colors tabular-nums pt-0.5 shrink-0 w-10 text-left"
+                aria-label={`Seek to ${formatTime(seg.start)}`}
+              >
+                {formatTime(seg.start)}
+              </button>
+              <p className="text-sm text-foreground leading-relaxed">{seg.text}</p>
+            </div>
+          ))}
+        </div>
+      </CollapsibleTranscript>
     );
   }
 
   // Completed with plain transcript only (no segments)
   if (transcriptionStatus === 'completed' && transcript) {
     return (
-      <div className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
-        {transcript}
-      </div>
+      <CollapsibleTranscript label="Transcript">
+        <div className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+          {transcript}
+        </div>
+      </CollapsibleTranscript>
     );
   }
 
