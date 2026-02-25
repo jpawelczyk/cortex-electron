@@ -117,23 +117,23 @@ export function RecordingControls({ meetingId, audioPath, onRecordingComplete }:
   // Recording in progress for this meeting
   if (isRecordingThisMeeting) {
     return (
-      <div className="flex items-center gap-3 py-2">
-        <span className="flex items-center gap-1.5 text-sm text-destructive">
+      <div className="flex items-center gap-3 rounded-lg bg-destructive/10 border border-destructive/20 px-3 py-2">
+        <span className="flex items-center gap-1.5 text-sm font-medium text-destructive">
           <span className="size-2 rounded-full bg-destructive animate-pulse" />
           Recording
         </span>
-        <span className="text-sm font-mono text-muted-foreground" data-testid="recording-duration">
+        <span className="text-sm font-mono tabular-nums text-destructive/70" data-testid="recording-duration">
           {formatDuration(recordingDuration)}
         </span>
         <Button
-          variant="outline"
+          variant="destructive"
           size="sm"
           onClick={handleStop}
-          className="gap-1.5"
+          className="ml-auto gap-1.5"
           aria-label="Stop recording"
         >
           <Square className="size-3 fill-current" />
-          Stop
+          Stop recording
         </Button>
       </div>
     );
