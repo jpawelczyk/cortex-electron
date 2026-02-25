@@ -4,6 +4,7 @@ import { CloudSun, CheckCircle2, Video, Plus, FolderKanban, Briefcase, Home as H
 import { useStore } from '../stores';
 import { useWeather } from '../hooks/useWeather';
 import { TaskList } from '../components/TaskList';
+import { filterTasksByContext, filterProjectsByContext } from '../lib/contextFilter';
 import type { Meeting } from '../../shared/types';
 
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -75,6 +76,7 @@ export function HomeView(_props: HomeViewProps) {
   const setAutoFocusMeetingTitle = useStore((s) => s.setAutoFocusMeetingTitle);
   const projects = useStore((s) => s.projects);
   const contexts = useStore((s) => s.contexts);
+  const activeContextIds = useStore((s) => s.activeContextIds);
   const weather = useWeather(weatherCity);
 
   const today = format(now, 'yyyy-MM-dd');
@@ -102,8 +104,8 @@ export function HomeView(_props: HomeViewProps) {
       }
       if (t.deadline && t.deadline < today) oc++;
     }
-    return { todayCount: tc, overdueCount: oc, todayTasks: visible };
-  }, [tasks, today, dismissedIds]);
+    return { todayCount: tc, overdueCount: oc, todayTasks: filterTasksByContext(visible, activeContextIds, projects) };
+  }, [tasks, today, dismissedIds, activeContextIds, projects]);
 
   const handleComplete = useCallback(
     (id: string) => {
@@ -138,17 +140,25 @@ export function HomeView(_props: HomeViewProps) {
   );
 
   const activeProjects = useMemo(() => {
-    return projects
-      .filter((p) => p.status === 'active' && !p.deleted_at)
+    const statusFiltered = projects.filter((p) => p.status === 'active' && !p.deleted_at);
+    return filterProjectsByContext(statusFiltered, activeContextIds)
       .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
       .slice(0, MAX_HOME_PROJECTS);
-  }, [projects]);
+  }, [projects, activeContextIds]);
 
   const todayMeetings = useMemo(() => {
-    return meetings
-      .filter((m) => !m.deleted_at && m.status !== 'cancelled' && isToday(parseISO(m.start_time)))
-      .sort((a, b) => parseISO(a.start_time).getTime() - parseISO(b.start_time).getTime());
-  }, [meetings]);
+    const dateFiltered = meetings
+      .filter((m) => !m.deleted_at && m.status !== 'cancelled' && isToday(parseISO(m.start_time)));
+    const contextFiltered = activeContextIds.length === 0
+      ? dateFiltered
+      : dateFiltered.filter((m) => {
+          const effectiveContextId = m.project_id
+            ? (projects.find((p) => p.id === m.project_id)?.context_id ?? m.context_id)
+            : m.context_id;
+          return effectiveContextId !== null && activeContextIds.includes(effectiveContextId);
+        });
+    return contextFiltered.sort((a, b) => parseISO(a.start_time).getTime() - parseISO(b.start_time).getTime());
+  }, [meetings, activeContextIds, projects]);
 
   const handleAddMeeting = useCallback(async () => {
     const meeting = await createMeeting({
