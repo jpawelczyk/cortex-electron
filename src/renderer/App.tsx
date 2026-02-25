@@ -221,34 +221,36 @@ function AuthenticatedApp() {
       />
 
       <main className="flex-1 flex flex-col min-w-0">
-        <header className="drag-region flex items-center gap-1 px-4 py-2 border-b border-border">
+        <header className="drag-region flex items-center h-11 px-3 border-b border-border">
           <TabBar />
-          <div className="flex-1" />
-          <div className="no-drag flex items-center gap-1">
+          <div className="flex-1 min-w-8" />
+          <div className="no-drag flex items-center gap-0.5">
             <ContextSelector />
             <button
               onClick={() => setContextSettingsOpen(true)}
-              className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              className="p-1.5 rounded-md text-muted-foreground/60 hover:text-muted-foreground hover:bg-accent/40 transition-colors"
               aria-label="Manage contexts"
             >
-              <Settings className="size-3.5" />
+              <Settings className="size-3.5" strokeWidth={1.75} />
+            </button>
+            <div className="w-px h-3.5 bg-border mx-1" />
+            <button
+              onClick={openCommandPalette}
+              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+              aria-label="Search"
+            >
+              <Search className="size-4" strokeWidth={1.75} />
+            </button>
+            <button
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={performContextCreate}
+              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+              aria-label="Create"
+            >
+              <Plus className="size-4" strokeWidth={1.75} />
             </button>
           </div>
           <ContextSettings open={contextSettingsOpen} onOpenChange={setContextSettingsOpen} />
-          <div className="w-2" />
-          <button
-            onClick={openCommandPalette}
-            className="no-drag p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-          >
-            <Search className="size-5" />
-          </button>
-          <button
-            onMouseDown={(e) => e.stopPropagation()}
-            onClick={performContextCreate}
-            className="no-drag p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-          >
-            <Plus className="size-5" />
-          </button>
         </header>
 
         {activeView === 'home' && <HomeView onNavigate={handleViewChange} />}
