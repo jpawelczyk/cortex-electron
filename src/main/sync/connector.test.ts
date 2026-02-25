@@ -52,7 +52,7 @@ describe('SupabaseConnector', () => {
       expect(createClient).toHaveBeenCalledWith(
         TEST_CONFIG.supabaseUrl,
         TEST_CONFIG.supabaseAnonKey,
-        { auth: {} }
+        expect.objectContaining({ auth: {} })
       );
     });
 
@@ -64,7 +64,7 @@ describe('SupabaseConnector', () => {
       expect(createClient).toHaveBeenCalledWith(
         TEST_CONFIG.supabaseUrl,
         TEST_CONFIG.supabaseAnonKey,
-        { auth: { storage: mockStorage } }
+        expect.objectContaining({ auth: { storage: mockStorage } })
       );
     });
 

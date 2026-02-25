@@ -11,6 +11,25 @@ export class SupabaseConnector implements PowerSyncBackendConnector {
       auth: {
         ...(storage && { storage }),
       },
+      global: {
+        // Wrap fetch to silently handle network errors (offline/unreachable).
+        // GoTrueClient's auto-refresh doesn't catch fetch-level failures,
+        // causing unhandled rejections. Returning a 503 lets it handle the
+        // error gracefully instead.
+        fetch: async (url, init) => {
+          try {
+            return await fetch(url, init);
+          } catch (err) {
+            if (err instanceof TypeError && err.message === 'fetch failed') {
+              return new Response(JSON.stringify({ error: 'Network unavailable' }), {
+                status: 503,
+                headers: { 'Content-Type': 'application/json' },
+              });
+            }
+            throw err;
+          }
+        },
+      },
     });
     this.powersyncUrl = config.powersyncUrl;
   }
