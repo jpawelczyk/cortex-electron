@@ -39,6 +39,8 @@ export function TranscriptView({
   onTranscriptionComplete,
 }: TranscriptViewProps) {
   const [toolsMissing, setToolsMissing] = useState<{ whisper: boolean; ffmpeg: boolean } | null>(null);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Nothing to show if no audio
   if (!audioPath) return null;
@@ -54,8 +56,16 @@ export function TranscriptView({
     }
 
     setToolsMissing(null);
-    await api.start(meetingId);
-    onTranscriptionComplete?.();
+    setError(null);
+    setIsTranscribing(true);
+    try {
+      await api.start(meetingId);
+      onTranscriptionComplete?.();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Transcription failed');
+    } finally {
+      setIsTranscribing(false);
+    }
   }
 
   // Show tools missing warning
@@ -81,7 +91,7 @@ export function TranscriptView({
   }
 
   // Processing states
-  if (transcriptionStatus === 'pending' || transcriptionStatus === 'processing') {
+  if (isTranscribing || transcriptionStatus === 'pending' || transcriptionStatus === 'processing') {
     return (
       <div data-testid="transcription-processing" className="flex items-center gap-2 text-sm text-muted-foreground">
         <Loader2 className="size-4 animate-spin" />
@@ -97,6 +107,26 @@ export function TranscriptView({
         <div className="flex items-center gap-1.5 text-sm text-destructive">
           <AlertCircle className="size-4" />
           <span>Transcription failed</span>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleStartTranscription}
+          aria-label="Retry transcription"
+        >
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
+  // Local error from failed start
+  if (error) {
+    return (
+      <div data-testid="transcription-error" className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5 text-sm text-destructive">
+          <AlertCircle className="size-4" />
+          <span>{error}</span>
         </div>
         <Button
           variant="outline"

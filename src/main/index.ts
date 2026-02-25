@@ -1,5 +1,10 @@
 import 'dotenv/config';
+import fixPath from 'fix-path';
 import { app, BrowserWindow, desktopCapturer, dialog, ipcMain, nativeImage, net, protocol, session, shell } from 'electron';
+
+// Ensure Electron inherits the user's shell PATH on macOS so that
+// bundled CLI tools (ffmpeg, whisper-cpp) are discoverable.
+fixPath();
 import { fileURLToPath } from 'url';
 import path from 'path';
 import { initDatabase, closeDatabase, getPowerSyncDatabase } from './db/index.js';

@@ -97,6 +97,7 @@ export function createTranscriptionService(): TranscriptionService {
     try {
       // Step 1: convert WebM → WAV 16kHz mono
       await runExecFile('ffmpeg', [
+        '-y',
         '-i', audioPath,
         '-ar', '16000',
         '-ac', '1',
@@ -126,8 +127,9 @@ export function createTranscriptionService(): TranscriptionService {
 
     // Try whisper-cpp first
     try {
+      const threads = Math.min(os.cpus().length, 8).toString();
       const stdout = await runExecFile('whisper-cpp', [
-        '--model', model, '--language', 'auto', '--output-json', wavPath,
+        '--model', model, '--language', 'auto', '--threads', threads, '--output-json', wavPath,
       ]);
       return parseWhisperCppOutput(stdout);
     } catch {
