@@ -43,7 +43,6 @@ function makeStore() {
     }),
     {
       name: 'cortex-store',
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       partialize: (state) => ({
         activeContextIds: state.activeContextIds,
         sidebarCollapsed: state.sidebarCollapsed,

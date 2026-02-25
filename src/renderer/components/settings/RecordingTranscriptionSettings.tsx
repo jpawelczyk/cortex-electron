@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Download, Trash2, Loader2, X } from 'lucide-react';
+import { Download, Trash2 } from 'lucide-react';
 import { Button } from '@renderer/components/ui/button';
 import { Input } from '@renderer/components/ui/input';
 import { Label } from '@renderer/components/ui/label';

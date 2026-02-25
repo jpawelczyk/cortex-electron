@@ -41,18 +41,6 @@ const fakeNote = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
-const fakeContext = (overrides: Record<string, unknown> = {}) => ({
-  id: 'ctx-1',
-  name: 'Work',
-  color: '#3b82f6',
-  icon: null,
-  sort_order: 0,
-  created_at: '2026-01-01T00:00:00.000Z',
-  updated_at: '2026-01-01T00:00:00.000Z',
-  deleted_at: null,
-  ...overrides,
-});
-
 describe('NotesOverviewView', () => {
   beforeEach(() => {
     vi.clearAllMocks();

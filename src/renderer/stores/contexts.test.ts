@@ -39,18 +39,6 @@ const mockCortex = {
   g.window = { ...(g.window || {}), cortex: { ...(g.window?.cortex as Record<string, unknown> || {}), ...mockCortex } };
 }
 
-const fakeContext = (overrides = {}) => ({
-  id: 'ctx-1',
-  name: 'Work',
-  color: null,
-  icon: null,
-  sort_order: 0,
-  created_at: '2026-02-17T00:00:00.000Z',
-  updated_at: '2026-02-17T00:00:00.000Z',
-  deleted_at: null,
-  ...overrides,
-});
-
 describe('ContextSlice', () => {
   beforeEach(() => {
     vi.clearAllMocks();

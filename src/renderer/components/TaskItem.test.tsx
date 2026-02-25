@@ -531,19 +531,6 @@ describe('TaskItem project picker (expanded)', () => {
     };
   }
 
-  function makeContext(overrides?: Partial<Context>): Context {
-    return {
-      id: 'ctx-1',
-      name: 'Work',
-      color: null,
-      icon: null,
-      sort_order: 0,
-      created_at: '2026-01-01T00:00:00.000Z',
-      updated_at: '2026-01-01T00:00:00.000Z',
-      deleted_at: null,
-      ...overrides,
-    };
-  }
 
   beforeEach(() => {
     vi.clearAllMocks();
