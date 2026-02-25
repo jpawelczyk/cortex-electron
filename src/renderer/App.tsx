@@ -1,8 +1,7 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { format } from 'date-fns';
-import { Plus, Search, Settings } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import { ContextSelector } from './components/ContextSelector';
-import { ContextSettings } from './components/ContextSettings';
 import { CommandPalette } from './components/CommandPalette';
 import { TabBar } from './components/TabBar';
 import { useStore } from './stores';
@@ -62,7 +61,6 @@ export default function App() {
 }
 
 function AuthenticatedApp() {
-  const [contextSettingsOpen, setContextSettingsOpen] = useState(false);
   const tasks = useStore((s) => s.tasks);
   const projects = useStore((s) => s.projects);
   const activeContextIds = useStore((s) => s.activeContextIds);
@@ -227,14 +225,6 @@ function AuthenticatedApp() {
           <div className="no-drag flex items-center gap-0.5">
             <ContextSelector />
             <button
-              onClick={() => setContextSettingsOpen(true)}
-              className="p-1.5 rounded-md text-muted-foreground/60 hover:text-muted-foreground hover:bg-accent/40 transition-colors"
-              aria-label="Manage contexts"
-            >
-              <Settings className="size-3.5" strokeWidth={1.75} />
-            </button>
-            <div className="w-px h-3.5 bg-border mx-1" />
-            <button
               onClick={openCommandPalette}
               className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
               aria-label="Search"
@@ -250,7 +240,6 @@ function AuthenticatedApp() {
               <Plus className="size-4" strokeWidth={1.75} />
             </button>
           </div>
-          <ContextSettings open={contextSettingsOpen} onOpenChange={setContextSettingsOpen} />
         </header>
 
         {activeView === 'home' && <HomeView onNavigate={handleViewChange} />}

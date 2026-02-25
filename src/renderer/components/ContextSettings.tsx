@@ -2,13 +2,6 @@ import { useState, useMemo } from 'react';
 import { Pencil, Trash2, Plus } from 'lucide-react';
 import { useStore } from '../stores';
 import { ICON_MAP, ICON_OPTIONS } from '../lib/icons';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from './ui/dialog';
 
 const COLORS = [
   '#f97316',
@@ -21,12 +14,7 @@ const COLORS = [
   '#6366f1',
 ];
 
-interface ContextSettingsProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}
-
-export function ContextSettings({ open, onOpenChange }: ContextSettingsProps) {
+export function ContextSettings() {
   const contexts = useStore((s) => s.contexts);
   const tasks = useStore((s) => s.tasks);
   const projects = useStore((s) => s.projects);
@@ -103,158 +91,149 @@ export function ContextSettings({ open, onOpenChange }: ContextSettingsProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md border-0 bg-popover shadow-2xl shadow-black/50">
-        <DialogHeader>
-          <DialogTitle>Manage Contexts</DialogTitle>
-          <DialogDescription className="sr-only">
-            Create, edit, and delete contexts
-          </DialogDescription>
-        </DialogHeader>
+    <div className="rounded-lg border border-border p-4 space-y-2">
+      <div className="space-y-0.5">
+        {contexts.length === 0 && !showAddForm && (
+          <p className="text-sm text-muted-foreground py-6 text-center">
+            No contexts yet
+          </p>
+        )}
 
-        <div className="space-y-0.5">
-          {contexts.length === 0 && !showAddForm && (
-            <p className="text-sm text-muted-foreground py-6 text-center">
-              No contexts yet
-            </p>
-          )}
-
-          {contexts.map((ctx) => {
-            if (editingId === ctx.id) {
-              return (
-                <div key={ctx.id} className="space-y-3 p-3 rounded-lg bg-accent/40">
-                  <input
-                    type="text"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    className="w-full px-2.5 py-1.5 text-sm rounded-md bg-background/60 border-0 ring-1 ring-white/10 focus:ring-primary/50 focus:outline-none transition-shadow"
-                    autoFocus
-                  />
-                  <ColorPicker value={editColor} onChange={setEditColor} />
-                  <IconPicker value={editIcon} onChange={setEditIcon} />
-                  <div className="flex gap-1.5 justify-end">
-                    <button
-                      onClick={cancelEdit}
-                      className="px-2.5 py-1 text-xs rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={saveEdit}
-                      className="px-2.5 py-1 text-xs rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-                    >
-                      Save
-                    </button>
-                  </div>
+        {contexts.map((ctx) => {
+          if (editingId === ctx.id) {
+            return (
+              <div key={ctx.id} className="space-y-3 p-3 rounded-lg bg-accent/40">
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-sm rounded-md bg-background/60 border-0 ring-1 ring-white/10 focus:ring-primary/50 focus:outline-none transition-shadow"
+                  autoFocus
+                />
+                <ColorPicker value={editColor} onChange={setEditColor} />
+                <IconPicker value={editIcon} onChange={setEditIcon} />
+                <div className="flex gap-1.5 justify-end">
+                  <button
+                    onClick={cancelEdit}
+                    className="px-2.5 py-1 text-xs rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={saveEdit}
+                    className="px-2.5 py-1 text-xs rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                  >
+                    Save
+                  </button>
                 </div>
-              );
-            }
+              </div>
+            );
+          }
 
-            if (deletingId === ctx.id) {
-              return (
-                <div
-                  key={ctx.id}
-                  className="p-3 rounded-lg bg-destructive/10 space-y-2"
-                >
-                  <p className="text-sm">
-                    Delete <strong>{deletingContext?.name}</strong>?{' '}
-                    {deleteItemCount} items will lose their context.
-                  </p>
-                  <div className="flex gap-1.5 justify-end">
-                    <button
-                      onClick={() => setDeletingId(null)}
-                      className="px-2.5 py-1 text-xs rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={confirmDelete}
-                      className="px-2.5 py-1 text-xs rounded-md bg-destructive text-white hover:bg-destructive/90 transition-colors"
-                    >
-                      Confirm
-                    </button>
-                  </div>
-                </div>
-              );
-            }
-
-            const Icon = ctx.icon ? ICON_MAP[ctx.icon] : null;
-
+          if (deletingId === ctx.id) {
             return (
               <div
                 key={ctx.id}
-                data-testid={`context-row-${ctx.id}`}
-                className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-accent/40 group transition-colors"
+                className="p-3 rounded-lg bg-destructive/10 space-y-2"
               >
-                <span
-                  data-testid={`settings-dot-${ctx.id}`}
-                  className="size-2.5 rounded-full shrink-0"
-                  style={{ backgroundColor: ctx.color ?? undefined }}
-                />
-                {Icon && <Icon className="size-4 text-muted-foreground" />}
-                <span className="text-sm flex-1">{ctx.name}</span>
-                <button
-                  onClick={() => startEdit(ctx)}
-                  className="p-1 rounded-md text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-foreground hover:bg-accent transition-all"
-                  aria-label="Edit"
-                >
-                  <Pencil className="size-3.5" />
-                </button>
-                <button
-                  onClick={() => setDeletingId(ctx.id)}
-                  className="p-1 rounded-md text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-destructive hover:bg-destructive/10 transition-all"
-                  aria-label="Delete"
-                >
-                  <Trash2 className="size-3.5" />
-                </button>
+                <p className="text-sm">
+                  Delete <strong>{deletingContext?.name}</strong>?{' '}
+                  {deleteItemCount} items will lose their context.
+                </p>
+                <div className="flex gap-1.5 justify-end">
+                  <button
+                    onClick={() => setDeletingId(null)}
+                    className="px-2.5 py-1 text-xs rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmDelete}
+                    className="px-2.5 py-1 text-xs rounded-md bg-destructive text-white hover:bg-destructive/90 transition-colors"
+                  >
+                    Confirm
+                  </button>
+                </div>
               </div>
             );
-          })}
-        </div>
+          }
 
-        {showAddForm ? (
-          <div className="space-y-3 p-3 rounded-lg bg-accent/40">
-            <input
-              type="text"
-              placeholder="Context name"
-              value={addName}
-              onChange={(e) => setAddName(e.target.value)}
-              className="w-full px-2.5 py-1.5 text-sm rounded-md bg-background/60 border-0 ring-1 ring-white/10 focus:ring-primary/50 focus:outline-none transition-shadow"
-              autoFocus
-            />
-            <ColorPicker value={addColor} onChange={setAddColor} />
-            <IconPicker value={addIcon} onChange={setAddIcon} />
-            <div className="flex gap-1.5 justify-end">
+          const Icon = ctx.icon ? ICON_MAP[ctx.icon] : null;
+
+          return (
+            <div
+              key={ctx.id}
+              data-testid={`context-row-${ctx.id}`}
+              className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-accent/40 group transition-colors"
+            >
+              <span
+                data-testid={`settings-dot-${ctx.id}`}
+                className="size-2.5 rounded-full shrink-0"
+                style={{ backgroundColor: ctx.color ?? undefined }}
+              />
+              {Icon && <Icon className="size-4 text-muted-foreground" />}
+              <span className="text-sm flex-1">{ctx.name}</span>
               <button
-                onClick={() => {
-                  setShowAddForm(false);
-                  setAddName('');
-                  setAddColor(COLORS[0]);
-                  setAddIcon(ICON_OPTIONS[0]);
-                }}
-                className="px-2.5 py-1 text-xs rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                onClick={() => startEdit(ctx)}
+                className="p-1 rounded-md text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-foreground hover:bg-accent transition-all"
+                aria-label="Edit"
               >
-                Cancel
+                <Pencil className="size-3.5" />
               </button>
               <button
-                onClick={handleAdd}
-                className="px-2.5 py-1 text-xs rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                onClick={() => setDeletingId(ctx.id)}
+                className="p-1 rounded-md text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-destructive hover:bg-destructive/10 transition-all"
+                aria-label="Delete"
               >
-                Save
+                <Trash2 className="size-3.5" />
               </button>
             </div>
+          );
+        })}
+      </div>
+
+      {showAddForm ? (
+        <div className="space-y-3 p-3 rounded-lg bg-accent/40">
+          <input
+            type="text"
+            placeholder="Context name"
+            value={addName}
+            onChange={(e) => setAddName(e.target.value)}
+            className="w-full px-2.5 py-1.5 text-sm rounded-md bg-background/60 border-0 ring-1 ring-white/10 focus:ring-primary/50 focus:outline-none transition-shadow"
+            autoFocus
+          />
+          <ColorPicker value={addColor} onChange={setAddColor} />
+          <IconPicker value={addIcon} onChange={setAddIcon} />
+          <div className="flex gap-1.5 justify-end">
+            <button
+              onClick={() => {
+                setShowAddForm(false);
+                setAddName('');
+                setAddColor(COLORS[0]);
+                setAddIcon(ICON_OPTIONS[0]);
+              }}
+              className="px-2.5 py-1 text-xs rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleAdd}
+              className="px-2.5 py-1 text-xs rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              Save
+            </button>
           </div>
-        ) : (
-          <button
-            onClick={() => setShowAddForm(true)}
-            className="flex items-center gap-2 w-full px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent/40 rounded-lg transition-colors"
-          >
-            <Plus className="size-4" />
-            Add context
-          </button>
-        )}
-      </DialogContent>
-    </Dialog>
+        </div>
+      ) : (
+        <button
+          onClick={() => setShowAddForm(true)}
+          className="flex items-center gap-2 w-full px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent/40 rounded-lg transition-colors"
+        >
+          <Plus className="size-4" />
+          Add context
+        </button>
+      )}
+    </div>
   );
 }
 

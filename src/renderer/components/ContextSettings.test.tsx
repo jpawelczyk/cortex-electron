@@ -8,7 +8,6 @@ import type { Context, Task, Project } from '@shared/types';
 const mockCreateContext = vi.fn().mockResolvedValue({} as Context);
 const mockUpdateContext = vi.fn().mockResolvedValue({} as Context);
 const mockDeleteContext = vi.fn().mockResolvedValue(undefined);
-const mockOnOpenChange = vi.fn();
 
 let mockContexts: Context[] = [];
 let mockTasks: Task[] = [];
@@ -85,8 +84,8 @@ describe('ContextSettings', () => {
     mockProjects = [];
   });
 
-  const renderModal = () =>
-    render(<ContextSettings open={true} onOpenChange={mockOnOpenChange} />);
+  const renderComponent = () =>
+    render(<ContextSettings />);
 
   describe('list', () => {
     it('renders all existing contexts', () => {
@@ -95,7 +94,7 @@ describe('ContextSettings', () => {
         fakeContext({ id: 'ctx-2', name: 'Personal', color: '#22c55e' }),
         fakeContext({ id: 'ctx-3', name: 'Research', color: '#06b6d4' }),
       ];
-      renderModal();
+      renderComponent();
       expect(screen.getByText('Work')).toBeInTheDocument();
       expect(screen.getByText('Personal')).toBeInTheDocument();
       expect(screen.getByText('Research')).toBeInTheDocument();
@@ -103,21 +102,21 @@ describe('ContextSettings', () => {
 
     it('shows colored dot for each context', () => {
       mockContexts = [fakeContext({ color: '#f97316' })];
-      renderModal();
+      renderComponent();
       const dot = screen.getByTestId('settings-dot-ctx-1');
       expect(dot).toHaveStyle({ backgroundColor: '#f97316' });
     });
 
     it('shows Lucide icon for known icon names', () => {
       mockContexts = [fakeContext({ icon: 'Briefcase' })];
-      renderModal();
+      renderComponent();
       const row = screen.getByTestId('context-row-ctx-1');
       expect(row.querySelector('.lucide-briefcase')).toBeInTheDocument();
     });
 
     it('shows empty state when no contexts', () => {
       mockContexts = [];
-      renderModal();
+      renderComponent();
       expect(screen.getByText(/no contexts/i)).toBeInTheDocument();
     });
   });
@@ -125,7 +124,7 @@ describe('ContextSettings', () => {
   describe('add', () => {
     it('creates a context when form is filled and saved', async () => {
       mockContexts = [];
-      renderModal();
+      renderComponent();
       fireEvent.click(screen.getByRole('button', { name: /add context/i }));
       const nameInput = screen.getByPlaceholderText(/context name/i);
       fireEvent.change(nameInput, { target: { value: 'Side Projects' } });
@@ -139,7 +138,7 @@ describe('ContextSettings', () => {
 
     it('does not save when name is empty', () => {
       mockContexts = [];
-      renderModal();
+      renderComponent();
       fireEvent.click(screen.getByRole('button', { name: /add context/i }));
       fireEvent.click(screen.getByRole('button', { name: /^save$/i }));
       expect(mockCreateContext).not.toHaveBeenCalled();
@@ -147,7 +146,7 @@ describe('ContextSettings', () => {
 
     it('passes selected color to createContext', async () => {
       mockContexts = [];
-      renderModal();
+      renderComponent();
       fireEvent.click(screen.getByRole('button', { name: /add context/i }));
       const nameInput = screen.getByPlaceholderText(/context name/i);
       fireEvent.change(nameInput, { target: { value: 'Test' } });
@@ -163,7 +162,7 @@ describe('ContextSettings', () => {
 
     it('passes selected icon to createContext', async () => {
       mockContexts = [];
-      renderModal();
+      renderComponent();
       fireEvent.click(screen.getByRole('button', { name: /add context/i }));
       const nameInput = screen.getByPlaceholderText(/context name/i);
       fireEvent.change(nameInput, { target: { value: 'Test' } });
@@ -178,7 +177,7 @@ describe('ContextSettings', () => {
 
     it('resets form after successful create', async () => {
       mockContexts = [];
-      renderModal();
+      renderComponent();
       fireEvent.click(screen.getByRole('button', { name: /add context/i }));
       const nameInput = screen.getByPlaceholderText(/context name/i);
       fireEvent.change(nameInput, { target: { value: 'Test' } });
@@ -192,7 +191,7 @@ describe('ContextSettings', () => {
   describe('edit', () => {
     it('clicking edit shows input with current name', () => {
       mockContexts = [fakeContext({ name: 'Work' })];
-      renderModal();
+      renderComponent();
       fireEvent.click(screen.getByRole('button', { name: /edit/i }));
       const input = screen.getByDisplayValue('Work');
       expect(input).toBeInTheDocument();
@@ -200,7 +199,7 @@ describe('ContextSettings', () => {
 
     it('saving edit calls updateContext with new values', () => {
       mockContexts = [fakeContext({ id: 'ctx-1', name: 'Work' })];
-      renderModal();
+      renderComponent();
       fireEvent.click(screen.getByRole('button', { name: /edit/i }));
       const input = screen.getByDisplayValue('Work');
       fireEvent.change(input, { target: { value: 'Office' } });
@@ -213,7 +212,7 @@ describe('ContextSettings', () => {
 
     it('cancelling edit reverts to display mode', () => {
       mockContexts = [fakeContext({ name: 'Work' })];
-      renderModal();
+      renderComponent();
       fireEvent.click(screen.getByRole('button', { name: /edit/i }));
       expect(screen.getByDisplayValue('Work')).toBeInTheDocument();
       fireEvent.click(screen.getByRole('button', { name: /cancel/i }));
@@ -230,7 +229,7 @@ describe('ContextSettings', () => {
         fakeTask({ id: 't2', context_id: 'ctx-1' }),
       ];
       mockProjects = [fakeProject({ id: 'p1', context_id: 'ctx-1' })];
-      renderModal();
+      renderComponent();
       fireEvent.click(screen.getByRole('button', { name: /delete/i }));
       expect(screen.getByText(/3 items/i)).toBeInTheDocument();
       expect(screen.getByText('Work')).toBeInTheDocument();
@@ -239,7 +238,7 @@ describe('ContextSettings', () => {
 
     it('confirming delete calls deleteContext', () => {
       mockContexts = [fakeContext({ id: 'ctx-1', name: 'Work' })];
-      renderModal();
+      renderComponent();
       fireEvent.click(screen.getByRole('button', { name: /delete/i }));
       fireEvent.click(screen.getByRole('button', { name: /confirm/i }));
       expect(mockDeleteContext).toHaveBeenCalledWith('ctx-1');
@@ -247,7 +246,7 @@ describe('ContextSettings', () => {
 
     it('cancelling delete hides confirmation', () => {
       mockContexts = [fakeContext({ id: 'ctx-1', name: 'Work' })];
-      renderModal();
+      renderComponent();
       fireEvent.click(screen.getByRole('button', { name: /delete/i }));
       expect(screen.getByRole('button', { name: /confirm/i })).toBeInTheDocument();
       fireEvent.click(screen.getByRole('button', { name: /cancel/i }));
@@ -258,7 +257,7 @@ describe('ContextSettings', () => {
       mockContexts = [fakeContext({ id: 'ctx-1', name: 'Work' })];
       mockTasks = [];
       mockProjects = [];
-      renderModal();
+      renderComponent();
       fireEvent.click(screen.getByRole('button', { name: /delete/i }));
       expect(screen.getByText(/0 items/i)).toBeInTheDocument();
     });
@@ -266,7 +265,7 @@ describe('ContextSettings', () => {
 
   describe('color picker', () => {
     it('renders color swatches in add form', () => {
-      renderModal();
+      renderComponent();
       fireEvent.click(screen.getByRole('button', { name: /add context/i }));
       expect(screen.getByTestId('color-swatch-#f97316')).toBeInTheDocument();
       expect(screen.getByTestId('color-swatch-#22c55e')).toBeInTheDocument();
@@ -274,7 +273,7 @@ describe('ContextSettings', () => {
     });
 
     it('clicking a swatch selects it (visual ring)', () => {
-      renderModal();
+      renderComponent();
       fireEvent.click(screen.getByRole('button', { name: /add context/i }));
       const swatch = screen.getByTestId('color-swatch-#8b5cf6');
       fireEvent.click(swatch);
