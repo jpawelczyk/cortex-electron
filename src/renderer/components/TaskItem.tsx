@@ -42,9 +42,7 @@ function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, isComple
   const deselectTask = useStore((s) => s.deselectTask);
   const projects = useStore((s) => s.projects);
   const contexts = useStore((s) => s.contexts);
-  const fetchProjects = useStore((s) => s.fetchProjects);
   const agents = useStore((s) => s.agents);
-  const fetchAgents = useStore((s) => s.fetchAgents);
   const authUser = useStore((s) => s.authUser) as { id: string } | null;
 
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -201,20 +199,6 @@ function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, isComple
       active: task.status === 'someday',
     },
   ], [task.id, task.status, updateTask]);
-
-  // Fetch projects on mount if not loaded
-  useEffect(() => {
-    if (projects.length === 0) {
-      fetchProjects();
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- intentionally only on mount
-
-  // Fetch agents on mount if not loaded
-  useEffect(() => {
-    if (agents.length === 0) {
-      fetchAgents();
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- intentionally only on mount
 
   const activeProjects = useMemo(
     () => projects.filter((p) => p.status !== 'completed' && p.status !== 'archived'),

@@ -275,45 +275,4 @@ describe('TaskSlice', () => {
     });
   });
 
-  describe('derived getters', () => {
-    const tasks = [
-      fakeTask({ id: '1', status: 'inbox', project_id: null }),
-      fakeTask({ id: '2', status: 'today', project_id: 'proj-1' }),
-      fakeTask({ id: '3', status: 'inbox', project_id: 'proj-1' }),
-      fakeTask({ id: '4', status: 'someday', project_id: null }),
-    ];
-
-    it('getTasksByStatus filters by status', () => {
-      const store = createStore({ tasks });
-      const inboxTasks = store.getTasksByStatus('inbox');
-      expect(inboxTasks).toHaveLength(2);
-      expect(inboxTasks.map((t) => t.id)).toEqual(['1', '3']);
-    });
-
-    it('getTasksByProject filters by project_id', () => {
-      const store = createStore({ tasks });
-      const projectTasks = store.getTasksByProject('proj-1');
-      expect(projectTasks).toHaveLength(2);
-      expect(projectTasks.map((t) => t.id)).toEqual(['2', '3']);
-    });
-
-    it('getInboxTasks returns only inbox tasks', () => {
-      const store = createStore({ tasks });
-      const inboxTasks = store.getInboxTasks();
-      expect(inboxTasks).toHaveLength(2);
-      expect(inboxTasks.every((t) => t.status === 'inbox')).toBe(true);
-    });
-
-    it('getInboxTasks excludes inbox tasks with a when_date', () => {
-      const store = createStore({
-        tasks: [
-          fakeTask({ id: '1', status: 'inbox', when_date: null }),
-          fakeTask({ id: '2', status: 'inbox', when_date: '2026-02-19' }),
-        ],
-      });
-      const inboxTasks = store.getInboxTasks();
-      expect(inboxTasks).toHaveLength(1);
-      expect(inboxTasks[0].id).toBe('1');
-    });
-  });
 });

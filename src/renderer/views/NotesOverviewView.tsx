@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { parseISO } from 'date-fns';
 import { FileText, Pin, Plus } from 'lucide-react';
 import { useStore } from '../stores';
@@ -31,7 +31,7 @@ function formatRelativeTime(iso: string): string {
   return date.toLocaleDateString();
 }
 
-function NoteRow({ note, onClick, contexts }: { note: Note; onClick: () => void; contexts: Context[] }) {
+const NoteRow = React.memo(function NoteRow({ note, onClick, contexts }: { note: Note; onClick: () => void; contexts: Context[] }) {
   const ctx = note.context_id ? contexts.find(c => c.id === note.context_id) : null;
   const preview = getPreview(note.content);
   return (
@@ -58,7 +58,7 @@ function NoteRow({ note, onClick, contexts }: { note: Note; onClick: () => void;
       <span className="text-xs text-muted-foreground shrink-0 mt-0.5">{formatRelativeTime(note.updated_at)}</span>
     </div>
   );
-}
+});
 
 export function NotesOverviewView() {
   const notes = useStore(s => s.notes);

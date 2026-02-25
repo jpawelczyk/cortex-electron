@@ -1,5 +1,4 @@
-import { v4 as uuid } from 'uuid';
-import { createHash } from 'crypto';
+import { randomUUID, createHash } from 'crypto';
 import type { AIAgent, CreateAIAgentInput } from '@shared/types';
 import type { DbContext } from '../db/types';
 
@@ -35,7 +34,7 @@ export function createAIAgentService(ctx: DbContext): AIAgentService {
 
   return {
     async create(input: CreateAIAgentInput): Promise<{ agent: AIAgent; key: string }> {
-      const id = uuid();
+      const id = randomUUID();
       const now = new Date().toISOString();
       const { key, hash } = generateApiKey();
       const permissions = input.permissions ?? { read: true, write: true };

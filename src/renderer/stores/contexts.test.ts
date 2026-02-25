@@ -208,42 +208,4 @@ describe('ContextSlice', () => {
     });
   });
 
-  describe('getFilteredByContext', () => {
-    const items = [
-      { id: '1', context_id: 'ctx-1' },
-      { id: '2', context_id: 'ctx-2' },
-      { id: '3', context_id: null },
-      { id: '4', context_id: 'ctx-1' },
-    ];
-
-    it('returns all items when no filter active', () => {
-      const store = createStore({ activeContextIds: [] });
-      expect(store.getFilteredByContext(items)).toEqual(items);
-    });
-
-    it('returns only matching items when filter active', () => {
-      const store = createStore({ activeContextIds: ['ctx-1'] });
-      const result = store.getFilteredByContext(items);
-      expect(result).toEqual([
-        { id: '1', context_id: 'ctx-1' },
-        { id: '4', context_id: 'ctx-1' },
-      ]);
-    });
-
-    it('supports multiple active contexts', () => {
-      const store = createStore({ activeContextIds: ['ctx-1', 'ctx-2'] });
-      const result = store.getFilteredByContext(items);
-      expect(result).toEqual([
-        { id: '1', context_id: 'ctx-1' },
-        { id: '2', context_id: 'ctx-2' },
-        { id: '4', context_id: 'ctx-1' },
-      ]);
-    });
-
-    it('excludes null context_id items when filter is active', () => {
-      const store = createStore({ activeContextIds: ['ctx-1'] });
-      const result = store.getFilteredByContext(items);
-      expect(result.find(i => i.context_id === null)).toBeUndefined();
-    });
-  });
 });

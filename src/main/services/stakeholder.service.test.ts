@@ -198,10 +198,10 @@ describe('StakeholderService', () => {
       expect(raw?.deleted_at).not.toBeNull();
     });
 
-    it('throws error for non-existent stakeholder', async () => {
+    it('is a no-op for non-existent stakeholder', async () => {
       await expect(
         stakeholderService.delete('non-existent')
-      ).rejects.toThrow('Stakeholder not found');
+      ).resolves.toBeUndefined();
     });
   });
 });

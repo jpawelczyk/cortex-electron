@@ -15,10 +15,6 @@ export interface TaskSlice {
   fetchTrashedTasks: () => Promise<void>;
   restoreTask: (id: string) => Promise<void>;
   emptyTrash: () => Promise<void>;
-
-  getTasksByStatus: (status: string) => Task[];
-  getTasksByProject: (projectId: string) => Task[];
-  getInboxTasks: () => Task[];
 }
 
 export const createTaskSlice: StateCreator<TaskSlice> = (set, get) => ({
@@ -113,8 +109,4 @@ export const createTaskSlice: StateCreator<TaskSlice> = (set, get) => ({
       set({ tasksError: err instanceof Error ? err.message : 'Unknown error' });
     }
   },
-
-  getTasksByStatus: (status) => get().tasks.filter((t) => t.status === status),
-  getTasksByProject: (projectId) => get().tasks.filter((t) => t.project_id === projectId),
-  getInboxTasks: () => get().tasks.filter((t) => t.status === 'inbox' && !t.when_date),
 });

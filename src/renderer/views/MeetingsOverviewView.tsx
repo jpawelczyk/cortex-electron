@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Video, Plus, Search } from 'lucide-react';
 import { parseISO, isToday, isBefore, startOfDay } from 'date-fns';
 import { useStore } from '../stores';
@@ -38,7 +38,7 @@ function formatMeetingDate(iso: string): string {
   return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
-function MeetingRow({ meeting, onClick, contexts }: { meeting: Meeting; onClick: () => void; contexts: Context[] }) {
+const MeetingRow = React.memo(function MeetingRow({ meeting, onClick, contexts }: { meeting: Meeting; onClick: () => void; contexts: Context[] }) {
   const ctx = meeting.context_id ? contexts.find(c => c.id === meeting.context_id) : null;
 
   return (
@@ -71,7 +71,7 @@ function MeetingRow({ meeting, onClick, contexts }: { meeting: Meeting; onClick:
       </div>
     </div>
   );
-}
+});
 
 export function MeetingsOverviewView() {
   const meetings = useStore(s => s.meetings);

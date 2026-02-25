@@ -15,11 +15,9 @@ export interface ContextSlice {
   toggleContext: (id: string) => void;
   setActiveContexts: (ids: string[]) => void;
   clearContextFilter: () => void;
-
-  getFilteredByContext: <T extends { context_id: string | null }>(items: T[]) => T[];
 }
 
-export const createContextSlice: StateCreator<ContextSlice> = (set, get) => ({
+export const createContextSlice: StateCreator<ContextSlice> = (set) => ({
   contexts: [],
   contextsLoading: false,
   contextsError: null,
@@ -83,12 +81,4 @@ export const createContextSlice: StateCreator<ContextSlice> = (set, get) => ({
   setActiveContexts: (ids) => set({ activeContextIds: ids }),
 
   clearContextFilter: () => set({ activeContextIds: [] }),
-
-  getFilteredByContext: <T extends { context_id: string | null }>(items: T[]): T[] => {
-    const { activeContextIds } = get();
-    if (activeContextIds.length === 0) return items;
-    return items.filter(
-      (item) => item.context_id !== null && activeContextIds.includes(item.context_id),
-    );
-  },
 });

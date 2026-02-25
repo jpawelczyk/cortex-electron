@@ -1,5 +1,4 @@
 import { useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { Task } from '@shared/types';
 import { TaskItem } from './TaskItem';
@@ -7,12 +6,6 @@ import { TaskItem } from './TaskItem';
 const VIRTUAL_THRESHOLD = 50;
 // Estimated row height in pixels for virtualizer
 const ESTIMATED_ROW_HEIGHT = 52;
-
-const taskVariants = {
-  initial: { opacity: 0, y: -8 },
-  animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -8 },
-};
 
 interface TaskListProps {
   tasks: Task[];
@@ -32,28 +25,21 @@ function AnimatedTaskList({
 }: Omit<TaskListProps, 'title'>) {
   return (
     <div className="flex flex-col">
-      <AnimatePresence mode="popLayout">
-        {tasks.map((task) => (
-          <motion.div
-            key={task.id}
-            layout
-            variants={taskVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            transition={{ duration: 0.2, ease: [0.2, 0, 0, 1] }}
-          >
-            <TaskItem
-              task={task}
-              onComplete={onCompleteTask}
-              onSelect={onSelectTask}
-              isSelected={selectedTaskId === task.id}
-              isExpanded={selectedTaskId === task.id}
-              isCompleted={completedIds?.has(task.id)}
-            />
-          </motion.div>
-        ))}
-      </AnimatePresence>
+      {tasks.map((task) => (
+        <div
+          key={task.id}
+          className="animate-task-enter"
+        >
+          <TaskItem
+            task={task}
+            onComplete={onCompleteTask}
+            onSelect={onSelectTask}
+            isSelected={selectedTaskId === task.id}
+            isExpanded={selectedTaskId === task.id}
+            isCompleted={completedIds?.has(task.id)}
+          />
+        </div>
+      ))}
     </div>
   );
 }

@@ -207,10 +207,10 @@ describe('ProjectService', () => {
       expect(raw?.deleted_at).not.toBeNull();
     });
 
-    it('throws error for non-existent project', async () => {
+    it('is a no-op for non-existent project', async () => {
       await expect(
         projectService.delete('non-existent')
-      ).rejects.toThrow('Project not found');
+      ).resolves.toBeUndefined();
     });
   });
 

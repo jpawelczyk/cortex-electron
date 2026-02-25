@@ -5,6 +5,7 @@
   --font-mono: 'Geist Mono', monospace;
 
   --animate-card-enter: card-enter 200ms ease-out;
+  --animate-task-enter: task-enter 0.2s cubic-bezier(0.2, 0, 0, 1) both;
 
   --radius: 0.625rem;
   --radius-sm: calc(var(--radius) - 4px);
@@ -74,6 +75,21 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+@keyframes task-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@utility animate-task-enter {
+  animation: task-enter 0.2s cubic-bezier(0.2, 0, 0, 1) both;
 }
 
 /* macOS-style drag region for hidden titlebar */

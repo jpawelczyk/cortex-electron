@@ -70,6 +70,11 @@ export function InlineTaskCard() {
   checklistRef.current = checklistItems;
   activeTokenRef.current = activeToken;
 
+  const contextsRef = useRef(contexts);
+  contextsRef.current = contexts;
+  const projectsRef = useRef(projects);
+  projectsRef.current = projects;
+
   const defaultProjectId = inlineCreateDefaults?.project_id ?? null;
   const defaultProjectIdRef = useRef(defaultProjectId);
   defaultProjectIdRef.current = defaultProjectId;
@@ -93,7 +98,7 @@ export function InlineTaskCard() {
     }
 
     // Re-parse at save time using current state
-    const parsedAtSave = parseTaskInput(trimmedRaw, contexts ?? [], projects ?? []);
+    const parsedAtSave = parseTaskInput(trimmedRaw, contextsRef.current ?? [], projectsRef.current ?? []);
     const trimmed = parsedAtSave.title.trim();
 
     if (!trimmed) {
@@ -153,7 +158,7 @@ export function InlineTaskCard() {
     }
 
     cancelInlineCreate();
-  }, [createTask, cancelInlineCreate, createChecklistItem, contexts, projects, activeContextIds]);
+  }, [createTask, cancelInlineCreate, createChecklistItem, activeContextIds]);
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;

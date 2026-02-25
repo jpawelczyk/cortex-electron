@@ -1,44 +1,38 @@
+import React from 'react';
 import { ChevronLeft, ChevronRight, Plus, X } from 'lucide-react';
 import { useStore } from '../stores';
 import { VIEW_META } from '../lib/viewMeta';
 
 function useTabTitle(tabId: string): string {
-  const tabs = useStore((s) => s.tabs);
-  const projects = useStore((s) => s.projects);
-  const notes = useStore((s) => s.notes);
-  const meetings = useStore((s) => s.meetings);
-  const stakeholders = useStore((s) => s.stakeholders);
-
-  const tab = tabs.find((t) => t.id === tabId);
-  if (!tab) return 'Home';
-
-  const state = tab.history[tab.historyIndex];
-
-  if (state.entityId && state.entityType) {
-    switch (state.entityType) {
-      case 'project': {
-        const project = projects.find((p) => p.id === state.entityId);
-        return project?.title || 'Project';
-      }
-      case 'note': {
-        const note = notes.find((n) => n.id === state.entityId);
-        return note?.title || 'Note';
-      }
-      case 'meeting': {
-        const meeting = meetings.find((m) => m.id === state.entityId);
-        return meeting?.title || 'Meeting';
-      }
-      case 'stakeholder': {
-        const s = stakeholders.find((st) => st.id === state.entityId);
-        return s?.name || 'Person';
+  return useStore((s) => {
+    const tab = s.tabs.find((t) => t.id === tabId);
+    if (!tab) return 'Home';
+    const state = tab.history[tab.historyIndex];
+    if (state.entityId && state.entityType) {
+      switch (state.entityType) {
+        case 'project': {
+          const project = s.projects.find((p) => p.id === state.entityId);
+          return project?.title || 'Project';
+        }
+        case 'note': {
+          const note = s.notes.find((n) => n.id === state.entityId);
+          return note?.title || 'Note';
+        }
+        case 'meeting': {
+          const meeting = s.meetings.find((m) => m.id === state.entityId);
+          return meeting?.title || 'Meeting';
+        }
+        case 'stakeholder': {
+          const st = s.stakeholders.find((st) => st.id === state.entityId);
+          return st?.name || 'Person';
+        }
       }
     }
-  }
-
-  return VIEW_META[state.view]?.label ?? 'Home';
+    return VIEW_META[state.view]?.label ?? 'Home';
+  });
 }
 
-function TabButton({ tabId }: { tabId: string }) {
+const TabButton = React.memo(function TabButton({ tabId }: { tabId: string }) {
   const activeTabId = useStore((s) => s.activeTabId);
   const tabs = useStore((s) => s.tabs);
   const switchTab = useStore((s) => s.switchTab);
@@ -90,18 +84,21 @@ function TabButton({ tabId }: { tabId: string }) {
       )}
     </button>
   );
-}
+});
 
 export function TabBar() {
   const tabs = useStore((s) => s.tabs);
   const createTab = useStore((s) => s.createTab);
-  const canGoBack = useStore((s) => s.canGoBack);
-  const canGoForward = useStore((s) => s.canGoForward);
   const goBack = useStore((s) => s.goBack);
   const goForward = useStore((s) => s.goForward);
-
-  const back = canGoBack();
-  const forward = canGoForward();
+  const back = useStore((s) => {
+    const tab = s.tabs.find((t) => t.id === s.activeTabId);
+    return tab ? tab.historyIndex > 0 : false;
+  });
+  const forward = useStore((s) => {
+    const tab = s.tabs.find((t) => t.id === s.activeTabId);
+    return tab ? tab.historyIndex < tab.history.length - 1 : false;
+  });
 
   return (
     <div className="no-drag flex items-center gap-0.5">

@@ -1,4 +1,4 @@
-import { v4 as uuid } from 'uuid';
+import { randomUUID } from 'crypto';
 import type { ChecklistItem, CreateChecklistItemInput, UpdateChecklistItemInput } from '@shared/types';
 import type { DbContext } from '../db/types';
 
@@ -30,7 +30,7 @@ export function createChecklistService(ctx: DbContext): ChecklistService {
 
   return {
     async create(input: CreateChecklistItemInput): Promise<ChecklistItem> {
-      const id = uuid();
+      const id = randomUUID();
       const now = new Date().toISOString();
 
       const orderRow = await db.getOptional<{ next_order: number }>(

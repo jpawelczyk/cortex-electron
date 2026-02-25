@@ -552,10 +552,10 @@ describe('TaskService', () => {
       expect(raw?.deleted_at).not.toBeNull();
     });
 
-    it('throws error for non-existent task', async () => {
+    it('is a no-op for non-existent task', async () => {
       await expect(
         taskService.delete('non-existent')
-      ).rejects.toThrow('Task not found');
+      ).resolves.toBeUndefined();
     });
 
     it('soft-deleting a task also soft-deletes its checklist items', async () => {

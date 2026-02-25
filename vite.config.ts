@@ -46,6 +46,27 @@ export default defineConfig({
   ],
   build: {
     outDir: path.resolve(__dirname, 'dist/renderer'),
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom'],
+          'vendor-tiptap': [
+            '@tiptap/react',
+            '@tiptap/starter-kit',
+            '@tiptap/extension-link',
+            '@tiptap/extension-placeholder',
+            '@tiptap/extension-task-list',
+            '@tiptap/extension-task-item',
+            'tiptap-markdown',
+          ],
+          'vendor-ui': [
+            '@radix-ui/react-popover',
+            'radix-ui',
+            'lucide-react',
+          ],
+        },
+      },
+    },
   },
   resolve: {
     alias: {

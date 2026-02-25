@@ -199,10 +199,10 @@ describe('NoteService', () => {
       expect(raw?.deleted_at).not.toBeNull();
     });
 
-    it('throws error for non-existent note', async () => {
+    it('is a no-op for non-existent note', async () => {
       await expect(
         noteService.delete('non-existent')
-      ).rejects.toThrow('Note not found');
+      ).resolves.toBeUndefined();
     });
   });
 

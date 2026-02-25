@@ -999,11 +999,11 @@ describe('TaskItem assign-to-agent (expanded)', () => {
     expect(screen.getByText('No agents available')).toBeInTheDocument();
   });
 
-  it('fetches agents on mount when agents list is empty', () => {
+  it('does not fetch agents per-item (App.tsx handles bulk fetch)', () => {
     mockAgents = [];
     render(
       <TaskItem task={fakeTask()} onComplete={vi.fn()} isExpanded />
     );
-    expect(mockFetchAgents).toHaveBeenCalled();
+    expect(mockFetchAgents).not.toHaveBeenCalled();
   });
 });

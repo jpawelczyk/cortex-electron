@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { format } from 'date-fns';
 import { Plus, Search } from 'lucide-react';
 import { ContextSelector } from './components/ContextSelector';
@@ -16,18 +16,19 @@ import { LogbookView } from './views/LogbookView';
 import { ProjectsOverviewView } from './views/ProjectsOverviewView';
 import { ProjectDetailView } from './views/ProjectDetailView';
 import { NotesOverviewView } from './views/NotesOverviewView';
-import { NoteDetailView } from './views/NoteDetailView';
 import { StakeholdersOverviewView } from './views/StakeholdersOverviewView';
 import { StakeholderDetailView } from './views/StakeholderDetailView';
 import { MeetingsOverviewView } from './views/MeetingsOverviewView';
-import { MeetingDetailView } from './views/MeetingDetailView';
-import { SettingsView } from './views/SettingsView';
 import { HomeView } from './views/HomeView';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
 import { SignIn } from './views/auth/sign-in';
 import { SignUp } from './views/auth/sign-up';
 import type { Task } from '@shared/types';
+
+const NoteDetailView = lazy(() => import('./views/NoteDetailView').then(m => ({ default: m.NoteDetailView })));
+const MeetingDetailView = lazy(() => import('./views/MeetingDetailView').then(m => ({ default: m.MeetingDetailView })));
+const SettingsView = lazy(() => import('./views/SettingsView').then(m => ({ default: m.SettingsView })));
 
 export default function App() {
   const authSession = useStore((s) => s.authSession);
@@ -76,10 +77,6 @@ function AuthenticatedApp() {
   const startInlineProjectCreate = useStore((s) => s.startInlineProjectCreate);
   const startInlineNoteCreate = useStore((s) => s.startInlineNoteCreate);
   const startInlineStakeholderCreate = useStore((s) => s.startInlineStakeholderCreate);
-  const selectedProjectId = useStore((s) => s.selectedProjectId);
-  const selectedNoteId = useStore((s) => s.selectedNoteId);
-  const selectedStakeholderId = useStore((s) => s.selectedStakeholderId);
-  const selectedMeetingId = useStore((s) => s.selectedMeetingId);
   const fetchMeetings = useStore((s) => s.fetchMeetings);
   const startInlineMeetingCreate = useStore((s) => s.startInlineMeetingCreate);
   const selectTask = useStore((s) => s.selectTask);
@@ -87,8 +84,35 @@ function AuthenticatedApp() {
   const openCommandPalette = useStore((s) => s.openCommandPalette);
 
   const navigateTab = useStore((s) => s.navigateTab);
-  const activeTabState = useStore((s) => s.getActiveTabState());
-  const activeView = activeTabState.view;
+  const activeView = useStore((s) => {
+    const tab = s.tabs.find((t) => t.id === s.activeTabId);
+    if (!tab) return 'home' as SidebarView;
+    return tab.history[tab.historyIndex].view as SidebarView;
+  });
+  const selectedProjectId = useStore((s) => {
+    const tab = s.tabs.find((t) => t.id === s.activeTabId);
+    if (!tab) return undefined;
+    const state = tab.history[tab.historyIndex];
+    return state.entityType === 'project' ? state.entityId : undefined;
+  });
+  const selectedNoteId = useStore((s) => {
+    const tab = s.tabs.find((t) => t.id === s.activeTabId);
+    if (!tab) return undefined;
+    const state = tab.history[tab.historyIndex];
+    return state.entityType === 'note' ? state.entityId : undefined;
+  });
+  const selectedStakeholderId = useStore((s) => {
+    const tab = s.tabs.find((t) => t.id === s.activeTabId);
+    if (!tab) return undefined;
+    const state = tab.history[tab.historyIndex];
+    return state.entityType === 'stakeholder' ? state.entityId : undefined;
+  });
+  const selectedMeetingId = useStore((s) => {
+    const tab = s.tabs.find((t) => t.id === s.activeTabId);
+    if (!tab) return undefined;
+    const state = tab.history[tab.historyIndex];
+    return state.entityType === 'meeting' ? state.entityId : undefined;
+  });
 
   const handleViewChange = useCallback((view: SidebarView) => {
     navigateTab({ view });
@@ -113,7 +137,7 @@ function AuthenticatedApp() {
   const today = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
 
   const performContextCreate = useCallback(() => {
-    const action = getCreateAction({ activeView, selectedProjectId, today });
+    const action = getCreateAction({ activeView, selectedProjectId: selectedProjectId ?? null, today });
     executeCreateAction(action, {
       setActiveView: handleViewChange,
       startInlineCreate,
@@ -254,12 +278,12 @@ function AuthenticatedApp() {
         {activeView === 'projects' && selectedProjectId && <ProjectDetailView projectId={selectedProjectId} />}
         {activeView === 'meetings' && (
           selectedMeetingId
-            ? <MeetingDetailView meetingId={selectedMeetingId} />
+            ? <Suspense fallback={null}><MeetingDetailView meetingId={selectedMeetingId} /></Suspense>
             : <MeetingsOverviewView />
         )}
         {activeView === 'notes' && (
           selectedNoteId
-            ? <NoteDetailView noteId={selectedNoteId} />
+            ? <Suspense fallback={null}><NoteDetailView noteId={selectedNoteId} /></Suspense>
             : <NotesOverviewView />
         )}
         {activeView === 'stakeholders' && (
@@ -267,7 +291,7 @@ function AuthenticatedApp() {
             ? <StakeholderDetailView stakeholderId={selectedStakeholderId} />
             : <StakeholdersOverviewView />
         )}
-        {activeView === 'settings' && <SettingsView />}
+        {activeView === 'settings' && <Suspense fallback={null}><SettingsView /></Suspense>}
       </main>
 
       <CommandPalette

@@ -1,4 +1,4 @@
-import { v4 as uuid } from 'uuid';
+import { randomUUID } from 'crypto';
 import type { Project, Task, ProjectStatus, CreateProjectInput, UpdateProjectInput } from '@shared/types';
 import type { DbContext } from '../db/types';
 
@@ -17,7 +17,7 @@ export function createProjectService(ctx: DbContext): ProjectService {
 
   return {
     async create(input: CreateProjectInput): Promise<Project> {
-      const id = uuid();
+      const id = randomUUID();
       const now = new Date().toISOString();
 
       const project: Project = {
@@ -105,11 +105,6 @@ export function createProjectService(ctx: DbContext): ProjectService {
     },
 
     async delete(id: string): Promise<void> {
-      const existing = await this.get(id);
-      if (!existing) {
-        throw new Error('Project not found');
-      }
-
       const now = new Date().toISOString();
       await db.execute(
         'UPDATE projects SET deleted_at = ?, updated_at = ? WHERE id = ?',

@@ -31,13 +31,16 @@ export class FtsIndex {
     title: string,
     content: string,
   ): void {
-    this.db.prepare('DELETE FROM search_fts WHERE entity_id = ?').run(entityId);
-    this.db
-      .prepare(
-        `INSERT INTO search_fts (entity_id, entity_type, title, content)
-         VALUES (?, ?, ?, ?)`,
-      )
-      .run(entityId, entityType, title, content);
+    const upsert = this.db.transaction(() => {
+      this.db.prepare('DELETE FROM search_fts WHERE entity_id = ?').run(entityId);
+      this.db
+        .prepare(
+          `INSERT INTO search_fts (entity_id, entity_type, title, content)
+           VALUES (?, ?, ?, ?)`,
+        )
+        .run(entityId, entityType, title, content);
+    });
+    upsert();
   }
 
   deleteEntity(entityId: string): void {

@@ -1,4 +1,4 @@
-import { v4 as uuid } from 'uuid';
+import { randomUUID } from 'crypto';
 import type { Meeting, CreateMeetingInput, UpdateMeetingInput } from '@shared/types';
 import type { DbContext } from '../db/types';
 
@@ -19,7 +19,7 @@ export function createMeetingService(ctx: DbContext): MeetingService {
 
   return {
     async create(input: CreateMeetingInput): Promise<Meeting> {
-      const id = uuid();
+      const id = randomUUID();
       const now = new Date().toISOString();
 
       const meeting: Meeting = {
@@ -115,11 +115,6 @@ export function createMeetingService(ctx: DbContext): MeetingService {
     },
 
     async delete(id: string): Promise<void> {
-      const existing = await this.get(id);
-      if (!existing) {
-        throw new Error('Meeting not found');
-      }
-
       const now = new Date().toISOString();
       await db.execute(
         'UPDATE meetings SET deleted_at = ?, updated_at = ? WHERE id = ?',

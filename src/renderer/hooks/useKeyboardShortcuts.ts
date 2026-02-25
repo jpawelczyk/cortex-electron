@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import type { SidebarView } from '../components/Sidebar';
 import { useStore } from '../stores';
 
@@ -29,6 +29,11 @@ export function useKeyboardShortcuts({
   const activeTabId = useStore((s) => s.activeTabId);
   const switchTab = useStore((s) => s.switchTab);
 
+  const tabsRef = useRef(tabs);
+  tabsRef.current = tabs;
+  const activeTabIdRef = useRef(activeTabId);
+  activeTabIdRef.current = activeTabId;
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const active = document.activeElement;
@@ -52,7 +57,7 @@ export function useKeyboardShortcuts({
 
         if (e.key === 'w') {
           e.preventDefault();
-          closeTab(activeTabId);
+          closeTab(activeTabIdRef.current);
           return;
         }
 
@@ -92,12 +97,12 @@ export function useKeyboardShortcuts({
       // Ctrl+Tab / Ctrl+Shift+Tab to cycle tabs
       if (e.ctrlKey && e.key === 'Tab') {
         e.preventDefault();
-        const currentIdx = tabs.findIndex((t) => t.id === activeTabId);
+        const currentIdx = tabsRef.current.findIndex((t) => t.id === activeTabIdRef.current);
         if (currentIdx === -1) return;
         const nextIdx = e.shiftKey
-          ? (currentIdx - 1 + tabs.length) % tabs.length
-          : (currentIdx + 1) % tabs.length;
-        switchTab(tabs[nextIdx].id);
+          ? (currentIdx - 1 + tabsRef.current.length) % tabsRef.current.length
+          : (currentIdx + 1) % tabsRef.current.length;
+        switchTab(tabsRef.current[nextIdx].id);
         return;
       }
 
@@ -108,5 +113,5 @@ export function useKeyboardShortcuts({
 
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [setActiveView, deselectTask, performContextCreate, toggleCommandPalette, createTab, closeTab, goBack, goForward, tabs, activeTabId, switchTab]);
+  }, [setActiveView, deselectTask, performContextCreate, toggleCommandPalette, createTab, closeTab, goBack, goForward, switchTab]);
 }

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { cn } from '../lib/utils';
 
 interface TokenAutocompleteProps {
@@ -12,9 +12,10 @@ interface TokenAutocompleteProps {
 export function TokenAutocomplete({ items, query, onSelect, onDismiss, type }: TokenAutocompleteProps) {
   const [highlightedIndex, setHighlightedIndex] = useState(0);
 
-  const filtered = items
-    .filter((item) => item.name.toLowerCase().includes(query.toLowerCase()))
-    .slice(0, 6);
+  const filtered = useMemo(
+    () => items.filter((item) => item.name.toLowerCase().includes(query.toLowerCase())).slice(0, 6),
+    [items, query]
+  );
 
   // Reset highlight when filter changes
   useEffect(() => {
@@ -23,28 +24,37 @@ export function TokenAutocomplete({ items, query, onSelect, onDismiss, type }: T
 
   const listRef = useRef<HTMLUListElement>(null);
 
+  const filteredRef = useRef(filtered);
+  filteredRef.current = filtered;
+  const highlightedIndexRef = useRef(highlightedIndex);
+  highlightedIndexRef.current = highlightedIndex;
+  const onSelectRef = useRef(onSelect);
+  onSelectRef.current = onSelect;
+  const onDismissRef = useRef(onDismiss);
+  onDismissRef.current = onDismiss;
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'ArrowDown') {
         e.preventDefault();
-        setHighlightedIndex((i) => Math.min(i + 1, filtered.length - 1));
+        setHighlightedIndex((i) => Math.min(i + 1, filteredRef.current.length - 1));
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
         setHighlightedIndex((i) => Math.max(i - 1, 0));
       } else if (e.key === 'Enter' || e.key === 'Tab') {
         e.preventDefault();
-        if (filtered[highlightedIndex]) {
-          onSelect(filtered[highlightedIndex]);
+        if (filteredRef.current[highlightedIndexRef.current]) {
+          onSelectRef.current(filteredRef.current[highlightedIndexRef.current]);
         }
       } else if (e.key === 'Escape') {
         e.preventDefault();
-        onDismiss();
+        onDismissRef.current();
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [filtered, highlightedIndex, onSelect, onDismiss]);
+  }, []);
 
   if (filtered.length === 0) return null;
 

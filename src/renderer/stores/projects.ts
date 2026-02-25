@@ -1,5 +1,5 @@
 import { StateCreator } from 'zustand';
-import type { Project, CreateProjectInput, UpdateProjectInput, ProjectStatus } from '../../shared/types';
+import type { Project, CreateProjectInput, UpdateProjectInput } from '../../shared/types';
 
 export interface ProjectSlice {
   projects: Project[];
@@ -10,12 +10,9 @@ export interface ProjectSlice {
   createProject: (input: CreateProjectInput) => Promise<Project>;
   updateProject: (id: string, input: UpdateProjectInput) => Promise<Project>;
   deleteProject: (id: string) => Promise<void>;
-
-  getProjectsByStatus: (status: ProjectStatus) => Project[];
-  getProjectsByContext: (contextId: string) => Project[];
 }
 
-export const createProjectSlice: StateCreator<ProjectSlice> = (set, get) => ({
+export const createProjectSlice: StateCreator<ProjectSlice> = (set) => ({
   projects: [],
   projectsLoading: false,
   projectsError: null,
@@ -68,7 +65,4 @@ export const createProjectSlice: StateCreator<ProjectSlice> = (set, get) => ({
       set({ projectsError: err instanceof Error ? err.message : 'Unknown error' });
     }
   },
-
-  getProjectsByStatus: (status) => get().projects.filter((p) => p.status === status),
-  getProjectsByContext: (contextId) => get().projects.filter((p) => p.context_id === contextId),
 });

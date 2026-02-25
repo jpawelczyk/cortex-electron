@@ -183,10 +183,10 @@ describe('ContextService', () => {
       expect(raw?.deleted_at).not.toBeNull();
     });
 
-    it('throws error for non-existent context', async () => {
+    it('is a no-op for non-existent context', async () => {
       await expect(
         contextService.delete('non-existent')
-      ).rejects.toThrow('Context not found');
+      ).resolves.toBeUndefined();
     });
 
     it('orphans projects by setting context_id to null', async () => {

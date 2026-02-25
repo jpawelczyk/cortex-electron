@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Users, Plus, Search } from 'lucide-react';
 import { useStore } from '../stores';
 import { InlineStakeholderCard } from '../components/InlineStakeholderCard';
@@ -6,7 +6,7 @@ import type { Stakeholder } from '../../shared/types';
 
 type StakeholderSort = 'name' | 'updated' | 'organization';
 
-function StakeholderRow({ stakeholder, onClick }: { stakeholder: Stakeholder; onClick: () => void }) {
+const StakeholderRow = React.memo(function StakeholderRow({ stakeholder, onClick }: { stakeholder: Stakeholder; onClick: () => void }) {
   const initials = stakeholder.name
     .split(' ')
     .map(n => n[0])
@@ -36,7 +36,7 @@ function StakeholderRow({ stakeholder, onClick }: { stakeholder: Stakeholder; on
       </div>
     </div>
   );
-}
+});
 
 export function StakeholdersOverviewView() {
   const stakeholders = useStore(s => s.stakeholders);

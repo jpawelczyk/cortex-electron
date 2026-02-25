@@ -1,4 +1,4 @@
-import { v4 as uuid } from 'uuid';
+import { randomUUID } from 'crypto';
 import type { Context, Project, Task, CreateContextInput, UpdateContextInput } from '@shared/types';
 import type { DbContext } from '../db/types';
 
@@ -20,20 +20,18 @@ const DEFAULT_CONTEXTS: { name: string; color: string; icon: string; sort_order:
 
 export async function seedDefaultContexts(ctx: DbContext): Promise<void> {
   const { db } = ctx;
-
   const now = new Date().toISOString();
 
-  for (const def of DEFAULT_CONTEXTS) {
-    // Check by name to avoid duplicates when sync delivers the same context
-    const existing = await db.getOptional<{ id: string }>(
-      'SELECT id FROM contexts WHERE name = ? AND deleted_at IS NULL',
-      [def.name]
-    );
-    if (existing) continue;
+  const existing = await db.getAll<{ name: string }>(
+    'SELECT name FROM contexts WHERE deleted_at IS NULL'
+  );
+  const existingNames = new Set(existing.map(e => e.name));
 
+  for (const def of DEFAULT_CONTEXTS) {
+    if (existingNames.has(def.name)) continue;
     await db.execute(
       'INSERT INTO contexts (id, name, color, icon, sort_order, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [uuid(), def.name, def.color, def.icon, def.sort_order, now, now, null]
+      [randomUUID(), def.name, def.color, def.icon, def.sort_order, now, now, null]
     );
   }
 }
@@ -43,7 +41,7 @@ export function createContextService(ctx: DbContext): ContextService {
 
   return {
     async create(input: CreateContextInput): Promise<Context> {
-      const id = uuid();
+      const id = randomUUID();
       const now = new Date().toISOString();
 
       const context: Context = {
@@ -110,20 +108,12 @@ export function createContextService(ctx: DbContext): ContextService {
     },
 
     async delete(id: string): Promise<void> {
-      const existing = await this.get(id);
-      if (!existing) {
-        throw new Error('Context not found');
-      }
-
       const now = new Date().toISOString();
-
       await db.writeTransaction(async (tx) => {
         await tx.execute(
           'UPDATE contexts SET deleted_at = ?, updated_at = ? WHERE id = ?',
           [now, now, id]
         );
-
-        // Orphan all items belonging to this context
         await tx.execute(
           'UPDATE projects SET context_id = NULL, updated_at = ? WHERE context_id = ?',
           [now, id]

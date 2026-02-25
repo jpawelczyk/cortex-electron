@@ -1,4 +1,4 @@
-import { v4 as uuid } from 'uuid';
+import { randomUUID } from 'crypto';
 import type { Stakeholder, CreateStakeholderInput, UpdateStakeholderInput } from '@shared/types';
 import type { DbContext } from '../db/types';
 
@@ -15,7 +15,7 @@ export function createStakeholderService(ctx: DbContext): StakeholderService {
 
   return {
     async create(input: CreateStakeholderInput): Promise<Stakeholder> {
-      const id = uuid();
+      const id = randomUUID();
       const now = new Date().toISOString();
 
       const stakeholder: Stakeholder = {
@@ -90,11 +90,6 @@ export function createStakeholderService(ctx: DbContext): StakeholderService {
     },
 
     async delete(id: string): Promise<void> {
-      const existing = await this.get(id);
-      if (!existing) {
-        throw new Error('Stakeholder not found');
-      }
-
       const now = new Date().toISOString();
       await db.execute(
         'UPDATE stakeholders SET deleted_at = ?, updated_at = ? WHERE id = ?',

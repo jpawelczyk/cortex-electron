@@ -1,4 +1,4 @@
-import { v4 as uuid } from 'uuid';
+import { randomUUID } from 'crypto';
 import type { Note, CreateNoteInput, UpdateNoteInput } from '@shared/types';
 import type { DbContext } from '../db/types';
 
@@ -19,7 +19,7 @@ export function createNoteService(ctx: DbContext): NoteService {
 
   return {
     async create(input: CreateNoteInput): Promise<Note> {
-      const id = uuid();
+      const id = randomUUID();
       const now = new Date().toISOString();
 
       const note: Note = {
@@ -91,11 +91,6 @@ export function createNoteService(ctx: DbContext): NoteService {
     },
 
     async delete(id: string): Promise<void> {
-      const existing = await this.get(id);
-      if (!existing) {
-        throw new Error('Note not found');
-      }
-
       const now = new Date().toISOString();
       await db.execute(
         'UPDATE notes SET deleted_at = ?, updated_at = ? WHERE id = ?',

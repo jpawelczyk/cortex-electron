@@ -169,26 +169,4 @@ describe('ProjectSlice', () => {
     });
   });
 
-  describe('derived getters', () => {
-    const projects = [
-      fakeProject({ id: '1', status: 'active', context_id: 'ctx-1' }),
-      fakeProject({ id: '2', status: 'completed', context_id: 'ctx-2' }),
-      fakeProject({ id: '3', status: 'active', context_id: 'ctx-1' }),
-      fakeProject({ id: '4', status: 'archived', context_id: null }),
-    ];
-
-    it('getProjectsByStatus filters by status', () => {
-      const store = createStore({ projects });
-      const active = store.getProjectsByStatus('active');
-      expect(active).toHaveLength(2);
-      expect(active.map((p) => p.id)).toEqual(['1', '3']);
-    });
-
-    it('getProjectsByContext filters by context_id', () => {
-      const store = createStore({ projects });
-      const ctx1 = store.getProjectsByContext('ctx-1');
-      expect(ctx1).toHaveLength(2);
-      expect(ctx1.map((p) => p.id)).toEqual(['1', '3']);
-    });
-  });
 });

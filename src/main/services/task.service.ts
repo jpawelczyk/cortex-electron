@@ -1,4 +1,4 @@
-import { v4 as uuid } from 'uuid';
+import { randomUUID } from 'crypto';
 import type { Task, CreateTaskInput, UpdateTaskInput, TaskStatus } from '@shared/types';
 import type { DbContext } from '../db/types';
 
@@ -47,7 +47,7 @@ export function createTaskService(ctx: DbContext): TaskService {
 
   return {
     async create(input: CreateTaskInput): Promise<Task> {
-      const id = uuid();
+      const id = randomUUID();
       const now = new Date().toISOString();
 
       // Determine context_id: inherit from project if project_id is set
@@ -196,11 +196,6 @@ export function createTaskService(ctx: DbContext): TaskService {
     },
 
     async delete(id: string): Promise<void> {
-      const existing = await this.get(id);
-      if (!existing) {
-        throw new Error('Task not found');
-      }
-
       const now = new Date().toISOString();
       await db.writeTransaction(async (tx) => {
         await tx.execute(

@@ -20,40 +20,46 @@ import { createTabsSlice, TabsSlice } from './tabs';
 
 export type StoreState = TaskSlice & ProjectSlice & ContextSlice & StakeholderSlice & ChecklistSlice & UISlice & NoteSlice & AuthSlice & AIAgentSlice & ProjectStakeholderSlice & NoteStakeholderSlice & SettingsSlice & MeetingSlice & MeetingAttendeeSlice & SearchSlice & RecordingSlice & TabsSlice;
 
-export const useStore = create<StoreState>()(
-  devtools(
-    persist(
-      (...a) => ({
-        ...createTaskSlice(...a),
-        ...createProjectSlice(...a),
-        ...createContextSlice(...a),
-        ...createStakeholderSlice(...a),
-        ...createChecklistSlice(...a),
-        ...createUISlice(...a),
-        ...createNoteSlice(...a),
-        ...createAuthSlice(...a),
-        ...createAIAgentSlice(...a),
-        ...createProjectStakeholderSlice(...a),
-        ...createNoteStakeholderSlice(...a),
-        ...createSettingsSlice(...a),
-        ...createMeetingSlice(...a),
-        ...createMeetingAttendeeSlice(...a),
-        ...createSearchSlice(...a),
-        ...createRecordingSlice(...a),
-        ...createTabsSlice(...a),
-      }),
-      {
-        name: 'cortex-store',
-        partialize: (state) => ({
-          activeContextIds: state.activeContextIds,
-          sidebarCollapsed: state.sidebarCollapsed,
-          userFirstName: state.userFirstName,
-          userLastName: state.userLastName,
-          weatherCity: state.weatherCity,
-          tabs: state.tabs,
-          activeTabId: state.activeTabId,
-        }),
-      }
-    )
-  )
-);
+function makeStore() {
+  const creator = persist<StoreState>(
+    (...a) => ({
+      ...createTaskSlice(...a),
+      ...createProjectSlice(...a),
+      ...createContextSlice(...a),
+      ...createStakeholderSlice(...a),
+      ...createChecklistSlice(...a),
+      ...createUISlice(...a),
+      ...createNoteSlice(...a),
+      ...createAuthSlice(...a),
+      ...createAIAgentSlice(...a),
+      ...createProjectStakeholderSlice(...a),
+      ...createNoteStakeholderSlice(...a),
+      ...createSettingsSlice(...a),
+      ...createMeetingSlice(...a),
+      ...createMeetingAttendeeSlice(...a),
+      ...createSearchSlice(...a),
+      ...createRecordingSlice(...a),
+      ...createTabsSlice(...a),
+    }),
+    {
+      name: 'cortex-store',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      partialize: (state) => ({
+        activeContextIds: state.activeContextIds,
+        sidebarCollapsed: state.sidebarCollapsed,
+        userFirstName: state.userFirstName,
+        userLastName: state.userLastName,
+        weatherCity: state.weatherCity,
+        tabs: state.tabs,
+        activeTabId: state.activeTabId,
+      }) as unknown as StoreState,
+    }
+  );
+
+  if (process.env.NODE_ENV === 'development') {
+    return create<StoreState>()(devtools(creator));
+  }
+  return create<StoreState>()(creator);
+}
+
+export const useStore = makeStore();
