@@ -5,6 +5,7 @@ import { useStore } from '../stores';
 import { TaskList } from '../components/TaskList';
 import { InlineTaskCard } from '../components/InlineTaskCard';
 import { filterTasksByContext } from '../lib/contextFilter';
+import { sortByPriority } from '../lib/prioritySort';
 
 function getToday(): string {
   return format(new Date(), 'yyyy-MM-dd');
@@ -80,7 +81,7 @@ export function InboxView() {
         !t.completed_at,
     );
     overdue.sort((a, b) => (a.deadline! < b.deadline! ? -1 : 1));
-    return filterTasksByContext(overdue, activeContextIds, projects);
+    return sortByPriority(filterTasksByContext(overdue, activeContextIds, projects));
   }, [tasks, today, activeContextIds, projects]);
 
   const needsReschedulingTasks = useMemo(() => {
@@ -94,7 +95,7 @@ export function InboxView() {
         !t.completed_at,
     );
     reschedule.sort((a, b) => (a.when_date! < b.when_date! ? -1 : 1));
-    return filterTasksByContext(reschedule, activeContextIds, projects);
+    return sortByPriority(filterTasksByContext(reschedule, activeContextIds, projects));
   }, [tasks, today, activeContextIds, projects]);
 
   const inboxTasks = useMemo(() => {
@@ -104,7 +105,7 @@ export function InboxView() {
       if (t.status === 'logbook' && everCompletedIds.current.has(t.id)) return true;
       return false;
     });
-    return filterTasksByContext(visible, activeContextIds, projects);
+    return sortByPriority(filterTasksByContext(visible, activeContextIds, projects));
   }, [tasks, dismissedIds, activeContextIds, projects]);
 
   const handleComplete = useCallback(

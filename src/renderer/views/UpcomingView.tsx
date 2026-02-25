@@ -4,6 +4,7 @@ import { format, differenceInCalendarDays, parseISO } from 'date-fns';
 import { useStore } from '../stores';
 import { TaskList } from '../components/TaskList';
 import { filterTasksByContext } from '../lib/contextFilter';
+import { sortByPriority } from '../lib/prioritySort';
 import type { Task } from '@shared/types';
 
 const DISMISS_DELAY_MS = 2500;
@@ -74,7 +75,7 @@ export function UpcomingView() {
       }
       return false;
     });
-    return filterTasksByContext(visible, activeContextIds, projects);
+    return sortByPriority(filterTasksByContext(visible, activeContextIds, projects));
   }, [tasks, dismissedIds, activeContextIds, projects]);
 
   const groupedTasks = useMemo(() => {
@@ -103,7 +104,7 @@ export function UpcomingView() {
       }
     }
 
-    return groups;
+    return groups.map((g) => ({ ...g, tasks: sortByPriority(g.tasks) }));
   }, [upcomingTasks]);
 
   const handleComplete = useCallback(

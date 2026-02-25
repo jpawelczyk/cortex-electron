@@ -4,6 +4,7 @@ import { format, differenceInCalendarDays, parseISO } from 'date-fns';
 import { useStore } from '../stores';
 import { TaskList } from '../components/TaskList';
 import { filterTasksByContext } from '../lib/contextFilter';
+import { sortByPriority } from '../lib/prioritySort';
 import type { Task } from '@shared/types';
 
 function formatCompletionDate(iso: string): string {
@@ -68,7 +69,7 @@ export function LogbookView() {
       }
     }
 
-    return groups;
+    return groups.map((g) => ({ ...g, tasks: sortByPriority(g.tasks) }));
   }, [logbookTasks]);
 
   const allCompletedIds = useMemo(

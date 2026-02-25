@@ -8,6 +8,7 @@ import { TaskList } from '../components/TaskList';
 import { InlineTaskCard } from '../components/InlineTaskCard';
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
 import { StakeholderPicker } from '../components/StakeholderPicker';
+import { sortByPriority } from '../lib/prioritySort';
 
 const ICON_MAP: Record<string, LucideIcon> = {
   Briefcase,
@@ -92,12 +93,13 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
   );
 
   const projectTasks = useMemo(() => {
-    return tasks.filter((t) =>
+    const filtered = tasks.filter((t) =>
       t.project_id === projectId &&
       !t.deleted_at &&
       !dismissedIds.has(t.id) &&
       (t.status !== 'logbook' || everCompletedIds.current.has(t.id)),
     );
+    return sortByPriority(filtered);
   }, [tasks, projectId, dismissedIds]);
 
   const hasIncompleteTasks = useMemo(

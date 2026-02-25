@@ -5,7 +5,7 @@ const uuidOrNull = z.string().uuid().nullable().optional();
 
 // Tasks
 const taskStatusSchema = z.enum(['inbox', 'today', 'upcoming', 'anytime', 'someday', 'stale', 'logbook', 'cancelled']);
-const prioritySchema = z.enum(['P0', 'P1', 'P2', 'P3']);
+const prioritySchema = z.enum(['P1', 'P2', 'P3']);
 
 export const CreateTaskSchema = z.object({
   title: z.string().min(1),

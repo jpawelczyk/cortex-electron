@@ -5,6 +5,7 @@ import { useStore } from '../stores';
 import { TaskList } from '../components/TaskList';
 import { InlineTaskCard } from '../components/InlineTaskCard';
 import { filterTasksByContext } from '../lib/contextFilter';
+import { sortByPriority } from '../lib/prioritySort';
 
 const DISMISS_DELAY_MS = 2500;
 // Only animate logbook tasks completed within this window (handles sync/agent completions).
@@ -108,7 +109,7 @@ export function TodayView() {
       if (t.deadline && t.deadline < today) return false;
       return t.status === 'today' || t.when_date === today;
     });
-    return filterTasksByContext(visible, activeContextIds, projects);
+    return sortByPriority(filterTasksByContext(visible, activeContextIds, projects));
   }, [tasks, today, dismissedIds, activeContextIds, projects]);
 
   const handleComplete = useCallback(

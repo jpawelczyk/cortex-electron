@@ -21,10 +21,9 @@ function getDeadlineUrgency(deadline: string | null): string | undefined {
 }
 
 const PRIORITY_COLORS: Record<string, string> = {
-  P0: 'text-red-500',
-  P1: 'text-orange-500',
-  P2: 'text-yellow-500',
-  P3: 'text-blue-500',
+  P1: 'text-red-500',
+  P2: 'text-red-500',
+  P3: 'text-muted-foreground',
 };
 
 interface TaskItemProps {
@@ -46,6 +45,7 @@ function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, isComple
   const authUser = useStore((s) => s.authUser) as { id: string } | null;
 
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [priorityOpen, setPriorityOpen] = useState(false);
   const [projectOpen, setProjectOpen] = useState(false);
   const [contextOpen, setContextOpen] = useState(false);
   const [assigneeOpen, setAssigneeOpen] = useState(false);
@@ -162,10 +162,24 @@ function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, isComple
         e.preventDefault();
         handleDelete();
       }
+      // Priority shortcuts: plain 1/2/3/0 when not typing in an input
+      if (!e.metaKey && !e.ctrlKey && !e.altKey) {
+        const active = document.activeElement;
+        const isTyping =
+          active instanceof HTMLInputElement ||
+          active instanceof HTMLTextAreaElement ||
+          (active instanceof HTMLElement && active.isContentEditable);
+        if (!isTyping) {
+          if (e.key === '1') { updateTask(task.id, { priority: 'P1' }); return; }
+          if (e.key === '2') { updateTask(task.id, { priority: 'P2' }); return; }
+          if (e.key === '3') { updateTask(task.id, { priority: 'P3' }); return; }
+          if (e.key === '0') { updateTask(task.id, { priority: null }); return; }
+        }
+      }
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isExpanded, flushTitle, flushNotes, deselectTask, handleDelete]);
+  }, [isExpanded, flushTitle, flushNotes, deselectTask, handleDelete, updateTask, task.id]);
 
   const handleTitleChange = (value: string) => {
     setTitle(value);
@@ -248,6 +262,11 @@ function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, isComple
     setAssigneeOpen(false);
   };
 
+  const handlePriorityChange = (priority: string | null) => {
+    updateTask(task.id, { priority: priority as any });
+    setPriorityOpen(false);
+  };
+
   const handleRowClick = () => {
     if (!isExpanded) {
       onSelect?.(task.id);
@@ -293,6 +312,14 @@ function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, isComple
           )}
         </button>
 
+        {task.priority && !isCompleted && (
+          <Flag
+            data-testid="priority-indicator"
+            className={`h-3.5 w-3.5 shrink-0 ${PRIORITY_COLORS[task.priority]}`}
+            fill={task.priority === 'P1' ? 'currentColor' : 'none'}
+          />
+        )}
+
         {isExpanded ? (
           <input
             type="text"
@@ -318,15 +345,6 @@ function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, isComple
             )}
             style={effectiveContext?.color ? { backgroundColor: effectiveContext.color } : undefined}
           />
-        )}
-
-        {!isExpanded && task.priority && !isCompleted && (
-          <span
-            data-testid="priority-indicator"
-            className={`text-[10px] font-medium tracking-wide ${PRIORITY_COLORS[task.priority]}`}
-          >
-            {task.priority}
-          </span>
         )}
 
         <div className="flex items-center shrink-0" onClick={(e) => e.stopPropagation()}>
@@ -371,6 +389,64 @@ function TaskItem({ task, onComplete, onSelect, isSelected, isExpanded, isComple
             />
             <div className="flex items-center justify-between pt-1 pb-2.5">
               <div className="flex items-center gap-1">
+              <Popover open={priorityOpen} onOpenChange={setPriorityOpen}>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label="Priority"
+                    tabIndex={isExpanded ? 0 : -1}
+                    className="-ml-1.5 inline-flex items-center gap-1.5 px-1.5 py-1 text-xs text-muted-foreground hover:bg-accent/60 rounded-md transition-colors cursor-pointer"
+                  >
+                    <Flag className="size-3" />
+                    <span>{task.priority ?? 'Priority'}</span>
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-44 p-1" align="start">
+                  <button
+                    role="option"
+                    aria-label="P1"
+                    type="button"
+                    onClick={() => handlePriorityChange('P1')}
+                    className="flex items-center gap-2 w-full px-2 py-1.5 text-sm text-foreground hover:bg-accent rounded-md cursor-pointer"
+                  >
+                    <Flag className="size-3.5 text-red-500" fill="currentColor" />
+                    <span>P1</span>
+                    <span className="text-muted-foreground text-xs">Must do</span>
+                  </button>
+                  <button
+                    role="option"
+                    aria-label="P2"
+                    type="button"
+                    onClick={() => handlePriorityChange('P2')}
+                    className="flex items-center gap-2 w-full px-2 py-1.5 text-sm text-foreground hover:bg-accent rounded-md cursor-pointer"
+                  >
+                    <Flag className="size-3.5 text-red-500" />
+                    <span>P2</span>
+                    <span className="text-muted-foreground text-xs">Should do</span>
+                  </button>
+                  <button
+                    role="option"
+                    aria-label="P3"
+                    type="button"
+                    onClick={() => handlePriorityChange('P3')}
+                    className="flex items-center gap-2 w-full px-2 py-1.5 text-sm text-foreground hover:bg-accent rounded-md cursor-pointer"
+                  >
+                    <Flag className="size-3.5 text-muted-foreground" />
+                    <span>P3</span>
+                    <span className="text-muted-foreground text-xs">Could do</span>
+                  </button>
+                  <button
+                    role="option"
+                    aria-label="No priority"
+                    type="button"
+                    onClick={() => handlePriorityChange(null)}
+                    className="flex items-center gap-2 w-full px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent rounded-md cursor-pointer"
+                  >
+                    <span className="size-3.5" />
+                    <span>None</span>
+                  </button>
+                </PopoverContent>
+              </Popover>
               <Popover open={projectOpen} onOpenChange={setProjectOpen}>
                 <PopoverTrigger asChild>
                   <button

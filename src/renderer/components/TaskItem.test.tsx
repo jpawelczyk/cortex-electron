@@ -683,6 +683,73 @@ describe('TaskItem context picker (expanded)', () => {
   });
 });
 
+describe('TaskItem priority (collapsed)', () => {
+  it('shows solid red flag for P1 priority', () => {
+    render(<TaskItem task={fakeTask({ priority: 'P1' })} onComplete={vi.fn()} />);
+    const flag = screen.getByTestId('priority-indicator');
+    expect(flag).toHaveClass('text-red-500');
+    expect(flag).toHaveAttribute('fill', 'currentColor');
+  });
+
+  it('shows outline red flag for P2 priority', () => {
+    render(<TaskItem task={fakeTask({ priority: 'P2' })} onComplete={vi.fn()} />);
+    const flag = screen.getByTestId('priority-indicator');
+    expect(flag).toHaveClass('text-red-500');
+    expect(flag).toHaveAttribute('fill', 'none');
+  });
+
+  it('shows outline gray flag for P3 priority', () => {
+    render(<TaskItem task={fakeTask({ priority: 'P3' })} onComplete={vi.fn()} />);
+    const flag = screen.getByTestId('priority-indicator');
+    expect(flag).toHaveClass('text-muted-foreground');
+    expect(flag).toHaveAttribute('fill', 'none');
+  });
+
+  it('shows no flag when priority is null', () => {
+    render(<TaskItem task={fakeTask({ priority: null })} onComplete={vi.fn()} />);
+    expect(screen.queryByTestId('priority-indicator')).not.toBeInTheDocument();
+  });
+
+  it('hides flag when task is completed', () => {
+    render(<TaskItem task={fakeTask({ priority: 'P1', status: 'logbook' })} onComplete={vi.fn()} isCompleted />);
+    expect(screen.queryByTestId('priority-indicator')).not.toBeInTheDocument();
+  });
+});
+
+describe('TaskItem priority picker (expanded)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('shows priority options when priority button is clicked', () => {
+    render(<TaskItem task={fakeTask()} onComplete={vi.fn()} isExpanded />);
+    fireEvent.click(screen.getByRole('button', { name: /priority/i }));
+    expect(screen.getByRole('option', { name: /p1/i })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: /p2/i })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: /p3/i })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: /no priority/i })).toBeInTheDocument();
+  });
+
+  it('calls updateTask with priority when option is selected', () => {
+    render(<TaskItem task={fakeTask({ priority: null })} onComplete={vi.fn()} isExpanded />);
+    fireEvent.click(screen.getByRole('button', { name: /priority/i }));
+    fireEvent.click(screen.getByRole('option', { name: /p1/i }));
+    expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { priority: 'P1' });
+  });
+
+  it('calls updateTask with null when "None" selected', () => {
+    render(<TaskItem task={fakeTask({ priority: 'P1' })} onComplete={vi.fn()} isExpanded />);
+    fireEvent.click(screen.getByRole('button', { name: /priority/i }));
+    fireEvent.click(screen.getByRole('option', { name: /no priority/i }));
+    expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { priority: null });
+  });
+});
+
 describe('TaskItem assign-to-agent (expanded)', () => {
   function makeAgent(overrides?: Partial<AIAgent>): AIAgent {
     return {
@@ -790,5 +857,58 @@ describe('TaskItem assign-to-agent (expanded)', () => {
       <TaskItem task={fakeTask()} onComplete={vi.fn()} isExpanded />
     );
     expect(mockFetchAgents).not.toHaveBeenCalled();
+  });
+});
+
+describe('TaskItem priority keyboard shortcuts (expanded)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('sets P1 when 1 is pressed on expanded task', () => {
+    render(<TaskItem task={fakeTask({ id: 'task-1' })} onComplete={vi.fn()} isExpanded />);
+    // Blur the auto-focused title input so isTyping check passes
+    (document.activeElement as HTMLElement)?.blur();
+    fireEvent.keyDown(document, { key: '1' });
+    expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { priority: 'P1' });
+  });
+
+  it('sets P2 when 2 is pressed on expanded task', () => {
+    render(<TaskItem task={fakeTask({ id: 'task-1' })} onComplete={vi.fn()} isExpanded />);
+    (document.activeElement as HTMLElement)?.blur();
+    fireEvent.keyDown(document, { key: '2' });
+    expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { priority: 'P2' });
+  });
+
+  it('sets P3 when 3 is pressed on expanded task', () => {
+    render(<TaskItem task={fakeTask({ id: 'task-1' })} onComplete={vi.fn()} isExpanded />);
+    (document.activeElement as HTMLElement)?.blur();
+    fireEvent.keyDown(document, { key: '3' });
+    expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { priority: 'P3' });
+  });
+
+  it('clears priority when 0 is pressed on expanded task', () => {
+    render(<TaskItem task={fakeTask({ id: 'task-1', priority: 'P1' })} onComplete={vi.fn()} isExpanded />);
+    (document.activeElement as HTMLElement)?.blur();
+    fireEvent.keyDown(document, { key: '0' });
+    expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { priority: null });
+  });
+
+  it('does not set priority when task is collapsed', () => {
+    render(<TaskItem task={fakeTask()} onComplete={vi.fn()} />);
+    fireEvent.keyDown(document, { key: '1' });
+    expect(mockUpdateTask).not.toHaveBeenCalled();
+  });
+
+  it('does not set priority when Meta is held (view navigation)', () => {
+    render(<TaskItem task={fakeTask()} onComplete={vi.fn()} isExpanded />);
+    fireEvent.keyDown(document, { key: '1', metaKey: true });
+    // Should not be called for priority — Meta+1 is for view navigation
+    expect(mockUpdateTask).not.toHaveBeenCalledWith('task-1', { priority: 'P1' });
   });
 });

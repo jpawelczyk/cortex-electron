@@ -26,7 +26,7 @@ export type TaskStatus =
   | 'logbook'
   | 'cancelled';
 
-export type Priority = 'P0' | 'P1' | 'P2' | 'P3';
+export type Priority = 'P1' | 'P2' | 'P3';
 
 export interface Task {
   id: string;

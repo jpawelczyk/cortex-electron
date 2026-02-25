@@ -51,12 +51,12 @@ describe('TaskService', () => {
       const task = await taskService.create({
         title: 'Important task',
         notes: 'Some notes here',
-        priority: 'P0',
+        priority: 'P1',
         deadline: '2026-02-20',
       });
 
       expect(task.notes).toBe('Some notes here');
-      expect(task.priority).toBe('P0');
+      expect(task.priority).toBe('P1');
       expect(task.deadline).toBe('2026-02-20');
     });
 

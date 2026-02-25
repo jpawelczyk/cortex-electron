@@ -3,6 +3,7 @@ import { Clock } from 'lucide-react';
 import { useStore } from '../stores';
 import { TaskList } from '../components/TaskList';
 import { filterTasksByContext } from '../lib/contextFilter';
+import { sortByPriority } from '../lib/prioritySort';
 
 const DISMISS_DELAY_MS = 2500;
 
@@ -38,7 +39,7 @@ export function StaleView() {
       if (t.status === 'stale') return true;
       return false;
     });
-    return filterTasksByContext(visible, activeContextIds, projects);
+    return sortByPriority(filterTasksByContext(visible, activeContextIds, projects));
   }, [tasks, dismissedIds, activeContextIds, projects]);
 
   const handleComplete = useCallback(
