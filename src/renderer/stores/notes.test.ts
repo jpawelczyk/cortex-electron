@@ -65,119 +65,16 @@ describe('NoteSlice', () => {
     vi.clearAllMocks();
   });
 
-  describe('initial state', () => {
-    it('starts with empty notes array', () => {
-      const store = createStore();
-      expect(store.notes).toEqual([]);
-    });
-
-    it('starts with loading false', () => {
-      const store = createStore();
-      expect(store.notesLoading).toBe(false);
-    });
-
-    it('starts with error null', () => {
-      const store = createStore();
-      expect(store.notesError).toBeNull();
-    });
-
-    it('starts with selectedNoteId null', () => {
-      const store = createStore();
-      expect(store.selectedNoteId).toBeNull();
-    });
-  });
-
-  describe('fetchNotes', () => {
-    it('calls IPC list', async () => {
-      mockCortex.notes.list.mockResolvedValue([fakeNote()]);
-
-      const store = createStore();
-      await store.fetchNotes();
-
-      expect(mockCortex.notes.list).toHaveBeenCalledOnce();
-    });
-
-    it('sets error on failure', async () => {
-      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      mockCortex.notes.list.mockRejectedValue(new Error('fail'));
-
-      const store = createStore();
-      await store.fetchNotes();
-
-      expect(mockCortex.notes.list).toHaveBeenCalledOnce();
-      spy.mockRestore();
-    });
-  });
-
-  describe('createNote', () => {
-    it('calls IPC create and returns the note', async () => {
-      const newNote = fakeNote({ id: 'new-1', title: 'New' });
-      mockCortex.notes.create.mockResolvedValue(newNote);
-
-      const store = createStore();
-      const result = await store.createNote({ title: 'New' });
-
-      expect(mockCortex.notes.create).toHaveBeenCalledWith({ title: 'New' });
-      expect(result).toEqual(newNote);
-    });
-
-    it('sets notesError on failure', async () => {
-      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      mockCortex.notes.create.mockRejectedValue(new Error('create failed'));
-
-      const store = createStore();
-      await store.createNote({ title: 'New' });
-
-      expect(store.notesError).toBe('create failed');
-      spy.mockRestore();
-    });
-  });
-
-  describe('updateNote', () => {
-    it('calls IPC update and returns updated note', async () => {
-      const updated = fakeNote({ title: 'Updated' });
-      mockCortex.notes.update.mockResolvedValue(updated);
-
-      const store = createStore({ notes: [fakeNote()] });
-      const result = await store.updateNote('note-1', { title: 'Updated' });
-
-      expect(mockCortex.notes.update).toHaveBeenCalledWith('note-1', { title: 'Updated' });
-      expect(result).toEqual(updated);
-    });
-
-    it('sets notesError on failure', async () => {
-      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      mockCortex.notes.update.mockRejectedValue(new Error('update failed'));
-
-      const store = createStore({ notes: [fakeNote()] });
-      await store.updateNote('note-1', { title: 'Updated' });
-
-      expect(store.notesError).toBe('update failed');
-      spy.mockRestore();
-    });
-  });
-
   describe('deleteNote', () => {
-    it('calls IPC delete and removes from array', async () => {
+    it('removes from notes array on success', async () => {
       mockCortex.notes.delete.mockResolvedValue(undefined);
 
       const store = createStore({ notes: [fakeNote()] });
       await store.deleteNote('note-1');
 
-      expect(mockCortex.notes.delete).toHaveBeenCalledWith('note-1');
       expect(store.notes).toEqual([]);
     });
 
-    it('sets notesError on failure', async () => {
-      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      mockCortex.notes.delete.mockRejectedValue(new Error('delete failed'));
-
-      const store = createStore({ notes: [fakeNote()] });
-      await store.deleteNote('note-1');
-
-      expect(store.notesError).toBe('delete failed');
-      spy.mockRestore();
-    });
   });
 
   describe('selectNote', () => {

@@ -69,21 +69,6 @@ describe('InlineTaskCard', () => {
     });
   });
 
-  it('renders a title input with placeholder', () => {
-    render(<InlineTaskCard />);
-    expect(screen.getByPlaceholderText('New task')).toBeInTheDocument();
-  });
-
-  it('renders a notes textarea', () => {
-    render(<InlineTaskCard />);
-    expect(screen.getByPlaceholderText('Notes')).toBeInTheDocument();
-  });
-
-  it('auto-focuses the title input', () => {
-    render(<InlineTaskCard />);
-    expect(screen.getByPlaceholderText('New task')).toHaveFocus();
-  });
-
   it('creates a task on Enter and closes', async () => {
     render(<InlineTaskCard />);
     const input = screen.getByPlaceholderText('New task');
@@ -200,16 +185,6 @@ describe('InlineTaskCard', () => {
 
   // --- Date picker tests ---
 
-  it('renders when date button', () => {
-    render(<InlineTaskCard />);
-    expect(screen.getByLabelText('When date')).toBeInTheDocument();
-  });
-
-  it('renders deadline button', () => {
-    render(<InlineTaskCard />);
-    expect(screen.getByLabelText('Deadline')).toBeInTheDocument();
-  });
-
   it('includes when_date in createTask when set', () => {
     render(<InlineTaskCard />);
 
@@ -284,11 +259,6 @@ describe('InlineTaskCard', () => {
   });
 
   // --- Checklist tests ---
-
-  it('renders Add checklist item button', () => {
-    render(<InlineTaskCard />);
-    expect(screen.getByText('Add checklist item')).toBeInTheDocument();
-  });
 
   it('shows input when Add checklist item is clicked', () => {
     render(<InlineTaskCard />);

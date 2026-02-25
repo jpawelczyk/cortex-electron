@@ -69,7 +69,7 @@ Tasks, Projects, Notes, Meetings, Stakeholders, Daily Notes. Full schema in [SCH
 
 ## Testing (TDD)
 
-**Test-driven, not "with tests".** Write tests FIRST, then implementation.
+**Test behavior, not React.** Service layer = high value. "Renders X" = noise.
 
 ```
 1. Write failing test (what behavior do I need?)
@@ -77,8 +77,9 @@ Tasks, Projects, Notes, Meetings, Stakeholders, Daily Notes. Full schema in [SCH
 3. Refactor (tests still pass)
 ```
 
-- Vitest for unit/integration
-- Playwright for E2E
+- Vitest for unit/integration, Playwright for E2E
+- **Test:** services, complex interactions (debounce, race), filtering/sorting logic, keyboard nav, validation
+- **Skip:** "renders X" checks, store IPC passthrough, initial state, trivial setters, duplicate shared behavior across views
 
 ## Hard Rules
 

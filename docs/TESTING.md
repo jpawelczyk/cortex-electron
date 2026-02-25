@@ -1,12 +1,26 @@
 # Testing Strategy
 
-Test-driven development — tests drive design, not the other way around.
+We test **behavior**, not React. Service layer = high value. "Renders X" = noise.
 
 ## Philosophy
 
-### Test-Driven, Not "With Tests"
+### Test Behavior, Not Implementation
 
-The difference matters:
+We test what the system **does**, not how it looks or how it's wired:
+
+| HIGH VALUE (write these) | LOW VALUE (don't write these) |
+|--------------------------|-------------------------------|
+| Business logic (services) | "renders X" / DOM presence checks |
+| Status transitions, context inheritance | `expect(getByText('Title')).toBeInTheDocument()` |
+| Complex interactions (debounce, race conditions) | Store IPC passthrough (`expect(ipc).toHaveBeenCalledWith(...)`) |
+| Multi-step flows (delete confirmation, inline creation) | Snapshot tests |
+| Filtering/sorting logic | Initial state / default value tests |
+| Keyboard navigation | Trivial setter tests (`set(true)` / `set(false)`) |
+| Validation (form guards, empty input) | Anything you'd catch in 2 seconds of manual dev |
+
+**The litmus test:** "What breaks if I delete this test?" If nothing meaningful, don't write it.
+
+### Test-Driven, Not "With Tests"
 
 | ❌ "With Tests" | ✅ Test-Driven |
 |-----------------|----------------|
@@ -128,14 +142,19 @@ High coverage with bad tests is worse than lower coverage with good tests. Use c
 | **Edge cases** | Nulls, empty strings, boundaries |
 | **Error paths** | What happens when things fail |
 
-### What Doesn't Need Tests
+### What We Don't Test
 
 | Area | Why |
 |------|-----|
+| **"Renders X" / DOM presence** | Visual verification, not behavior. Caught instantly in dev. |
+| **Store IPC passthrough** | `store.doThing()` → `expect(ipc).toHaveBeenCalledWith()` just tests Zustand wiring |
+| **Initial state / default values** | Trivial, caught by any usage |
+| **Trivial setters** | `set(true)` / `set(false)` — no logic to test |
+| **Duplicate shared behavior** | Shared hooks (e.g., completion flow) tested once, not per-view |
+| **Button → handler wiring** | "Click Bold → editor.toggleBold() called" tests framework, not logic |
 | **Simple pass-through** | No logic to test |
 | **Framework code** | Trust Electron/React to work |
-| **Styling** | Visual review, not unit tests |
-| **Generated code** | Test the generator, not output |
+| **Styling / layout** | Visual review, not unit tests |
 
 ### Coverage Guidelines (Not Requirements)
 
@@ -143,8 +162,9 @@ High coverage with bad tests is worse than lower coverage with good tests. Use c
 |-------|-----------|-------|
 | **Services** | High | Business logic, rules, edge cases |
 | **Validation** | High | Every rule, every boundary |
-| **Stores** | Medium | State transitions, not getters |
-| **Components** | Low-Medium | Behavior, not rendering |
+| **Stores** | Low | Only non-trivial logic (toggle, guard, side effects). Skip IPC passthrough and error pattern tests. |
+| **Components** | Low | Complex interactions only (debounce, race, keyboard, multi-step). Skip render checks. |
+| **Views** | Low | Filtering logic, context inheritance. Test shared behavior (completion flow) once, not per-view. |
 | **E2E** | Critical paths only | User journeys that must not break |
 
 ## TDD Workflow
@@ -366,39 +386,38 @@ export const fixtures = {
 
 ## Component Testing
 
-Using Testing Library for React components:
+Using Testing Library for React components. **Test behavior, not rendering:**
 
 ```typescript
-// TaskItem.test.tsx
-import { render, screen, fireEvent } from '@testing-library/react';
-import { TaskItem } from './TaskItem';
-
+// Good: tests debounce, race conditions, multi-step flows
 describe('TaskItem', () => {
-  it('renders task title', () => {
-    render(<TaskItem task={fixtures.inboxTask} />);
-    expect(screen.getByText('Inbox task')).toBeInTheDocument();
+  it('debounces title saves', async () => {
+    vi.useFakeTimers();
+    render(<TaskItem task={fakeTask()} />);
+
+    const input = screen.getByDisplayValue('Test task');
+    await userEvent.clear(input);
+    await userEvent.type(input, 'Updated title');
+
+    expect(mockUpdateTask).not.toHaveBeenCalled(); // Not called yet
+    act(() => { vi.advanceTimersByTime(500); });
+    expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { title: 'Updated title' });
   });
 
-  it('shows checkbox unchecked for non-completed tasks', () => {
-    render(<TaskItem task={fixtures.inboxTask} />);
-    const checkbox = screen.getByRole('checkbox');
-    expect(checkbox).not.toBeChecked();
+  it('saves correct task when switching rapidly between tasks', async () => {
+    // Race condition test: ensures debounced save targets the right task
   });
 
-  it('calls onComplete when checkbox clicked', () => {
-    const onComplete = vi.fn();
-    render(<TaskItem task={fixtures.inboxTask} onComplete={onComplete} />);
-    
-    fireEvent.click(screen.getByRole('checkbox'));
-    
-    expect(onComplete).toHaveBeenCalledWith('task-1');
+  it('shows delete confirmation before deleting', () => {
+    // Multi-step flow: first click shows confirm, second click deletes
   });
+});
 
-  it('shows priority badge when priority set', () => {
-    const task = fixtures.createTask({ priority: 'P0' });
-    render(<TaskItem task={task} />);
-    expect(screen.getByText('P0')).toBeInTheDocument();
-  });
+// Bad: don't write these
+describe('TaskItem', () => {
+  it('renders task title', () => { /* DOM presence check — caught in 2s of dev */ });
+  it('shows checkbox', () => { /* Visual verification — no behavior tested */ });
+  it('renders priority badge', () => { /* Pure render check */ });
 });
 ```
 
@@ -587,6 +606,10 @@ export default defineConfig({
 - ❌ Change tests to match broken implementation
 - ❌ Write tests just to hit coverage numbers
 - ❌ Test implementation details (internal state, private methods)
+- ❌ Write "renders X" / DOM presence tests
+- ❌ Write store tests that only verify IPC was called
+- ❌ Write initial state tests or trivial setter tests
+- ❌ Duplicate shared behavior tests across multiple views
 - ❌ Use vague assertions (`toBeDefined()`, `toBeTruthy()` without reason)
 - ❌ Have tests depend on each other
 - ❌ Skip tests instead of understanding why they fail
@@ -598,3 +621,4 @@ Before committing any test, ask:
 1. **Did I write this test before the implementation?** If no, consider rewriting.
 2. **What breaks if I delete this test?** If nothing meaningful, delete it.
 3. **Would I change this test if I refactored internals?** If yes, you're testing implementation, not behavior.
+4. **Would I catch this in 2 seconds of manual testing?** If yes, skip the test.

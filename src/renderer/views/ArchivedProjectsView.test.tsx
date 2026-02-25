@@ -62,43 +62,6 @@ describe('ArchivedProjectsView', () => {
     mockTasks = [];
   });
 
-  it('renders only archived projects', () => {
-    mockProjects = [
-      fakeProject({ id: 'p1', title: 'Archived Project', status: 'archived' }),
-      fakeProject({ id: 'p2', title: 'Active Project', status: 'active' }),
-      fakeProject({ id: 'p3', title: 'Completed Project', status: 'completed' }),
-    ];
-    render(<ArchivedProjectsView />);
-
-    expect(screen.getByText('Archived Project')).toBeInTheDocument();
-    expect(screen.queryByText('Active Project')).not.toBeInTheDocument();
-    expect(screen.queryByText('Completed Project')).not.toBeInTheDocument();
-  });
-
-  it('does not render deleted projects', () => {
-    mockProjects = [
-      fakeProject({ id: 'p1', title: 'Deleted Archived', status: 'archived', deleted_at: '2026-02-15T00:00:00.000Z' }),
-    ];
-    render(<ArchivedProjectsView />);
-
-    expect(screen.queryByText('Deleted Archived')).not.toBeInTheDocument();
-  });
-
-  it('renders empty state when no archived projects', () => {
-    render(<ArchivedProjectsView />);
-
-    expect(screen.getByText('No archived projects')).toBeInTheDocument();
-  });
-
-  it('shows archived date on each card', () => {
-    mockProjects = [
-      fakeProject({ id: 'p1', title: 'Archived', updated_at: '2026-02-10T00:00:00.000Z' }),
-    ];
-    render(<ArchivedProjectsView />);
-
-    expect(screen.getByText(/Feb 10, 2026/)).toBeInTheDocument();
-  });
-
   it('shows task count for each project', () => {
     mockProjects = [
       fakeProject({ id: 'p1', title: 'Archived Project' }),

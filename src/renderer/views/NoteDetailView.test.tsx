@@ -102,16 +102,6 @@ describe('NoteDetailView', () => {
 
   // --- Rendering ---
 
-  it('renders note title in input', () => {
-    render(<NoteDetailView noteId="note-1" />);
-    expect(screen.getByDisplayValue('My Test Note')).toBeInTheDocument();
-  });
-
-  it('renders the mock editor with note content', () => {
-    render(<NoteDetailView noteId="note-1" />);
-    expect(screen.getByTestId('mock-editor')).toBeInTheDocument();
-  });
-
   it('renders "Note not found" when note does not exist', () => {
     mockNotes = [];
     render(<NoteDetailView noteId="nonexistent" />);
@@ -119,11 +109,6 @@ describe('NoteDetailView', () => {
   });
 
   // --- Back navigation ---
-
-  it('renders back button', () => {
-    render(<NoteDetailView noteId="note-1" />);
-    expect(screen.getByTestId('back-to-notes')).toBeInTheDocument();
-  });
 
   it('clicking back button calls goBack', () => {
     render(<NoteDetailView noteId="note-1" />);
@@ -148,11 +133,6 @@ describe('NoteDetailView', () => {
   });
 
   // --- Delete confirmation ---
-
-  it('shows delete button initially', () => {
-    render(<NoteDetailView noteId="note-1" />);
-    expect(screen.getByTestId('delete-note')).toBeInTheDocument();
-  });
 
   it('clicking delete shows confirmation', () => {
     render(<NoteDetailView noteId="note-1" />);
@@ -198,19 +178,6 @@ describe('NoteDetailView', () => {
 
   // --- Context picker ---
 
-  it('shows "No context" when note has no context', () => {
-    mockNotes = [makeNote({ context_id: null })];
-    render(<NoteDetailView noteId="note-1" />);
-    expect(screen.getByTestId('note-context-picker')).toHaveTextContent('No context');
-  });
-
-  it('shows context name when note has a context', () => {
-    mockContexts = [makeContext({ id: 'ctx-1', name: 'Work' })];
-    mockNotes = [makeNote({ context_id: 'ctx-1' })];
-    render(<NoteDetailView noteId="note-1" />);
-    expect(screen.getByTestId('note-context-picker')).toHaveTextContent('Work');
-  });
-
   it('opens context picker and shows contexts', () => {
     mockContexts = [
       makeContext({ id: 'ctx-1', name: 'Work' }),
@@ -243,19 +210,6 @@ describe('NoteDetailView', () => {
   });
 
   // --- Project picker ---
-
-  it('shows "No project" when note has no project', () => {
-    mockNotes = [makeNote({ project_id: null })];
-    render(<NoteDetailView noteId="note-1" />);
-    expect(screen.getByTestId('note-project-picker')).toHaveTextContent('No project');
-  });
-
-  it('shows project title when note has a project', () => {
-    mockProjects = [makeProject({ id: 'proj-1', title: 'Test Project' })];
-    mockNotes = [makeNote({ project_id: 'proj-1' })];
-    render(<NoteDetailView noteId="note-1" />);
-    expect(screen.getByTestId('note-project-picker')).toHaveTextContent('Test Project');
-  });
 
   it('opens project picker and shows projects', () => {
     mockProjects = [

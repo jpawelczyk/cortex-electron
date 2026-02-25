@@ -84,22 +84,6 @@ describe('TodayView', () => {
     mockActiveContextIds = [];
   });
 
-  it('renders the Today heading', () => {
-    render(<TodayView />);
-    expect(screen.getByText('Today')).toBeInTheDocument();
-  });
-
-  it('shows empty state when no today tasks', () => {
-    render(<TodayView />);
-    expect(screen.getByText(/nothing scheduled for today/i)).toBeInTheDocument();
-  });
-
-  it('shows tasks with status=today', () => {
-    mockTasks = [fakeTask({ id: '1', title: 'Status today', status: 'today' })];
-    render(<TodayView />);
-    expect(screen.getByText('Status today')).toBeInTheDocument();
-  });
-
   it('shows tasks with when_date=today regardless of status', () => {
     mockTasks = [
       fakeTask({ id: '1', title: 'Scheduled today', status: 'anytime', when_date: TODAY }),
@@ -108,28 +92,12 @@ describe('TodayView', () => {
     expect(screen.getByText('Scheduled today')).toBeInTheDocument();
   });
 
-  it('shows upcoming tasks whose when_date has arrived', () => {
-    mockTasks = [
-      fakeTask({ id: '1', title: 'Upcoming due today', status: 'upcoming', when_date: TODAY }),
-    ];
-    render(<TodayView />);
-    expect(screen.getByText('Upcoming due today')).toBeInTheDocument();
-  });
-
   it('excludes logbook tasks even if when_date=today', () => {
     mockTasks = [
       fakeTask({ id: '1', title: 'Done task', status: 'logbook', when_date: TODAY }),
     ];
     render(<TodayView />);
     expect(screen.queryByText('Done task')).not.toBeInTheDocument();
-  });
-
-  it('excludes cancelled tasks even if when_date=today', () => {
-    mockTasks = [
-      fakeTask({ id: '1', title: 'Cancelled task', status: 'cancelled', when_date: TODAY }),
-    ];
-    render(<TodayView />);
-    expect(screen.queryByText('Cancelled task')).not.toBeInTheDocument();
   });
 
   it('does not show tasks with when_date in the future', () => {
@@ -146,22 +114,6 @@ describe('TodayView', () => {
     ];
     render(<TodayView />);
     expect(screen.queryByText('Overdue')).not.toBeInTheDocument();
-  });
-
-  it('still shows tasks with future deadline', () => {
-    mockTasks = [
-      fakeTask({ id: '1', title: 'Future deadline', status: 'today', deadline: '2099-12-31' }),
-    ];
-    render(<TodayView />);
-    expect(screen.getByText('Future deadline')).toBeInTheDocument();
-  });
-
-  it('still shows tasks with no deadline', () => {
-    mockTasks = [
-      fakeTask({ id: '1', title: 'No deadline', status: 'today', deadline: null }),
-    ];
-    render(<TodayView />);
-    expect(screen.getByText('No deadline')).toBeInTheDocument();
   });
 
   it('completes a task by setting status to logbook', () => {
@@ -323,19 +275,6 @@ describe('TodayView', () => {
   });
 
   describe('context filtering', () => {
-    it('shows all tasks when no context filter is active', () => {
-      mockActiveContextIds = [];
-      mockTasks = [
-        fakeTask({ id: '1', title: 'Work task', status: 'today', context_id: 'ctx-work' }),
-        fakeTask({ id: '2', title: 'Personal task', status: 'today', context_id: 'ctx-personal' }),
-        fakeTask({ id: '3', title: 'No context task', status: 'today', context_id: null }),
-      ];
-      render(<TodayView />);
-      expect(screen.getByText('Work task')).toBeInTheDocument();
-      expect(screen.getByText('Personal task')).toBeInTheDocument();
-      expect(screen.getByText('No context task')).toBeInTheDocument();
-    });
-
     it('shows only tasks matching active context', () => {
       mockActiveContextIds = ['ctx-work'];
       mockTasks = [

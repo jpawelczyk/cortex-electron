@@ -42,31 +42,6 @@ describe('ContextSelector', () => {
     mockActiveContextIds = [];
   });
 
-  it('renders a button for each context', () => {
-    mockContexts = [
-      fakeContext({ id: 'ctx-1', name: 'Work' }),
-      fakeContext({ id: 'ctx-2', name: 'Personal' }),
-      fakeContext({ id: 'ctx-3', name: 'Research' }),
-    ];
-    render(<ContextSelector />);
-    expect(screen.getByRole('button', { name: /Work/ })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Personal/ })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Research/ })).toBeInTheDocument();
-  });
-
-  it('each button shows context name', () => {
-    mockContexts = [fakeContext({ name: 'Work' })];
-    render(<ContextSelector />);
-    expect(screen.getByText('Work')).toBeInTheDocument();
-  });
-
-  it('each button shows a colored dot', () => {
-    mockContexts = [fakeContext({ color: '#f97316' })];
-    render(<ContextSelector />);
-    const dot = screen.getByTestId('context-dot-ctx-1');
-    expect(dot).toHaveStyle({ backgroundColor: '#f97316' });
-  });
-
   it('clicking a button calls toggleContext with context id', () => {
     mockContexts = [fakeContext({ id: 'ctx-42' })];
     render(<ContextSelector />);
@@ -117,12 +92,6 @@ describe('ContextSelector', () => {
     mockContexts = [fakeContext()];
     render(<ContextSelector />);
     expect(mockFetchContexts).not.toHaveBeenCalled();
-  });
-
-  it('renders nothing when no contexts exist', () => {
-    mockContexts = [];
-    const { container } = render(<ContextSelector />);
-    expect(container.querySelector('button')).toBeNull();
   });
 
   it('renders Lucide icon when icon is a known name', () => {

@@ -30,16 +30,6 @@ describe('InlineProjectCard', () => {
     });
   });
 
-  it('renders a title input with placeholder', () => {
-    render(<InlineProjectCard onClose={mockOnClose} />);
-    expect(screen.getByPlaceholderText('New project')).toBeInTheDocument();
-  });
-
-  it('auto-focuses the title input', () => {
-    render(<InlineProjectCard onClose={mockOnClose} />);
-    expect(screen.getByPlaceholderText('New project')).toHaveFocus();
-  });
-
   it('creates a project with status planned on Enter and closes', async () => {
     render(<InlineProjectCard onClose={mockOnClose} />);
     const input = screen.getByPlaceholderText('New project');

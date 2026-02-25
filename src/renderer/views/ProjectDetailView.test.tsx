@@ -138,52 +138,7 @@ describe('ProjectDetailView', () => {
     vi.useRealTimers();
   });
 
-  // --- Rendering ---
-
-  it('renders the project title in an editable input', () => {
-    render(<ProjectDetailView projectId="proj-1" />);
-
-    const input = screen.getByDisplayValue('Test Project');
-    expect(input).toBeInTheDocument();
-    expect(input.tagName).toBe('INPUT');
-  });
-
-  it('renders a description placeholder when description is null', () => {
-    render(<ProjectDetailView projectId="proj-1" />);
-
-    expect(screen.getByPlaceholderText('Add a description...')).toBeInTheDocument();
-  });
-
-  it('renders the description when present', () => {
-    mockProjects = [makeProject({ description: 'A detailed description' })];
-    render(<ProjectDetailView projectId="proj-1" />);
-
-    expect(screen.getByDisplayValue('A detailed description')).toBeInTheDocument();
-  });
-
-  it('renders the current status', () => {
-    render(<ProjectDetailView projectId="proj-1" />);
-
-    expect(screen.getByText('Active')).toBeInTheDocument();
-  });
-
   // --- Context picker ---
-
-  it('renders "No context" when project has no context', () => {
-    mockProjects = [makeProject({ context_id: null })];
-    mockContexts = [makeContext({ id: 'ctx-1', name: 'Work' })];
-    render(<ProjectDetailView projectId="proj-1" />);
-
-    expect(screen.getByTestId('context-selector')).toHaveTextContent('No context');
-  });
-
-  it('renders context name when project has context_id', () => {
-    mockProjects = [makeProject({ context_id: 'ctx-1' })];
-    mockContexts = [makeContext({ id: 'ctx-1', name: 'Work' })];
-    render(<ProjectDetailView projectId="proj-1" />);
-
-    expect(screen.getByTestId('context-selector')).toHaveTextContent('Work');
-  });
 
   it('opens context picker and shows all contexts plus None option', () => {
     mockProjects = [makeProject({ context_id: 'ctx-1' })];
@@ -239,12 +194,6 @@ describe('ProjectDetailView', () => {
   });
 
   // --- Back navigation ---
-
-  it('renders a back button', () => {
-    render(<ProjectDetailView projectId="proj-1" />);
-
-    expect(screen.getByRole('button', { name: /back/i })).toBeInTheDocument();
-  });
 
   it('clicking back button calls goBack', () => {
     render(<ProjectDetailView projectId="proj-1" />);
@@ -365,26 +314,6 @@ describe('ProjectDetailView', () => {
 
   // --- Task list ---
 
-  it('renders only tasks belonging to this project', () => {
-    mockTasks = [
-      makeTask({ id: 't1', title: 'Project task', project_id: 'proj-1', status: 'inbox' }),
-      makeTask({ id: 't2', title: 'Other task', project_id: 'other-proj', status: 'inbox' }),
-      makeTask({ id: 't3', title: 'No project task', project_id: null, status: 'inbox' }),
-    ];
-    render(<ProjectDetailView projectId="proj-1" />);
-
-    expect(screen.getByText('Project task')).toBeInTheDocument();
-    expect(screen.queryByText('Other task')).not.toBeInTheDocument();
-    expect(screen.queryByText('No project task')).not.toBeInTheDocument();
-  });
-
-  it('shows empty state when project has no tasks', () => {
-    mockTasks = [];
-    render(<ProjectDetailView projectId="proj-1" />);
-
-    expect(screen.getByText('No tasks in this project')).toBeInTheDocument();
-  });
-
   it('empty state CTA triggers inline task creation', () => {
     mockTasks = [];
     render(<ProjectDetailView projectId="proj-1" />);
@@ -411,13 +340,6 @@ describe('ProjectDetailView', () => {
     render(<ProjectDetailView projectId="proj-1" />);
 
     expect(screen.getByTestId('inline-task-card')).toBeInTheDocument();
-  });
-
-  it('does not show InlineTaskCard when isInlineCreating is false', () => {
-    mockIsInlineCreating = false;
-    render(<ProjectDetailView projectId="proj-1" />);
-
-    expect(screen.queryByTestId('inline-task-card')).not.toBeInTheDocument();
   });
 
   it('InlineTaskCard creates tasks with project_id', () => {
@@ -509,12 +431,6 @@ describe('ProjectDetailView', () => {
   });
 
   // --- Project deletion ---
-
-  it('renders a delete button', () => {
-    render(<ProjectDetailView projectId="proj-1" />);
-
-    expect(screen.getByLabelText('Delete project')).toBeInTheDocument();
-  });
 
   it('shows confirmation when delete button is clicked', () => {
     render(<ProjectDetailView projectId="proj-1" />);

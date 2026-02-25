@@ -67,31 +67,11 @@ const fakeTask = (overrides: Partial<Task> = {}): Task => ({
 });
 
 describe('TaskItem (collapsed)', () => {
-  it('renders task title', () => {
-    render(<TaskItem task={fakeTask({ title: 'Buy groceries' })} onComplete={vi.fn()} />);
-    expect(screen.getByText('Buy groceries')).toBeInTheDocument();
-  });
-
-  it('renders a checkbox', () => {
-    render(<TaskItem task={fakeTask()} onComplete={vi.fn()} />);
-    expect(screen.getByRole('checkbox')).toBeInTheDocument();
-  });
-
   it('calls onComplete with task id when checkbox is clicked', () => {
     const onComplete = vi.fn();
     render(<TaskItem task={fakeTask({ id: 'task-42' })} onComplete={onComplete} />);
     fireEvent.click(screen.getByRole('checkbox'));
     expect(onComplete).toHaveBeenCalledWith('task-42');
-  });
-
-  it('shows completed state for logbook tasks', () => {
-    render(
-      <TaskItem
-        task={fakeTask({ status: 'logbook', completed_at: '2026-02-17T12:00:00Z' })}
-        onComplete={vi.fn()}
-      />
-    );
-    expect(screen.getByRole('checkbox')).toBeChecked();
   });
 
   it('shows deadline badge when present', () => {
@@ -148,16 +128,6 @@ describe('TaskItem (collapsed)', () => {
     vi.useRealTimers();
   });
 
-  it('shows priority indicator when set', () => {
-    render(<TaskItem task={fakeTask({ priority: 'P1' })} onComplete={vi.fn()} />);
-    expect(screen.getByTestId('priority-indicator')).toBeInTheDocument();
-  });
-
-  it('does not show priority indicator when null', () => {
-    render(<TaskItem task={fakeTask({ priority: null })} onComplete={vi.fn()} />);
-    expect(screen.queryByTestId('priority-indicator')).not.toBeInTheDocument();
-  });
-
   it('calls onSelect with task id when row is clicked', () => {
     const onSelect = vi.fn();
     render(
@@ -172,42 +142,6 @@ describe('TaskItem (collapsed)', () => {
       <TaskItem task={fakeTask({ when_date: '2026-03-10' })} onComplete={vi.fn()} />
     );
     expect(screen.getByTestId('when-date')).toHaveTextContent('Mar 10');
-  });
-
-  it('date picker buttons always have fixed width', () => {
-    render(
-      <TaskItem task={fakeTask({ when_date: null, deadline: '2026-12-25' })} onComplete={vi.fn()} />
-    );
-    const whenButton = within(screen.getByTestId('when-date')).getByRole('button');
-    const deadlineButton = within(screen.getByTestId('deadline-badge')).getByRole('button');
-    expect(whenButton).toHaveClass('w-[4.5rem]');
-    expect(deadlineButton).toHaveClass('w-[4.5rem]');
-  });
-
-  it('shows Layers icon for when-date button when status is anytime', () => {
-    render(
-      <TaskItem task={fakeTask({ status: 'anytime' })} onComplete={vi.fn()} />
-    );
-    const whenDate = screen.getByTestId('when-date');
-    expect(whenDate.querySelector('.lucide-layers')).toBeInTheDocument();
-    expect(whenDate.querySelector('.lucide-calendar')).not.toBeInTheDocument();
-  });
-
-  it('shows Cloud icon for when-date button when status is someday', () => {
-    render(
-      <TaskItem task={fakeTask({ status: 'someday' })} onComplete={vi.fn()} />
-    );
-    const whenDate = screen.getByTestId('when-date');
-    expect(whenDate.querySelector('.lucide-cloud')).toBeInTheDocument();
-    expect(whenDate.querySelector('.lucide-calendar')).not.toBeInTheDocument();
-  });
-
-  it('shows Calendar icon for when-date button when status is not anytime or someday', () => {
-    render(
-      <TaskItem task={fakeTask({ status: 'inbox' })} onComplete={vi.fn()} />
-    );
-    const whenDate = screen.getByTestId('when-date');
-    expect(whenDate.querySelector('.lucide-calendar')).toBeInTheDocument();
   });
 
   it('shows icon only for when_date when status is anytime', () => {
@@ -377,21 +311,8 @@ describe('TaskItem (collapsed)', () => {
     expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { deadline: null });
   });
 
-  it('highlights as selected when isSelected is true', () => {
-    render(
-      <TaskItem task={fakeTask()} onComplete={vi.fn()} isSelected />
-    );
-    const row = screen.getByText('Test task').closest('[data-testid="task-item"]');
-    expect(row?.className).toContain('bg-accent');
-  });
-
-  it('shows completed state when isCompleted prop is true regardless of task status', () => {
-    render(
-      <TaskItem task={fakeTask({ status: 'inbox' })} onComplete={vi.fn()} isCompleted />
-    );
-    expect(screen.getByRole('checkbox')).toBeChecked();
-  });
 });
+
 
 describe('TaskItem (expanded)', () => {
   beforeEach(() => {
@@ -401,55 +322,6 @@ describe('TaskItem (expanded)', () => {
 
   afterEach(() => {
     vi.useRealTimers();
-  });
-
-  it('renders editable title input when expanded', () => {
-    render(
-      <TaskItem task={fakeTask({ title: 'Editable task' })} onComplete={vi.fn()} isExpanded />
-    );
-    const input = screen.getByDisplayValue('Editable task');
-    expect(input.tagName).toBe('INPUT');
-  });
-
-  it('renders notes textarea when expanded', () => {
-    render(
-      <TaskItem task={fakeTask({ notes: 'Some notes' })} onComplete={vi.fn()} isExpanded />
-    );
-    const textarea = screen.getByDisplayValue('Some notes');
-    expect(textarea.tagName).toBe('TEXTAREA');
-  });
-
-  it('renders empty notes textarea with placeholder when notes is null', () => {
-    render(
-      <TaskItem task={fakeTask({ notes: null })} onComplete={vi.fn()} isExpanded />
-    );
-    const textarea = screen.getByPlaceholderText('Notes');
-    expect(textarea.tagName).toBe('TEXTAREA');
-    expect((textarea as HTMLTextAreaElement).value).toBe('');
-  });
-
-  it('auto-grows notes textarea to fit content', () => {
-    render(
-      <TaskItem task={fakeTask({ notes: 'Line 1' })} onComplete={vi.fn()} isExpanded />
-    );
-    const textarea = screen.getByDisplayValue('Line 1') as HTMLTextAreaElement;
-    // jsdom scrollHeight is 0, so auto-grow sets height to '0px'
-    expect(textarea.style.height).toBe('0px');
-    expect(textarea.className).toContain('overflow-hidden');
-  });
-
-  it('shows when-date button when expanded', () => {
-    render(
-      <TaskItem task={fakeTask()} onComplete={vi.fn()} isExpanded />
-    );
-    expect(screen.getByLabelText('When date')).toBeInTheDocument();
-  });
-
-  it('shows deadline button when expanded', () => {
-    render(
-      <TaskItem task={fakeTask()} onComplete={vi.fn()} isExpanded />
-    );
-    expect(screen.getByLabelText('Deadline')).toBeInTheDocument();
   });
 
   it('does not save title immediately on typing', () => {
@@ -563,13 +435,6 @@ describe('TaskItem (expanded)', () => {
     const day15 = within(grid).getByText('15');
     fireEvent.click(day15);
     expect(mockUpdateTask).toHaveBeenCalledWith('task-1', expect.objectContaining({ deadline: expect.stringMatching(/^\d{4}-\d{2}-15$/) }));
-  });
-
-  it('shows trash button when expanded', () => {
-    render(
-      <TaskItem task={fakeTask()} onComplete={vi.fn()} isExpanded />
-    );
-    expect(screen.getByLabelText('Delete task')).toBeInTheDocument();
   });
 
   it('does not show interactive trash button when collapsed', () => {
@@ -693,22 +558,6 @@ describe('TaskItem project picker (expanded)', () => {
     mockContexts = [];
   });
 
-  it('shows "No project" when task.project_id is null', () => {
-    render(
-      <TaskItem task={fakeTask({ project_id: null })} onComplete={vi.fn()} isExpanded />
-    );
-    const btn = screen.getByRole('button', { name: /project/i });
-    expect(btn.textContent).toContain('No project');
-  });
-
-  it('shows project name when task has project_id', () => {
-    mockProjects = [makeProject({ id: 'proj-1', title: 'Launch Campaign' })];
-    render(
-      <TaskItem task={fakeTask({ project_id: 'proj-1' })} onComplete={vi.fn()} isExpanded />
-    );
-    expect(screen.getByText('Launch Campaign')).toBeInTheDocument();
-  });
-
   it('only shows active projects in picker (not completed/archived)', () => {
     mockProjects = [
       makeProject({ id: 'proj-active', title: 'Active Project', status: 'active' }),
@@ -744,14 +593,6 @@ describe('TaskItem project picker (expanded)', () => {
     expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { project_id: null });
   });
 
-  it('shows inherited context badge when project has context_id', () => {
-    mockProjects = [makeProject({ id: 'proj-1', title: 'My Project', context_id: 'ctx-1' })];
-    mockContexts = [makeContext({ id: 'ctx-1', name: 'Work' })];
-    render(
-      <TaskItem task={fakeTask({ project_id: 'proj-1' })} onComplete={vi.fn()} isExpanded />
-    );
-    expect(screen.getAllByText('Work').length).toBeGreaterThanOrEqual(1);
-  });
 });
 
 describe('TaskItem context picker (expanded)', () => {
@@ -798,23 +639,6 @@ describe('TaskItem context picker (expanded)', () => {
     vi.useRealTimers();
     mockProjects = [];
     mockContexts = [];
-  });
-
-  it('shows "No context" when task has no context and no project', () => {
-    render(
-      <TaskItem task={fakeTask({ context_id: null, project_id: null })} onComplete={vi.fn()} isExpanded />
-    );
-    const btn = screen.getByRole('button', { name: /context/i });
-    expect(btn.textContent).toContain('No context');
-  });
-
-  it('shows context name when task has direct context_id', () => {
-    mockContexts = [makeContext({ id: 'ctx-1', name: 'Work' })];
-    render(
-      <TaskItem task={fakeTask({ project_id: null, context_id: 'ctx-1' })} onComplete={vi.fn()} isExpanded />
-    );
-    const btn = screen.getByRole('button', { name: /context/i });
-    expect(btn.textContent).toContain('Work');
   });
 
   it('shows editable context picker with options when task has no project', () => {
@@ -898,32 +722,6 @@ describe('TaskItem assign-to-agent (expanded)', () => {
     vi.useRealTimers();
     mockAgents = [];
     mockAuthUser = null;
-  });
-
-  it('shows "Assign to Agent" when task.assignee_id is null', () => {
-    render(
-      <TaskItem task={fakeTask({ assignee_id: null })} onComplete={vi.fn()} isExpanded />
-    );
-    const btn = screen.getByRole('button', { name: /assign to agent/i });
-    expect(btn.textContent).toContain('Assign to Agent');
-  });
-
-  it('shows "Assign to Agent" when assigned to current user', () => {
-    mockAuthUser = { id: 'user-1' };
-    render(
-      <TaskItem task={fakeTask({ assignee_id: 'user-1' })} onComplete={vi.fn()} isExpanded />
-    );
-    const btn = screen.getByRole('button', { name: /assign to agent/i });
-    expect(btn.textContent).toContain('Assign to Agent');
-  });
-
-  it('shows agent name when task is assigned to an AI agent', () => {
-    mockAgents = [makeAgent({ id: 'agent-1', name: 'Cortex Agent' })];
-    render(
-      <TaskItem task={fakeTask({ assignee_id: 'agent-1' })} onComplete={vi.fn()} isExpanded />
-    );
-    const btn = screen.getByRole('button', { name: /assign to agent/i });
-    expect(btn.textContent).toContain('Cortex Agent');
   });
 
   it('shows dropdown with agents when clicked', () => {

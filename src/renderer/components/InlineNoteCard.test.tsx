@@ -37,16 +37,6 @@ describe('InlineNoteCard', () => {
     });
   });
 
-  it('renders a title input with placeholder', () => {
-    render(<InlineNoteCard onClose={mockOnClose} />);
-    expect(screen.getByPlaceholderText('New note')).toBeInTheDocument();
-  });
-
-  it('auto-focuses the title input', () => {
-    render(<InlineNoteCard onClose={mockOnClose} />);
-    expect(screen.getByPlaceholderText('New note')).toHaveFocus();
-  });
-
   it('creates a note on Enter, selects it, and closes', async () => {
     render(<InlineNoteCard onClose={mockOnClose} />);
     const input = screen.getByPlaceholderText('New note');

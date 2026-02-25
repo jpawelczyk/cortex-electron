@@ -197,15 +197,6 @@ describe('SearchSlice', () => {
   });
 
   describe('startReindex', () => {
-    it('calls window.cortex.search.reindex', async () => {
-      mockSearch.reindex.mockResolvedValue(undefined);
-
-      const store = createStore();
-      await store.startReindex();
-
-      expect(mockSearch.reindex).toHaveBeenCalledOnce();
-    });
-
     it('sets reindexProgress to 0 at start and null after completion', async () => {
       let resolveReindex!: () => void;
       mockSearch.reindex.mockReturnValue(new Promise<void>((res) => { resolveReindex = res; }));

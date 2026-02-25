@@ -41,37 +41,6 @@ describe('TrashView', () => {
     mockStore.trashedTasks = [];
   });
 
-  it('calls fetchTrashedTasks on mount', () => {
-    render(<TrashView />);
-    expect(mockStore.fetchTrashedTasks).toHaveBeenCalledOnce();
-  });
-
-  it('shows empty state when no trashed tasks', () => {
-    render(<TrashView />);
-    expect(screen.getByText('Trash is empty')).toBeInTheDocument();
-  });
-
-  it('renders trashed tasks', () => {
-    mockStore.trashedTasks = [
-      fakeTask({ id: '1', title: 'First deleted' }),
-      fakeTask({ id: '2', title: 'Second deleted' }),
-    ];
-    render(<TrashView />);
-    expect(screen.getByText('First deleted')).toBeInTheDocument();
-    expect(screen.getByText('Second deleted')).toBeInTheDocument();
-  });
-
-  it('shows Empty Trash button when items exist', () => {
-    mockStore.trashedTasks = [fakeTask()];
-    render(<TrashView />);
-    expect(screen.getByLabelText('Empty Trash')).toBeInTheDocument();
-  });
-
-  it('does not show Empty Trash button when empty', () => {
-    render(<TrashView />);
-    expect(screen.queryByLabelText('Empty Trash')).not.toBeInTheDocument();
-  });
-
   it('does not call emptyTrash on first click — shows confirmation', () => {
     mockStore.trashedTasks = [fakeTask()];
     render(<TrashView />);
@@ -108,10 +77,5 @@ describe('TrashView', () => {
     expect(mockStore.restoreTask).toHaveBeenCalledWith('task-1');
   });
 
-  it('shows task title with strikethrough styling', () => {
-    mockStore.trashedTasks = [fakeTask({ title: 'Struck task' })];
-    render(<TrashView />);
-    const title = screen.getByText('Struck task');
-    expect(title).toHaveClass('line-through');
-  });
 });
+

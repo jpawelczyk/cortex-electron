@@ -152,22 +152,6 @@ beforeEach(() => {
 });
 
 describe('CommandPalette', () => {
-  it('renders nothing when commandPaletteOpen is false', () => {
-    mockStore.commandPaletteOpen = false;
-    const { container } = render(<CommandPalette {...defaultProps()} />);
-    expect(container.firstChild).toBeNull();
-  });
-
-  it('renders dialog when commandPaletteOpen is true', () => {
-    render(<CommandPalette {...defaultProps()} />);
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
-  });
-
-  it('shows search input with placeholder', () => {
-    render(<CommandPalette {...defaultProps()} />);
-    expect(screen.getByPlaceholderText('Search tasks, projects, notes...')).toBeInTheDocument();
-  });
-
   it('typing in search filters tasks by title', () => {
     mockStore.searchResults = {
       keyword: [{ entityId: 't1', entityType: 'task', title: 'Buy groceries', preview: '', score: 1, matchType: 'keyword' }],
@@ -289,18 +273,6 @@ describe('CommandPalette', () => {
     fireEvent.change(input, { target: { value: 'Meeting' } });
     fireEvent.keyDown(input, { key: 'Enter' });
     expect(props.onNavigateToNote).toHaveBeenCalledWith('n1');
-  });
-
-  it('shows quick actions when query is empty', () => {
-    render(<CommandPalette {...defaultProps()} />);
-    expect(screen.getByText('New Task')).toBeInTheDocument();
-    expect(screen.getByText('New Project')).toBeInTheDocument();
-    expect(screen.getByText('New Note')).toBeInTheDocument();
-  });
-
-  it('shows keyboard hints footer', () => {
-    render(<CommandPalette {...defaultProps()} />);
-    expect(screen.getByText('↑↓ navigate')).toBeInTheDocument();
   });
 
   it('shows semantic results section when search returns semantic results', () => {

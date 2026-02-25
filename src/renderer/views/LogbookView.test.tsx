@@ -61,16 +61,6 @@ describe('LogbookView', () => {
     mockTasks = [];
   });
 
-  it('renders the Logbook heading', () => {
-    render(<LogbookView />);
-    expect(screen.getByText('Logbook')).toBeInTheDocument();
-  });
-
-  it('shows empty state when no logbook tasks', () => {
-    render(<LogbookView />);
-    expect(screen.getByText(/no completed tasks/i)).toBeInTheDocument();
-  });
-
   it('shows logbook tasks and excludes non-logbook tasks', () => {
     mockTasks = [
       fakeTask({ id: '1', title: 'Completed task' }),
@@ -139,24 +129,6 @@ describe('LogbookView', () => {
     const checkbox = screen.getByRole('checkbox');
     checkbox.click();
     expect(mockUpdateTask).toHaveBeenCalledWith('task-42', { status: 'inbox' });
-  });
-
-  it('renders all checkboxes as checked', () => {
-    mockTasks = [
-      fakeTask({ id: '1', title: 'Task A' }),
-      fakeTask({ id: '2', title: 'Task B' }),
-    ];
-    render(<LogbookView />);
-    const checkboxes = screen.getAllByRole('checkbox');
-    expect(checkboxes).toHaveLength(2);
-    checkboxes.forEach((cb) => {
-      expect(cb).toHaveAttribute('aria-checked', 'true');
-    });
-  });
-
-  it('calls fetchTasks on mount', () => {
-    render(<LogbookView />);
-    expect(mockFetchTasks).toHaveBeenCalled();
   });
 
   it('excludes logbook tasks without completed_at', () => {

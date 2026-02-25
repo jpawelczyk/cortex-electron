@@ -88,32 +88,6 @@ describe('ContextSettings', () => {
     render(<ContextSettings />);
 
   describe('list', () => {
-    it('renders all existing contexts', () => {
-      mockContexts = [
-        fakeContext({ id: 'ctx-1', name: 'Work' }),
-        fakeContext({ id: 'ctx-2', name: 'Personal', color: '#22c55e' }),
-        fakeContext({ id: 'ctx-3', name: 'Research', color: '#06b6d4' }),
-      ];
-      renderComponent();
-      expect(screen.getByText('Work')).toBeInTheDocument();
-      expect(screen.getByText('Personal')).toBeInTheDocument();
-      expect(screen.getByText('Research')).toBeInTheDocument();
-    });
-
-    it('shows colored dot for each context', () => {
-      mockContexts = [fakeContext({ color: '#f97316' })];
-      renderComponent();
-      const dot = screen.getByTestId('settings-dot-ctx-1');
-      expect(dot).toHaveStyle({ backgroundColor: '#f97316' });
-    });
-
-    it('shows Lucide icon for known icon names', () => {
-      mockContexts = [fakeContext({ icon: 'Briefcase' })];
-      renderComponent();
-      const row = screen.getByTestId('context-row-ctx-1');
-      expect(row.querySelector('.lucide-briefcase')).toBeInTheDocument();
-    });
-
     it('shows empty state when no contexts', () => {
       mockContexts = [];
       renderComponent();
@@ -264,14 +238,6 @@ describe('ContextSettings', () => {
   });
 
   describe('color picker', () => {
-    it('renders color swatches in add form', () => {
-      renderComponent();
-      fireEvent.click(screen.getByRole('button', { name: /add context/i }));
-      expect(screen.getByTestId('color-swatch-#f97316')).toBeInTheDocument();
-      expect(screen.getByTestId('color-swatch-#22c55e')).toBeInTheDocument();
-      expect(screen.getByTestId('color-swatch-#06b6d4')).toBeInTheDocument();
-    });
-
     it('clicking a swatch selects it (visual ring)', () => {
       renderComponent();
       fireEvent.click(screen.getByRole('button', { name: /add context/i }));

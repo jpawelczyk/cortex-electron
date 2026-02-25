@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, act } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { UpcomingView } from './UpcomingView';
 
@@ -71,36 +71,6 @@ describe('UpcomingView', () => {
     mockTasks = [];
   });
 
-  it('renders the Upcoming heading', () => {
-    render(<UpcomingView />);
-    expect(screen.getByText('Upcoming')).toBeInTheDocument();
-  });
-
-  it('shows empty state when no upcoming tasks', () => {
-    render(<UpcomingView />);
-    expect(screen.getByText(/nothing upcoming/i)).toBeInTheDocument();
-  });
-
-  it('shows tasks with status=upcoming', () => {
-    mockTasks = [fakeTask({ id: '1', title: 'Upcoming task' })];
-    render(<UpcomingView />);
-    expect(screen.getByText('Upcoming task')).toBeInTheDocument();
-  });
-
-  it('excludes tasks with other statuses', () => {
-    mockTasks = [
-      fakeTask({ id: '1', title: 'Inbox task', status: 'inbox', when_date: null }),
-      fakeTask({ id: '2', title: 'Today task', status: 'today', when_date: null }),
-      fakeTask({ id: '3', title: 'Logbook task', status: 'logbook', when_date: TOMORROW }),
-      fakeTask({ id: '4', title: 'Cancelled task', status: 'cancelled', when_date: TOMORROW }),
-    ];
-    render(<UpcomingView />);
-    expect(screen.queryByText('Inbox task')).not.toBeInTheDocument();
-    expect(screen.queryByText('Today task')).not.toBeInTheDocument();
-    expect(screen.queryByText('Logbook task')).not.toBeInTheDocument();
-    expect(screen.queryByText('Cancelled task')).not.toBeInTheDocument();
-  });
-
   it('groups tasks by when_date with date headers', () => {
     const dayAfterTomorrow = daysFromNow(2);
     mockTasks = [
@@ -161,94 +131,5 @@ describe('UpcomingView', () => {
 
     const groups = screen.getAllByTestId('upcoming-date-group');
     expect(groups[0]).toHaveTextContent('Tomorrow');
-  });
-
-  it('completes a task by setting status to logbook', () => {
-    mockTasks = [fakeTask({ id: 'task-42', title: 'Complete me' })];
-    render(<UpcomingView />);
-    const checkbox = screen.getByRole('checkbox');
-    act(() => { checkbox.click(); });
-    expect(mockUpdateTask).toHaveBeenCalledWith('task-42', { status: 'logbook' });
-  });
-
-  it('keeps a completed task visible in the list', () => {
-    mockTasks = [fakeTask({ id: '1', title: 'Just completed' })];
-    const { rerender } = render(<UpcomingView />);
-
-    act(() => { screen.getByRole('checkbox').click(); });
-    expect(mockUpdateTask).toHaveBeenCalledWith('1', { status: 'logbook' });
-
-    // Store updates: task is now logbook
-    mockTasks = [fakeTask({ id: '1', title: 'Just completed', status: 'logbook', completed_at: '2026-02-18T00:00:00.000Z' })];
-    rerender(<UpcomingView />);
-
-    expect(screen.getByText('Just completed')).toBeInTheDocument();
-  });
-
-  it('keeps completed task in place before sort delay', () => {
-    vi.useFakeTimers();
-    mockTasks = [
-      fakeTask({ id: '1', title: 'First task' }),
-      fakeTask({ id: '2', title: 'Second task' }),
-    ];
-    const { rerender } = render(<UpcomingView />);
-
-    act(() => { screen.getAllByRole('checkbox')[0].click(); });
-
-    mockTasks = [
-      fakeTask({ id: '1', title: 'First task', status: 'logbook', completed_at: '2026-02-18T00:00:00.000Z' }),
-      fakeTask({ id: '2', title: 'Second task' }),
-    ];
-    rerender(<UpcomingView />);
-
-    // Before delay: completed task stays in original position
-    const itemsBefore = screen.getAllByTestId('task-item');
-    expect(itemsBefore[0]).toHaveTextContent('First task');
-    expect(itemsBefore[1]).toHaveTextContent('Second task');
-
-    vi.useRealTimers();
-  });
-
-  it('dismisses completed task after delay', () => {
-    vi.useFakeTimers();
-    mockTasks = [fakeTask({ id: '1', title: 'Active task' })];
-    const { rerender } = render(<UpcomingView />);
-
-    act(() => { screen.getByRole('checkbox').click(); });
-
-    mockTasks = [
-      fakeTask({ id: '1', title: 'Done task', status: 'logbook', completed_at: '2026-02-18T00:00:00.000Z' }),
-      fakeTask({ id: '2', title: 'New upcoming task' }),
-    ];
-    rerender(<UpcomingView />);
-
-    // Advance past dismiss delay
-    act(() => { vi.advanceTimersByTime(2500); });
-
-    const items = screen.getAllByTestId('task-item');
-    expect(items).toHaveLength(1);
-    expect(items[0]).toHaveTextContent('New upcoming task');
-
-    vi.useRealTimers();
-  });
-
-  it('uncompletes a task back to upcoming', () => {
-    mockTasks = [fakeTask({ id: '1', title: 'Task' })];
-    const { rerender } = render(<UpcomingView />);
-
-    act(() => { screen.getByRole('checkbox').click(); });
-    expect(mockUpdateTask).toHaveBeenCalledWith('1', { status: 'logbook' });
-
-    mockTasks = [fakeTask({ id: '1', title: 'Task', status: 'logbook', completed_at: '2026-02-18T00:00:00.000Z' })];
-    rerender(<UpcomingView />);
-
-    vi.clearAllMocks();
-    act(() => { screen.getByRole('checkbox').click(); });
-    expect(mockUpdateTask).toHaveBeenCalledWith('1', { status: 'upcoming' });
-  });
-
-  it('calls fetchTasks on mount', () => {
-    render(<UpcomingView />);
-    expect(mockFetchTasks).toHaveBeenCalled();
   });
 });

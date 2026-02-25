@@ -61,27 +61,6 @@ describe('NotesOverviewView', () => {
     mockContexts = [];
   });
 
-  it('renders "Notes" heading', () => {
-    render(<NotesOverviewView />);
-    expect(screen.getByText('Notes')).toBeInTheDocument();
-  });
-
-  it('shows empty state when no notes', () => {
-    render(<NotesOverviewView />);
-    expect(screen.getByTestId('notes-empty')).toBeInTheDocument();
-  });
-
-  it('renders note rows with titles', () => {
-    mockNotes = [
-      fakeNote({ id: 'n1', title: 'My First Note' }),
-      fakeNote({ id: 'n2', title: 'My Second Note' }),
-    ];
-    render(<NotesOverviewView />);
-    expect(screen.getByText('My First Note')).toBeInTheDocument();
-    expect(screen.getByText('My Second Note')).toBeInTheDocument();
-    expect(screen.getAllByTestId('note-row')).toHaveLength(2);
-  });
-
   it('pinned notes appear first regardless of sort', () => {
     mockNotes = [
       fakeNote({ id: 'n1', title: 'Regular Note', is_pinned: false, updated_at: '2026-02-20T00:00:00.000Z' }),
@@ -91,20 +70,6 @@ describe('NotesOverviewView', () => {
     const rows = screen.getAllByTestId('note-row');
     expect(rows[0]).toHaveTextContent('Pinned Note');
     expect(rows[1]).toHaveTextContent('Regular Note');
-  });
-
-  it('shows context badge when note has context', () => {
-    mockContexts = [fakeContext({ id: 'ctx-1', name: 'Work' })];
-    mockNotes = [fakeNote({ id: 'n1', context_id: 'ctx-1' })];
-    render(<NotesOverviewView />);
-    expect(screen.getByText('Work')).toBeInTheDocument();
-  });
-
-  it('does not show context badge when note has no context', () => {
-    mockContexts = [fakeContext({ id: 'ctx-1', name: 'Work' })];
-    mockNotes = [fakeNote({ id: 'n1', context_id: null })];
-    render(<NotesOverviewView />);
-    expect(screen.queryByText('Work')).not.toBeInTheDocument();
   });
 
   it('filters by active context', () => {
@@ -187,12 +152,6 @@ describe('NotesOverviewView', () => {
     expect(mockFetchNotes).toHaveBeenCalled();
   });
 
-  it('shows content preview when note has content', () => {
-    mockNotes = [fakeNote({ id: 'n1', content: 'This is the note content' })];
-    render(<NotesOverviewView />);
-    expect(screen.getByText('This is the note content')).toBeInTheDocument();
-  });
-
   it('strips markdown from content preview', () => {
     mockNotes = [fakeNote({ id: 'n1', content: '# Heading **bold** text' })];
     render(<NotesOverviewView />);
@@ -231,11 +190,6 @@ describe('NotesOverviewView', () => {
   });
 
   describe('note creation', () => {
-    it('shows a "New Note" trigger button', () => {
-      render(<NotesOverviewView />);
-      expect(screen.getByTestId('new-note-trigger')).toBeInTheDocument();
-    });
-
     it('creates note and navigates to detail view when clicked', async () => {
       render(<NotesOverviewView />);
       fireEvent.click(screen.getByTestId('new-note-trigger'));

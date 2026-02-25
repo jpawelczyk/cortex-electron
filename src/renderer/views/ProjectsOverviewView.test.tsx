@@ -93,31 +93,6 @@ describe('ProjectsOverviewView', () => {
     mockContexts = [];
   });
 
-  it('renders the Projects heading', () => {
-    render(<ProjectsOverviewView />);
-    expect(screen.getByText('Projects')).toBeInTheDocument();
-  });
-
-  it('shows only the trigger card when no projects exist', () => {
-    render(<ProjectsOverviewView />);
-    expect(screen.getByTestId('new-project-trigger')).toBeInTheDocument();
-    expect(screen.queryAllByTestId('project-card')).toHaveLength(0);
-  });
-
-  it('renders project cards for active-status projects', () => {
-    mockProjects = [
-      fakeProject({ id: 'p1', title: 'Active Project', status: 'active' }),
-      fakeProject({ id: 'p2', title: 'Planned Project', status: 'planned' }),
-      fakeProject({ id: 'p3', title: 'On Hold Project', status: 'on_hold' }),
-      fakeProject({ id: 'p4', title: 'Blocked Project', status: 'blocked' }),
-    ];
-    render(<ProjectsOverviewView />);
-    expect(screen.getByText('Active Project')).toBeInTheDocument();
-    expect(screen.getByText('Planned Project')).toBeInTheDocument();
-    expect(screen.getByText('On Hold Project')).toBeInTheDocument();
-    expect(screen.getByText('Blocked Project')).toBeInTheDocument();
-  });
-
   it('does NOT render completed projects', () => {
     mockProjects = [
       fakeProject({ id: 'p1', title: 'Completed Project', status: 'completed' }),
@@ -132,17 +107,6 @@ describe('ProjectsOverviewView', () => {
     ];
     render(<ProjectsOverviewView />);
     expect(screen.queryByText('Archived Project')).not.toBeInTheDocument();
-  });
-
-  it('each card shows title and status badge', () => {
-    mockProjects = [
-      fakeProject({ id: 'p1', title: 'My Project', status: 'active' }),
-    ];
-    render(<ProjectsOverviewView />);
-    expect(screen.getByText('My Project')).toBeInTheDocument();
-    // "Active" appears in both the tab and the status badge
-    const card = screen.getByTestId('project-card');
-    expect(card).toHaveTextContent('Active');
   });
 
   it('shows task count for each project', () => {
@@ -189,28 +153,6 @@ describe('ProjectsOverviewView', () => {
     expect(screen.queryByText('Stale')).not.toBeInTheDocument();
   });
 
-  it('shows correct status badge colors', () => {
-    mockProjects = [
-      fakeProject({ id: 'p1', title: 'P1', status: 'planned' }),
-      fakeProject({ id: 'p2', title: 'P2', status: 'active' }),
-      fakeProject({ id: 'p3', title: 'P3', status: 'on_hold' }),
-      fakeProject({ id: 'p4', title: 'P4', status: 'blocked' }),
-    ];
-    render(<ProjectsOverviewView />);
-    expect(screen.getByText('Planned')).toBeInTheDocument();
-    // "Active" appears in both the tab and the badge — check within card
-    const cards = screen.getAllByTestId('project-card');
-    const activeCard = cards.find((c) => c.textContent?.includes('P2'));
-    expect(activeCard).toHaveTextContent('Active');
-    expect(screen.getByText('On Hold')).toBeInTheDocument();
-    expect(screen.getByText('Blocked')).toBeInTheDocument();
-  });
-
-  it('fetches projects on mount', () => {
-    render(<ProjectsOverviewView />);
-    expect(mockFetchProjects).toHaveBeenCalled();
-  });
-
   it('sorts projects by created_at descending', () => {
     mockProjects = [
       fakeProject({ id: 'p1', title: 'Older', created_at: '2026-01-01T00:00:00.000Z' }),
@@ -223,15 +165,6 @@ describe('ProjectsOverviewView', () => {
   });
 
   describe('project deletion', () => {
-    it('shows a delete button on each project card', () => {
-      mockProjects = [
-        fakeProject({ id: 'p1', title: 'My Project', status: 'active' }),
-      ];
-      render(<ProjectsOverviewView />);
-
-      expect(screen.getByLabelText('Delete project')).toBeInTheDocument();
-    });
-
     it('shows confirmation when delete button is clicked', () => {
       mockProjects = [
         fakeProject({ id: 'p1', title: 'My Project', status: 'active' }),
@@ -286,18 +219,6 @@ describe('ProjectsOverviewView', () => {
   });
 
   describe('tab navigation', () => {
-    it('renders Active, Completed, and Archived tabs', () => {
-      render(<ProjectsOverviewView />);
-      expect(screen.getByTestId('projects-tab-active')).toBeInTheDocument();
-      expect(screen.getByTestId('projects-tab-completed')).toBeInTheDocument();
-      expect(screen.getByTestId('projects-tab-archived')).toBeInTheDocument();
-    });
-
-    it('shows Active tab as selected by default', () => {
-      render(<ProjectsOverviewView />);
-      expect(screen.getByTestId('projects-tab-active')).toHaveAttribute('aria-selected', 'true');
-    });
-
     it('switches to completed view when Completed tab is clicked', () => {
       mockProjects = [
         fakeProject({ id: 'p1', title: 'Done Project', status: 'completed', completed_at: '2026-02-10T00:00:00.000Z' }),
@@ -336,19 +257,6 @@ describe('ProjectsOverviewView', () => {
   });
 
   describe('inline project creation', () => {
-    it('shows a "New Project" trigger card in the grid', () => {
-      mockProjects = [
-        fakeProject({ id: 'p1', title: 'Existing', status: 'active' }),
-      ];
-      render(<ProjectsOverviewView />);
-      expect(screen.getByTestId('new-project-trigger')).toBeInTheDocument();
-    });
-
-    it('shows trigger card even when no projects exist (empty state replaced by grid)', () => {
-      render(<ProjectsOverviewView />);
-      expect(screen.getByTestId('new-project-trigger')).toBeInTheDocument();
-    });
-
     it('opens InlineProjectCard when trigger is clicked', () => {
       render(<ProjectsOverviewView />);
       fireEvent.click(screen.getByTestId('new-project-trigger'));
@@ -420,24 +328,6 @@ describe('ProjectsOverviewView', () => {
   });
 
   describe('context picker on project card', () => {
-    it('shows context name on card when project has context_id', () => {
-      mockContexts = [fakeContext({ id: 'ctx-1', name: 'Work' })];
-      mockProjects = [fakeProject({ id: 'p1', context_id: 'ctx-1' })];
-      render(<ProjectsOverviewView />);
-
-      const card = screen.getByTestId('project-card');
-      expect(card).toHaveTextContent('Work');
-    });
-
-    it('shows "No context" on card when project has no context', () => {
-      mockContexts = [fakeContext({ id: 'ctx-1', name: 'Work' })];
-      mockProjects = [fakeProject({ id: 'p1', context_id: null })];
-      render(<ProjectsOverviewView />);
-
-      const card = screen.getByTestId('project-card');
-      expect(card).toHaveTextContent('No context');
-    });
-
     it('opens context picker and shows all contexts plus None', () => {
       mockContexts = [
         fakeContext({ id: 'ctx-1', name: 'Work' }),

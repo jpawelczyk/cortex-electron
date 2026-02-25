@@ -71,22 +71,6 @@ describe('InboxView', () => {
     mockState.projects = [];
   });
 
-  it('renders the Inbox heading', () => {
-    render(<InboxView />);
-    expect(screen.getByText('Inbox')).toBeInTheDocument();
-  });
-
-  it('shows empty state when no inbox tasks', () => {
-    render(<InboxView />);
-    expect(screen.getByText(/no tasks in your inbox/i)).toBeInTheDocument();
-  });
-
-  it('renders inbox tasks from the store', () => {
-    mockTasks = [fakeTask({ id: '1', title: 'Triage this' })];
-    render(<InboxView />);
-    expect(screen.getByText('Triage this')).toBeInTheDocument();
-  });
-
   it('filters to only inbox tasks', () => {
     mockTasks = [
       fakeTask({ id: '1', title: 'Inbox task', status: 'inbox' }),

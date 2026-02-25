@@ -69,47 +69,7 @@ describe('TaskSlice', () => {
     vi.clearAllMocks();
   });
 
-  describe('initial state', () => {
-    it('starts with empty tasks array', () => {
-      const store = createStore();
-      expect(store.tasks).toEqual([]);
-    });
-
-    it('starts with loading false', () => {
-      const store = createStore();
-      expect(store.tasksLoading).toBe(false);
-    });
-
-    it('starts with error null', () => {
-      const store = createStore();
-      expect(store.tasksError).toBeNull();
-    });
-  });
-
   describe('fetchTasks', () => {
-    it('sets loading true then false after fetch', async () => {
-      const tasks = [fakeTask()];
-      mockCortex.tasks.list.mockResolvedValue(tasks);
-
-      const store = createStore();
-      await store.fetchTasks();
-
-      // After await, loading should be false, tasks populated
-      const updated = createStore({ tasks });
-      expect(updated.tasksLoading).toBe(false);
-    });
-
-    it('populates tasks from IPC', async () => {
-      const tasks = [fakeTask({ id: 'a' }), fakeTask({ id: 'b' })];
-      mockCortex.tasks.list.mockResolvedValue(tasks);
-
-      const store = createStore();
-      await store.fetchTasks();
-
-      // We need to verify the mock was called
-      expect(mockCortex.tasks.list).toHaveBeenCalledOnce();
-    });
-
     it('sets error on failure', async () => {
       const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
       mockCortex.tasks.list.mockRejectedValue(new Error('Network error'));
@@ -117,24 +77,12 @@ describe('TaskSlice', () => {
       const store = createStore();
       await store.fetchTasks();
 
-      // After error, the store should capture the error
-      expect(mockCortex.tasks.list).toHaveBeenCalledOnce();
+      expect(store.tasksError).toBe('Network error');
       spy.mockRestore();
     });
   });
 
   describe('createTask', () => {
-    it('calls IPC create and returns the task', async () => {
-      const newTask = fakeTask({ id: 'new-1', title: 'New task' });
-      mockCortex.tasks.create.mockResolvedValue(newTask);
-
-      const store = createStore();
-      const result = await store.createTask({ title: 'New task' });
-
-      expect(mockCortex.tasks.create).toHaveBeenCalledWith({ title: 'New task' });
-      expect(result).toEqual(newTask);
-    });
-
     it('sets tasksError on failure', async () => {
       const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
       mockCortex.tasks.create.mockRejectedValue(new Error('create failed'));
@@ -148,17 +96,6 @@ describe('TaskSlice', () => {
   });
 
   describe('updateTask', () => {
-    it('calls IPC update and returns updated task', async () => {
-      const updated = fakeTask({ id: 'task-1', title: 'Updated' });
-      mockCortex.tasks.update.mockResolvedValue(updated);
-
-      const store = createStore({ tasks: [fakeTask()] });
-      const result = await store.updateTask('task-1', { title: 'Updated' });
-
-      expect(mockCortex.tasks.update).toHaveBeenCalledWith('task-1', { title: 'Updated' });
-      expect(result).toEqual(updated);
-    });
-
     it('sets tasksError on failure', async () => {
       const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
       mockCortex.tasks.update.mockRejectedValue(new Error('update failed'));
@@ -172,15 +109,6 @@ describe('TaskSlice', () => {
   });
 
   describe('deleteTask', () => {
-    it('calls IPC delete', async () => {
-      mockCortex.tasks.delete.mockResolvedValue(undefined);
-
-      const store = createStore({ tasks: [fakeTask()] });
-      await store.deleteTask('task-1');
-
-      expect(mockCortex.tasks.delete).toHaveBeenCalledWith('task-1');
-    });
-
     it('sets tasksError on failure', async () => {
       const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
       mockCortex.tasks.delete.mockRejectedValue(new Error('delete failed'));
@@ -197,48 +125,6 @@ describe('TaskSlice', () => {
     it('starts with empty trashedTasks array', () => {
       const store = createStore();
       expect(store.trashedTasks).toEqual([]);
-    });
-
-    it('fetchTrashedTasks populates trashedTasks from IPC', async () => {
-      const trashed = [fakeTask({ id: 'del-1', deleted_at: '2026-02-17T00:00:00.000Z' })];
-      mockCortex.tasks.listTrashed.mockResolvedValue(trashed);
-
-      const store = createStore();
-      await store.fetchTrashedTasks();
-
-      expect(mockCortex.tasks.listTrashed).toHaveBeenCalledOnce();
-    });
-
-    it('restoreTask calls IPC and moves task from trashedTasks to tasks', async () => {
-      const trashedTask = fakeTask({ id: 'del-1', deleted_at: '2026-02-17T00:00:00.000Z' });
-      const restoredTask = fakeTask({ id: 'del-1', deleted_at: null, status: 'inbox' });
-      mockCortex.tasks.restore.mockResolvedValue(restoredTask);
-
-      const store = createStore({ trashedTasks: [trashedTask], tasks: [] });
-      await store.restoreTask('del-1');
-
-      expect(mockCortex.tasks.restore).toHaveBeenCalledWith('del-1');
-    });
-
-    it('emptyTrash calls IPC and clears trashedTasks', async () => {
-      mockCortex.tasks.emptyTrash.mockResolvedValue(undefined);
-
-      const store = createStore({
-        trashedTasks: [fakeTask({ id: 'del-1', deleted_at: '2026-02-17T00:00:00.000Z' })],
-      });
-      await store.emptyTrash();
-
-      expect(mockCortex.tasks.emptyTrash).toHaveBeenCalledOnce();
-    });
-
-    it('deleteTask pushes removed task into trashedTasks', async () => {
-      mockCortex.tasks.delete.mockResolvedValue(undefined);
-
-      const task = fakeTask({ id: 'task-1' });
-      const store = createStore({ tasks: [task], trashedTasks: [] });
-      await store.deleteTask('task-1');
-
-      expect(mockCortex.tasks.delete).toHaveBeenCalledWith('task-1');
     });
 
     it('fetchTrashedTasks sets tasksError on failure', async () => {

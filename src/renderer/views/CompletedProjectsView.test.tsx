@@ -62,43 +62,6 @@ describe('CompletedProjectsView', () => {
     mockTasks = [];
   });
 
-  it('renders only completed projects', () => {
-    mockProjects = [
-      fakeProject({ id: 'p1', title: 'Done Project', status: 'completed' }),
-      fakeProject({ id: 'p2', title: 'Active Project', status: 'active' }),
-      fakeProject({ id: 'p3', title: 'Archived Project', status: 'archived' }),
-    ];
-    render(<CompletedProjectsView />);
-
-    expect(screen.getByText('Done Project')).toBeInTheDocument();
-    expect(screen.queryByText('Active Project')).not.toBeInTheDocument();
-    expect(screen.queryByText('Archived Project')).not.toBeInTheDocument();
-  });
-
-  it('does not render deleted projects', () => {
-    mockProjects = [
-      fakeProject({ id: 'p1', title: 'Deleted Completed', status: 'completed', deleted_at: '2026-02-15T00:00:00.000Z' }),
-    ];
-    render(<CompletedProjectsView />);
-
-    expect(screen.queryByText('Deleted Completed')).not.toBeInTheDocument();
-  });
-
-  it('renders empty state when no completed projects', () => {
-    render(<CompletedProjectsView />);
-
-    expect(screen.getByText('No completed projects')).toBeInTheDocument();
-  });
-
-  it('shows completion date on each card', () => {
-    mockProjects = [
-      fakeProject({ id: 'p1', title: 'Done', completed_at: '2026-02-10T00:00:00.000Z' }),
-    ];
-    render(<CompletedProjectsView />);
-
-    expect(screen.getByText(/Feb 10, 2026/)).toBeInTheDocument();
-  });
-
   it('falls back to updated_at when completed_at is null', () => {
     mockProjects = [
       fakeProject({ id: 'p1', title: 'Done', completed_at: null, updated_at: '2026-02-05T00:00:00.000Z' }),

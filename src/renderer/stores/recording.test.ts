@@ -201,30 +201,6 @@ describe('RecordingSlice', () => {
     });
   });
 
-  describe('fetchAudioSources', () => {
-    it('populates audioSources from IPC', async () => {
-      const sources = [
-        { id: 'screen:1', name: 'Screen 1', type: 'screen' as const },
-        { id: 'window:1', name: 'Chrome', type: 'window' as const },
-      ];
-      mockCortex.recording.getSources.mockResolvedValue(sources);
-
-      const store = createStore();
-      await store.fetchAudioSources();
-
-      expect(store.audioSources).toEqual(sources);
-    });
-
-    it('calls window.cortex.recording.getSources', async () => {
-      mockCortex.recording.getSources.mockResolvedValue([]);
-
-      const store = createStore();
-      await store.fetchAudioSources();
-
-      expect(mockCortex.recording.getSources).toHaveBeenCalledOnce();
-    });
-  });
-
   describe('resetRecording', () => {
     it('resets all state to initial values', () => {
       const store = createStore({
