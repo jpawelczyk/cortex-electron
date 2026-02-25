@@ -179,6 +179,7 @@ describe('TranscriptView', () => {
           transcriptionStatus="completed"
         />
       );
+      fireEvent.click(screen.getByRole('button', { name: /transcript/i }));
       expect(screen.getByText('Hello world')).toBeInTheDocument();
       expect(screen.getByText('This is a test')).toBeInTheDocument();
       expect(screen.getByText('Third segment')).toBeInTheDocument();
@@ -194,6 +195,7 @@ describe('TranscriptView', () => {
           transcriptionStatus="completed"
         />
       );
+      fireEvent.click(screen.getByRole('button', { name: /transcript/i }));
       expect(screen.getByText('00:00')).toBeInTheDocument();
       expect(screen.getByText('01:05')).toBeInTheDocument();
       expect(screen.getByText('02:10')).toBeInTheDocument();
@@ -211,6 +213,7 @@ describe('TranscriptView', () => {
           onSeekTo={onSeekTo}
         />
       );
+      fireEvent.click(screen.getByRole('button', { name: /transcript/i }));
       fireEvent.click(screen.getByText('01:05'));
       expect(onSeekTo).toHaveBeenCalledWith(65);
     });
@@ -225,6 +228,7 @@ describe('TranscriptView', () => {
           transcriptionStatus="completed"
         />
       );
+      fireEvent.click(screen.getByRole('button', { name: /transcript/i }));
       expect(() => fireEvent.click(screen.getByText('00:00'))).not.toThrow();
     });
   });
@@ -240,6 +244,7 @@ describe('TranscriptView', () => {
           transcriptionStatus="completed"
         />
       );
+      fireEvent.click(screen.getByRole('button', { name: /transcript/i }));
       expect(screen.getByText('This is the full transcript text.')).toBeInTheDocument();
     });
   });
