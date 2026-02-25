@@ -10,6 +10,7 @@ vi.mock('child_process', () => ({
 vi.mock('fs/promises', () => ({
   unlink: vi.fn(),
   readFile: vi.fn(),
+  stat: vi.fn(),
 }));
 
 import * as childProcess from 'child_process';
@@ -48,7 +49,7 @@ describe('TranscriptionService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    service = createTranscriptionService();
+    service = createTranscriptionService('/models');
   });
 
   describe('isAvailable', () => {
@@ -118,6 +119,11 @@ describe('TranscriptionService', () => {
   });
 
   describe('transcribe', () => {
+    beforeEach(() => {
+      // Model file exists by default; individual tests override for ENOENT
+      vi.mocked(fs.stat).mockResolvedValue({} as import('fs').Stats);
+    });
+
     it('calls ffmpeg to convert webm to wav with correct flags', async () => {
       const calls: { cmd: string; args: string[] }[] = [];
       vi.mocked(childProcess.execFile).mockImplementation(
@@ -149,7 +155,7 @@ describe('TranscriptionService', () => {
       expect(ffmpegCall!.args).toContain('wav');
     });
 
-    it('calls whisper with --output-json and --model flags', async () => {
+    it('calls whisper-cpp with --output-json and resolved model file path', async () => {
       const calls: { cmd: string; args: string[] }[] = [];
       vi.mocked(childProcess.execFile).mockImplementation(
         (cmd: unknown, args: unknown, _opts: unknown, callback: unknown) => {
@@ -171,7 +177,8 @@ describe('TranscriptionService', () => {
       expect(whisperCall).toBeDefined();
       expect(whisperCall!.args).toContain('--output-json');
       expect(whisperCall!.args).toContain('--model');
-      expect(whisperCall!.args).toContain('base');
+      // Should pass full file path, not bare model name
+      expect(whisperCall!.args).toContain('/models/ggml-base.bin');
     });
 
     it('parses whisper JSON output into TranscriptSegments', async () => {
@@ -314,6 +321,48 @@ describe('TranscriptionService', () => {
         'ffmpeg: command not found',
       );
     });
+
+    it('passes a timeout to execFile so it does not hang forever', async () => {
+      const execFileOpts: Array<Record<string, unknown>> = [];
+      vi.mocked(childProcess.execFile).mockImplementation(
+        (_cmd: unknown, _args: unknown, opts: unknown, callback: unknown) => {
+          const cb = callback as (err: null, stdout: string, stderr: string) => void;
+          execFileOpts.push(opts as Record<string, unknown>);
+          if (execFileOpts.length === 2) {
+            process.nextTick(() => cb(null, WHISPER_JSON_OUTPUT, ''));
+          } else {
+            process.nextTick(() => cb(null, '', ''));
+          }
+          return { kill: vi.fn() } as unknown as ChildProcess;
+        },
+      );
+      vi.mocked(fs.unlink).mockResolvedValue(undefined);
+
+      await service.transcribe('/tmp/meeting.webm');
+
+      // Both ffmpeg and whisper calls should have a timeout
+      expect(execFileOpts.length).toBeGreaterThanOrEqual(2);
+      for (const opts of execFileOpts) {
+        expect(opts.timeout).toBeGreaterThan(0);
+      }
+    });
+
+    it('rejects with a clear error when model file is not found', async () => {
+      vi.mocked(childProcess.execFile).mockImplementation(
+        (_cmd: unknown, _args: unknown, _opts: unknown, callback: unknown) => {
+          const cb = callback as (err: null, stdout: string, stderr: string) => void;
+          // ffmpeg succeeds
+          process.nextTick(() => cb(null, '', ''));
+          return { kill: vi.fn() } as unknown as ChildProcess;
+        },
+      );
+      vi.mocked(fs.unlink).mockResolvedValue(undefined);
+      vi.mocked(fs.stat).mockRejectedValue(new Error('ENOENT'));
+
+      await expect(service.transcribe('/tmp/meeting.webm', { model: 'large' })).rejects.toThrow(
+        /model.*not.*downloaded/i,
+      );
+    });
   });
 
   describe('transcribe with OpenAI whisper', () => {
@@ -420,11 +469,11 @@ describe('TranscriptionService', () => {
         },
       );
       vi.mocked(fs.unlink).mockResolvedValue(undefined);
+      vi.mocked(fs.stat).mockResolvedValue({} as import('fs').Stats);
 
       const transcribePromise = service.transcribe('/tmp/meeting.webm');
-      // Wait a tick for ffmpeg to complete and whisper to start
-      await new Promise((r) => process.nextTick(r));
-      await new Promise((r) => process.nextTick(r));
+      // Wait for ffmpeg to complete, stat to resolve, and whisper to start
+      await new Promise((r) => setTimeout(r, 10));
 
       service.cancel();
 

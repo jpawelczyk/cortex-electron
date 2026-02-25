@@ -2,7 +2,7 @@ import os from 'os';
 import path from 'path';
 import { execFile } from 'child_process';
 import type { ChildProcess } from 'child_process';
-import { unlink, readFile } from 'fs/promises';
+import { unlink, readFile, stat } from 'fs/promises';
 import type { TranscriptSegment } from '@shared/recording-types';
 
 export interface TranscriptionResult {
@@ -38,7 +38,7 @@ function which(binary: string): Promise<string> {
   return execFilePromise('which', [binary]);
 }
 
-export function createTranscriptionService(): TranscriptionService {
+export function createTranscriptionService(modelsDir?: string): TranscriptionService {
   let currentProcess: ChildProcess | null = null;
 
   // Cache the resolved whisper binary name across calls
@@ -70,9 +70,9 @@ export function createTranscriptionService(): TranscriptionService {
     return { whisper, ffmpeg };
   }
 
-  function runExecFile(cmd: string, args: string[]): Promise<string> {
+  function runExecFile(cmd: string, args: string[], timeout = 120_000): Promise<string> {
     return new Promise((resolve, reject) => {
-      const proc = execFile(cmd, args, {}, (err, stdout) => {
+      const proc = execFile(cmd, args, { timeout }, (err, stdout) => {
         currentProcess = null;
         if (err) reject(err);
         else resolve(stdout);
@@ -118,6 +118,19 @@ export function createTranscriptionService(): TranscriptionService {
     }
   }
 
+  async function resolveModelPath(model: string): Promise<string> {
+    if (!modelsDir) return model;
+    const modelPath = path.join(modelsDir, `ggml-${model}.bin`);
+    try {
+      await stat(modelPath);
+    } catch {
+      throw new Error(
+        `Whisper model "${model}" not downloaded. Please download it from Settings first.`,
+      );
+    }
+    return modelPath;
+  }
+
   async function runWhisper(wavPath: string, model: string): Promise<TranscriptionResult> {
     const bin = whisperBinCache ?? 'whisper-cpp';
 
@@ -127,12 +140,15 @@ export function createTranscriptionService(): TranscriptionService {
 
     // Try whisper-cpp first
     try {
+      const modelPath = await resolveModelPath(model);
       const threads = Math.min(os.cpus().length, 8).toString();
       const stdout = await runExecFile('whisper-cpp', [
-        '--model', model, '--language', 'auto', '--threads', threads, '--output-json', wavPath,
-      ]);
+        '--model', modelPath, '--language', 'auto', '--threads', threads, '--output-json', wavPath,
+      ], 300_000);
       return parseWhisperCppOutput(stdout);
-    } catch {
+    } catch (err) {
+      // Don't fall back if the model file is explicitly missing
+      if (err instanceof Error && err.message.includes('not downloaded')) throw err;
       // Fallback to OpenAI whisper
       whisperBinCache = 'whisper';
       return runOpenAIWhisper(wavPath, model);

@@ -5,7 +5,7 @@ import { app, BrowserWindow, desktopCapturer, dialog, ipcMain, nativeImage, net,
 // Ensure Electron inherits the user's shell PATH on macOS so that
 // bundled CLI tools (ffmpeg, whisper-cpp) are discoverable.
 fixPath();
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import path from 'path';
 import { initDatabase, closeDatabase, getPowerSyncDatabase } from './db/index.js';
 import { registerHandlers } from './ipc/handlers.js';
@@ -155,7 +155,7 @@ app.whenReady().then(async () => {
     if (!resolved.startsWith(recordingsDir + path.sep) && resolved !== recordingsDir) {
       return new Response('Forbidden', { status: 403 });
     }
-    return net.fetch(`file://${resolved}`);
+    return net.fetch(pathToFileURL(resolved).href);
   });
 
   // Register auth handlers BEFORE initDatabase() — the renderer can show
@@ -240,7 +240,8 @@ app.whenReady().then(async () => {
     registerRecordingHandlers(recordingService);
 
     // Initialize transcription service + model manager
-    const transcriptionService = createTranscriptionService();
+    const modelsDir = path.join(app.getPath('userData'), 'whisper-models');
+    const transcriptionService = createTranscriptionService(modelsDir);
     const modelManager = createModelManager(app);
     registerTranscriptionHandlers(transcriptionService, { db }, () => mainWindow, modelManager);
 
