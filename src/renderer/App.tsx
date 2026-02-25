@@ -10,13 +10,9 @@ import { getCreateAction } from './lib/getCreateAction';
 import { executeCreateAction } from './lib/executeCreateAction';
 import { Sidebar, SidebarView } from './components/Sidebar';
 import { InboxView } from './views/InboxView';
-import { TodayView } from './views/TodayView';
+import { TasksView } from './views/TasksView';
 import { TrashView } from './views/TrashView';
 import { LogbookView } from './views/LogbookView';
-import { UpcomingView } from './views/UpcomingView';
-import { AnytimeView } from './views/AnytimeView';
-import { SomedayView } from './views/SomedayView';
-import { StaleView } from './views/StaleView';
 import { ProjectsOverviewView } from './views/ProjectsOverviewView';
 import { ProjectDetailView } from './views/ProjectDetailView';
 import { NotesOverviewView } from './views/NotesOverviewView';
@@ -270,11 +266,9 @@ function AuthenticatedApp() {
         {activeView === 'home' && <HomeView onNavigate={handleViewChange} />}
         {activeView === 'daily' && <PlaceholderView title="Daily" />}
         {activeView === 'inbox' && <InboxView />}
-        {activeView === 'today' && <TodayView />}
-        {activeView === 'upcoming' && <UpcomingView />}
-        {activeView === 'anytime' && <AnytimeView />}
-        {activeView === 'someday' && <SomedayView />}
-        {activeView === 'stale' && <StaleView />}
+        {['tasks', 'today', 'upcoming', 'anytime', 'someday', 'stale'].includes(activeView) && (
+          <TasksView activeView={activeView} onViewChange={handleViewChange} taskCounts={taskCounts} />
+        )}
         {activeView === 'logbook' && <LogbookView />}
         {activeView === 'trash' && <TrashView />}
         {activeView === 'projects' && !selectedProjectId && <ProjectsOverviewView />}
@@ -301,7 +295,7 @@ function AuthenticatedApp() {
         onNavigateToTask={(task: Task) => {
           const viewMap: Record<string, SidebarView> = {
             inbox: 'inbox',
-            today: 'today',
+            today: 'tasks',
             upcoming: 'upcoming',
             anytime: 'anytime',
             someday: 'someday',

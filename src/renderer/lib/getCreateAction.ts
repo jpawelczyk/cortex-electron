@@ -26,6 +26,7 @@ export function getCreateAction(input: CreateActionInput): CreateAction {
   switch (activeView) {
     case 'inbox':
       return { type: 'task' };
+    case 'tasks':
     case 'today':
       return { type: 'task', defaults: { when_date: today } };
     case 'anytime':
