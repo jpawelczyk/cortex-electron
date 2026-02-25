@@ -2,7 +2,10 @@ import { ipcMain } from 'electron';
 import type { BrowserWindow } from 'electron';
 import { z } from 'zod';
 import type { TranscriptionService } from '../recording/transcription-service';
+import type { ModelManager } from '../recording/model-manager';
 import type { DbContext } from '../db/types';
+import { TranscriptionStartOptionsSchema, WhisperModelSchema } from '../../shared/validation';
+import { transcribeViaApi } from '../recording/api-transcription-service.js';
 
 const MeetingIdSchema = z.string().uuid();
 
@@ -19,6 +22,7 @@ export function registerTranscriptionHandlers(
   transcriptionService: TranscriptionService,
   ctx: DbContext,
   getMainWindow: () => BrowserWindow | null,
+  modelManager: ModelManager,
 ): void {
   const { db } = ctx;
 
@@ -31,9 +35,10 @@ export function registerTranscriptionHandlers(
     }
   });
 
-  ipcMain.handle('transcription:start', async (_, meetingId: unknown) => {
+  ipcMain.handle('transcription:start', async (_, meetingId: unknown, options?: unknown) => {
     try {
       const validatedId = MeetingIdSchema.parse(meetingId);
+      const opts = TranscriptionStartOptionsSchema.parse(options) ?? {};
 
       const meeting = await db.getOptional<Record<string, unknown>>(
         'SELECT * FROM meetings WHERE id = ? AND deleted_at IS NULL',
@@ -56,14 +61,21 @@ export function registerTranscriptionHandlers(
       );
 
       try {
-        const result = await transcriptionService.transcribe(audioPath, {
-          onProgress: (progress) => {
-            const win = getMainWindow();
-            if (win && !win.isDestroyed()) {
-              win.webContents.send('transcription:progress', { meetingId: validatedId, progress });
-            }
-          },
-        });
+        let result;
+
+        if (opts.provider === 'api' && opts.apiKey) {
+          result = await transcribeViaApi(audioPath, opts.apiKey);
+        } else {
+          result = await transcriptionService.transcribe(audioPath, {
+            model: opts.model,
+            onProgress: (progress) => {
+              const win = getMainWindow();
+              if (win && !win.isDestroyed()) {
+                win.webContents.send('transcription:progress', { meetingId: validatedId, progress });
+              }
+            },
+          });
+        }
 
         const updatedAt = new Date().toISOString();
         await db.execute(
@@ -99,5 +111,40 @@ export function registerTranscriptionHandlers(
 
   ipcMain.handle('transcription:cancel', () => {
     transcriptionService.cancel();
+  });
+
+  // Model management channels
+  ipcMain.handle('transcription:list-models', async () => {
+    try {
+      return await modelManager.listModels();
+    } catch (err) {
+      console.error('[IPC transcription:list-models]', err instanceof Error ? err.message : String(err));
+      throw toIpcError(err);
+    }
+  });
+
+  ipcMain.handle('transcription:download-model', async (_, name: unknown) => {
+    try {
+      const validatedName = WhisperModelSchema.parse(name);
+      await modelManager.downloadModel(validatedName, (progress) => {
+        const win = getMainWindow();
+        if (win && !win.isDestroyed()) {
+          win.webContents.send('transcription:download-progress', { model: validatedName, progress });
+        }
+      });
+    } catch (err) {
+      console.error('[IPC transcription:download-model]', err instanceof Error ? err.message : String(err));
+      throw toIpcError(err);
+    }
+  });
+
+  ipcMain.handle('transcription:delete-model', async (_, name: unknown) => {
+    try {
+      const validatedName = WhisperModelSchema.parse(name);
+      await modelManager.deleteModel(validatedName);
+    } catch (err) {
+      console.error('[IPC transcription:delete-model]', err instanceof Error ? err.message : String(err));
+      throw toIpcError(err);
+    }
   });
 }

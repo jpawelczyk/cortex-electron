@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Loader2, AlertCircle, FileText } from 'lucide-react';
 import { Button } from './ui/button';
+import { useStore } from '../stores';
 import type { TranscriptSegment, TranscriptionStatus } from '@shared/recording-types';
 
 interface TranscriptionAPI {
-  start: (meetingId: string) => Promise<void>;
+  start: (meetingId: string, options?: { provider?: string; apiKey?: string; model?: string }) => Promise<void>;
   check: () => Promise<{ whisper: boolean; ffmpeg: boolean }>;
 }
 
@@ -41,6 +42,9 @@ export function TranscriptView({
   const [toolsMissing, setToolsMissing] = useState<{ whisper: boolean; ffmpeg: boolean } | null>(null);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const transcriptionProvider = useStore((s) => s.transcriptionProvider);
+  const openaiApiKey = useStore((s) => s.openaiApiKey);
+  const whisperModel = useStore((s) => s.whisperModel);
 
   // Nothing to show if no audio
   if (!audioPath) return null;
@@ -49,17 +53,24 @@ export function TranscriptView({
     const api = getTranscriptionAPI();
     if (!api) return;
 
-    const tools = await api.check();
-    if (!tools.whisper || !tools.ffmpeg) {
-      setToolsMissing(tools);
-      return;
+    // Only check local tools when using local provider
+    if (transcriptionProvider === 'local') {
+      const tools = await api.check();
+      if (!tools.whisper || !tools.ffmpeg) {
+        setToolsMissing(tools);
+        return;
+      }
     }
 
     setToolsMissing(null);
     setError(null);
     setIsTranscribing(true);
     try {
-      await api.start(meetingId);
+      await api.start(meetingId, {
+        provider: transcriptionProvider,
+        apiKey: openaiApiKey,
+        model: whisperModel,
+      });
       onTranscriptionComplete?.();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Transcription failed');

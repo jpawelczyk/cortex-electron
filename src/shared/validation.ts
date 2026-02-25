@@ -190,6 +190,15 @@ export const CreateAIAgentSchema = z.object({
 
 export const AIAgentIdSchema = z.string().uuid();
 
+// Transcription
+export const TranscriptionProviderSchema = z.enum(['local', 'api']);
+export const WhisperModelSchema = z.enum(['tiny', 'base', 'small', 'medium', 'large']);
+export const TranscriptionStartOptionsSchema = z.object({
+  provider: TranscriptionProviderSchema.optional(),
+  apiKey: z.string().optional(),
+  model: WhisperModelSchema.optional(),
+}).optional();
+
 // Auth
 export const SignInSchema = z.object({
   email: z.string().email(),

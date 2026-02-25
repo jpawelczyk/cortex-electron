@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { format, parseISO } from 'date-fns';
-import { Bot, Plus, KeyRound, User, CloudSun, Layers } from 'lucide-react';
+import { Bot, Plus, KeyRound, User, CloudSun, Layers, Mic } from 'lucide-react';
 import { useStore } from '../stores';
 import { Button } from '@renderer/components/ui/button';
 import { Input } from '@renderer/components/ui/input';
 import { Label } from '@renderer/components/ui/label';
 import { CreateAgentDialog } from '@renderer/components/settings/CreateAgentDialog';
 import { ContextSettings } from '@renderer/components/ContextSettings';
+import { RecordingTranscriptionSettings } from '@renderer/components/settings/RecordingTranscriptionSettings';
 
 export function SettingsView() {
   const agents = useStore((s) => s.agents);
@@ -117,6 +118,15 @@ export function SettingsView() {
               </div>
             )}
           </div>
+        </section>
+
+        {/* Recording & Transcription Section */}
+        <section className="mb-8">
+          <div className="flex items-center gap-2 mb-4">
+            <Mic className="size-4 text-muted-foreground" />
+            <h2 className="text-sm font-medium">Recording & Transcription</h2>
+          </div>
+          <RecordingTranscriptionSettings />
         </section>
 
         {/* Contexts Section */}

@@ -77,7 +77,11 @@ describe('TranscriptView', () => {
         fireEvent.click(screen.getByRole('button', { name: /transcribe/i }));
       });
 
-      expect(mockTranscriptionStart).toHaveBeenCalledWith('m1');
+      expect(mockTranscriptionStart).toHaveBeenCalledWith('m1', {
+        provider: 'local',
+        apiKey: '',
+        model: 'base',
+      });
     });
   });
 
@@ -156,7 +160,11 @@ describe('TranscriptView', () => {
         fireEvent.click(screen.getByRole('button', { name: /retry/i }));
       });
 
-      expect(mockTranscriptionStart).toHaveBeenCalledWith('m1');
+      expect(mockTranscriptionStart).toHaveBeenCalledWith('m1', {
+        provider: 'local',
+        apiKey: '',
+        model: 'base',
+      });
     });
   });
 

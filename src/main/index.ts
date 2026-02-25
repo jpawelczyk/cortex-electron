@@ -18,7 +18,7 @@ import { FileAuthStorage } from './sync/auth-storage.js';
 import { getSyncConfig } from '../shared/config.js';
 import { SearchService } from './search/search-service.js';
 import { registerSearchHandlers } from './ipc/search-handlers.js';
-import { createRecordingService, createTranscriptionService } from './recording/index.js';
+import { createRecordingService, createTranscriptionService, createModelManager } from './recording/index.js';
 import { registerRecordingHandlers } from './ipc/recording-handlers.js';
 import { registerTranscriptionHandlers } from './ipc/transcription-handlers.js';
 import type { DbContext } from './db/types.js';
@@ -239,9 +239,10 @@ app.whenReady().then(async () => {
     const recordingService = createRecordingService(app);
     registerRecordingHandlers(recordingService);
 
-    // Initialize transcription service
+    // Initialize transcription service + model manager
     const transcriptionService = createTranscriptionService();
-    registerTranscriptionHandlers(transcriptionService, { db }, () => mainWindow);
+    const modelManager = createModelManager(app);
+    registerTranscriptionHandlers(transcriptionService, { db }, () => mainWindow, modelManager);
 
     // Initialize search service (non-blocking — model loads in background)
     searchService = new SearchService();

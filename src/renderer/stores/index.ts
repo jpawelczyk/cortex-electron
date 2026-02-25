@@ -52,6 +52,11 @@ function makeStore() {
         weatherCity: state.weatherCity,
         tabs: state.tabs,
         activeTabId: state.activeTabId,
+        transcriptionProvider: state.transcriptionProvider,
+        openaiApiKey: state.openaiApiKey,
+        whisperModel: state.whisperModel,
+        defaultRecordingMode: state.defaultRecordingMode,
+        autoTranscribe: state.autoTranscribe,
       }) as unknown as StoreState,
     }
   );

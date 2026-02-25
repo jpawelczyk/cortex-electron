@@ -11,7 +11,7 @@ import type {
   Meeting, CreateMeetingInput, UpdateMeetingInput, MeetingAttendee,
 } from '../shared/types';
 import type { HybridSearchResult, SearchStatus, SearchableEntityType } from '../shared/search-types';
-import type { AudioSource } from '../shared/recording-types';
+import type { AudioSource, WhisperModelInfo, WhisperModel } from '../shared/recording-types';
 
 interface DailyNote {
   date: string;
@@ -174,13 +174,21 @@ const api = {
 
   transcription: {
     check: (): Promise<{ whisper: boolean; ffmpeg: boolean }> => ipcRenderer.invoke('transcription:check'),
-    start: (meetingId: string): Promise<{ text: string; segments: unknown[]; language: string }> =>
-      ipcRenderer.invoke('transcription:start', meetingId),
+    start: (meetingId: string, options?: { provider?: string; apiKey?: string; model?: string }): Promise<{ text: string; segments: unknown[]; language: string }> =>
+      ipcRenderer.invoke('transcription:start', meetingId, options),
     cancel: (): Promise<void> => ipcRenderer.invoke('transcription:cancel'),
     onProgress: (callback: (data: { meetingId: string; progress: number }) => void) => {
       const handler = (_event: unknown, data: { meetingId: string; progress: number }) => callback(data);
       ipcRenderer.on('transcription:progress', handler);
       return () => { ipcRenderer.removeListener('transcription:progress', handler); };
+    },
+    listModels: (): Promise<WhisperModelInfo[]> => ipcRenderer.invoke('transcription:list-models'),
+    downloadModel: (name: WhisperModel): Promise<void> => ipcRenderer.invoke('transcription:download-model', name),
+    deleteModel: (name: WhisperModel): Promise<void> => ipcRenderer.invoke('transcription:delete-model', name),
+    onDownloadProgress: (callback: (data: { model: string; progress: number }) => void) => {
+      const handler = (_event: unknown, data: { model: string; progress: number }) => callback(data);
+      ipcRenderer.on('transcription:download-progress', handler);
+      return () => { ipcRenderer.removeListener('transcription:download-progress', handler); };
     },
   },
 };

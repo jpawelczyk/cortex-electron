@@ -7,7 +7,7 @@ import type {
   Meeting, CreateMeetingInput, UpdateMeetingInput, MeetingAttendee,
 } from './types';
 import type { HybridSearchResult, SearchStatus, SearchableEntityType } from './search-types';
-import type { AudioSource } from './recording-types';
+import type { AudioSource, WhisperModelInfo, WhisperModel } from './recording-types';
 
 declare global {
   interface Window {
@@ -125,6 +125,16 @@ declare global {
         save(meetingId: string, data: ArrayBuffer): Promise<string>;
         delete(audioPath: string): Promise<void>;
         openSystemPrefs(): Promise<void>;
+      };
+      transcription: {
+        check(): Promise<{ whisper: boolean; ffmpeg: boolean }>;
+        start(meetingId: string, options?: { provider?: string; apiKey?: string; model?: string }): Promise<{ text: string; segments: unknown[]; language: string }>;
+        cancel(): Promise<void>;
+        onProgress(callback: (data: { meetingId: string; progress: number }) => void): () => void;
+        listModels(): Promise<WhisperModelInfo[]>;
+        downloadModel(name: WhisperModel): Promise<void>;
+        deleteModel(name: WhisperModel): Promise<void>;
+        onDownloadProgress(callback: (data: { model: string; progress: number }) => void): () => void;
       };
     };
   }

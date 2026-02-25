@@ -15,6 +15,7 @@ vi.mock('zod', async (importOriginal) => {
 
 import { ipcMain } from 'electron';
 import type { TranscriptionService } from '../../recording/transcription-service';
+import type { ModelManager } from '../../recording/model-manager';
 import type { AsyncDatabase } from '../../db/types';
 import { registerTranscriptionHandlers } from '../transcription-handlers';
 
@@ -60,11 +61,21 @@ const MOCK_MEETING = {
   is_all_day: 0,
 };
 
+function createMockModelManager(): ModelManager {
+  return {
+    listModels: vi.fn().mockResolvedValue([]),
+    downloadModel: vi.fn().mockResolvedValue(undefined),
+    deleteModel: vi.fn().mockResolvedValue(undefined),
+    cancelDownload: vi.fn(),
+  };
+}
+
 describe('registerTranscriptionHandlers', () => {
   let transcriptionService: TranscriptionService;
   let db: AsyncDatabase;
   let getMainWindow: () => { webContents: { send: ReturnType<typeof vi.fn> } } | null;
   let mockSend: ReturnType<typeof vi.fn>;
+  let modelManager: ModelManager;
 
   beforeEach(() => {
     vi.mocked(ipcMain.handle).mockClear();
@@ -72,8 +83,9 @@ describe('registerTranscriptionHandlers', () => {
     db = createMockDb(MOCK_MEETING);
     mockSend = vi.fn();
     getMainWindow = () => ({ webContents: { send: mockSend }, isDestroyed: () => false });
+    modelManager = createMockModelManager();
 
-    registerTranscriptionHandlers(transcriptionService, { db }, getMainWindow as () => Electron.BrowserWindow | null);
+    registerTranscriptionHandlers(transcriptionService, { db }, getMainWindow as () => Electron.BrowserWindow | null, modelManager);
   });
 
   describe('channel registration', () => {
@@ -117,7 +129,7 @@ describe('registerTranscriptionHandlers', () => {
     it('throws when meeting not found', async () => {
       const emptyDb = createMockDb(null);
       vi.mocked(ipcMain.handle).mockClear();
-      registerTranscriptionHandlers(transcriptionService, { db: emptyDb }, getMainWindow as () => Electron.BrowserWindow | null);
+      registerTranscriptionHandlers(transcriptionService, { db: emptyDb }, getMainWindow as () => Electron.BrowserWindow | null, modelManager);
       const handler = getHandler('transcription:start');
       await expect(handler({}, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11')).rejects.toThrow('Meeting not found');
     });
@@ -125,7 +137,7 @@ describe('registerTranscriptionHandlers', () => {
     it('throws when meeting has no audio_path', async () => {
       const noAudioDb = createMockDb({ ...MOCK_MEETING, audio_path: null });
       vi.mocked(ipcMain.handle).mockClear();
-      registerTranscriptionHandlers(transcriptionService, { db: noAudioDb }, getMainWindow as () => Electron.BrowserWindow | null);
+      registerTranscriptionHandlers(transcriptionService, { db: noAudioDb }, getMainWindow as () => Electron.BrowserWindow | null, modelManager);
       const handler = getHandler('transcription:start');
       await expect(handler({}, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11')).rejects.toThrow('No audio recording');
     });

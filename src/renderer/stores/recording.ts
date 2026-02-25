@@ -1,5 +1,6 @@
 import type { StateCreator } from 'zustand';
 import type { RecordingMode, RecordingStatus, AudioSource } from '@shared/recording-types';
+import type { SettingsSlice } from './settings';
 
 export interface RecordingSlice {
   recordingStatus: RecordingStatus;
@@ -61,7 +62,7 @@ async function getMergedStream(sourceId: string): Promise<MediaStream> {
   return destination.stream;
 }
 
-export const createRecordingSlice: StateCreator<RecordingSlice> = (set, get) => ({
+export const createRecordingSlice: StateCreator<RecordingSlice, [], [], RecordingSlice> = (set, get) => ({
   recordingStatus: 'idle',
   recordingMeetingId: null,
   recordingDuration: 0,
@@ -147,6 +148,18 @@ export const createRecordingSlice: StateCreator<RecordingSlice> = (set, get) => 
             recordingMode: null,
             recordingDuration: 0,
           });
+
+          // Auto-transcribe if enabled
+          const settingsState = get() as unknown as SettingsSlice;
+          if (settingsState.autoTranscribe) {
+            window.cortex.transcription.start(recordingMeetingId, {
+              provider: settingsState.transcriptionProvider,
+              apiKey: settingsState.openaiApiKey,
+              model: settingsState.whisperModel,
+            }).catch((err: unknown) => {
+              console.error('[RecordingSlice] auto-transcribe failed:', err);
+            });
+          }
 
           resolve(audioPath);
         } catch (err) {
