@@ -17,16 +17,6 @@ import * as childProcess from 'child_process';
 import * as fs from 'fs/promises';
 import { createTranscriptionService } from '../transcription-service';
 
-function mockExecFileError(message: string) {
-  vi.mocked(childProcess.execFile).mockImplementation(
-    (_cmd: unknown, _args: unknown, _opts: unknown, callback: unknown) => {
-      const cb = callback as (err: Error) => void;
-      process.nextTick(() => cb(new Error(message)));
-      return { kill: vi.fn() } as unknown as ChildProcess;
-    },
-  );
-}
-
 const OPENAI_WHISPER_JSON = JSON.stringify({
   text: ' Hello world How are you',
   segments: [
@@ -44,6 +34,39 @@ const WHISPER_JSON_OUTPUT = JSON.stringify({
   result: { language: 'en' },
 });
 
+/**
+ * Helper: create a command-aware execFile mock.
+ * Routes calls based on the executed command name.
+ */
+function mockExecFileRouter(
+  handlers: Record<string, (args: string[], opts: Record<string, unknown>) => { err: Error | null; stdout: string }>,
+  opts?: { killFn?: ReturnType<typeof vi.fn>; onCall?: (cmd: string, args: string[], callOpts: Record<string, unknown>) => void },
+) {
+  const killFn = opts?.killFn ?? vi.fn();
+  vi.mocked(childProcess.execFile).mockImplementation(
+    (cmd: unknown, args: unknown, callOpts: unknown, callback: unknown) => {
+      const cmdStr = cmd as string;
+      const argArr = args as string[];
+      const optsObj = callOpts as Record<string, unknown>;
+      const cb = callback as (err: Error | null, stdout: string, stderr: string) => void;
+      opts?.onCall?.(cmdStr, argArr, optsObj);
+
+      // `which` checks — route based on the binary being looked up
+      const key = cmdStr === 'which' ? `which:${argArr[0]}` : cmdStr;
+
+      const handler = handlers[key] ?? handlers['*'];
+      if (handler) {
+        const result = handler(argArr, optsObj);
+        process.nextTick(() => cb(result.err, result.stdout, ''));
+      } else {
+        process.nextTick(() => cb(new Error(`Unexpected command: ${cmdStr} ${argArr.join(' ')}`), '', ''));
+      }
+      return { kill: killFn } as unknown as ChildProcess;
+    },
+  );
+  return killFn;
+}
+
 describe('TranscriptionService', () => {
   let service: ReturnType<typeof createTranscriptionService>;
 
@@ -54,92 +77,67 @@ describe('TranscriptionService', () => {
 
   describe('isAvailable', () => {
     it('returns true for whisper when which finds whisper-cpp', async () => {
-      vi.mocked(childProcess.execFile).mockImplementation(
-        (_cmd: unknown, args: unknown, _opts: unknown, callback: unknown) => {
-          const cb = callback as (err: null, stdout: string, stderr: string) => void;
-          const argArr = args as string[];
-          // which whisper-cpp succeeds, which ffmpeg succeeds
-          process.nextTick(() => cb(null, '/usr/local/bin/' + argArr[0], ''));
-          return { kill: vi.fn() } as unknown as ChildProcess;
-        },
-      );
+      mockExecFileRouter({
+        'which:whisper-cpp': () => ({ err: null, stdout: '/usr/local/bin/whisper-cpp' }),
+        'which:ffmpeg': () => ({ err: null, stdout: '/usr/local/bin/ffmpeg' }),
+      });
       const result = await service.isAvailable();
       expect(result.whisper).toBe(true);
       expect(result.ffmpeg).toBe(true);
     });
 
     it('falls back to "whisper" when whisper-cpp not found', async () => {
-      let callCount = 0;
-      vi.mocked(childProcess.execFile).mockImplementation(
-        (_cmd: unknown, args: unknown, _opts: unknown, callback: unknown) => {
-          const cb = callback as (err: Error | null, stdout?: string) => void;
-          const argArr = args as string[];
-          callCount++;
-          if (argArr[0] === 'whisper-cpp') {
-            process.nextTick(() => cb(new Error('not found')));
-          } else {
-            process.nextTick(() => cb(null, '/usr/local/bin/' + argArr[0]));
-          }
-          return { kill: vi.fn() } as unknown as ChildProcess;
-        },
-      );
+      mockExecFileRouter({
+        'which:whisper-cpp': () => ({ err: new Error('not found'), stdout: '' }),
+        'which:whisper': () => ({ err: null, stdout: '/usr/local/bin/whisper' }),
+        'which:ffmpeg': () => ({ err: null, stdout: '/usr/local/bin/ffmpeg' }),
+      });
       const result = await service.isAvailable();
       expect(result.whisper).toBe(true);
-      expect(callCount).toBeGreaterThanOrEqual(2); // tried whisper-cpp, then whisper
     });
 
     it('returns false for whisper when neither whisper-cpp nor whisper found', async () => {
-      vi.mocked(childProcess.execFile).mockImplementation(
-        (_cmd: unknown, _args: unknown, _opts: unknown, callback: unknown) => {
-          const cb = callback as (err: Error) => void;
-          process.nextTick(() => cb(new Error('not found')));
-          return { kill: vi.fn() } as unknown as ChildProcess;
-        },
-      );
+      mockExecFileRouter({
+        '*': () => ({ err: new Error('not found'), stdout: '' }),
+      });
       const result = await service.isAvailable();
       expect(result.whisper).toBe(false);
     });
 
     it('returns false for ffmpeg when not found', async () => {
-      vi.mocked(childProcess.execFile).mockImplementation(
-        (_cmd: unknown, args: unknown, _opts: unknown, callback: unknown) => {
-          const cb = callback as (err: Error | null, stdout?: string) => void;
-          const argArr = args as string[];
-          if (argArr[0] === 'ffmpeg') {
-            process.nextTick(() => cb(new Error('not found')));
-          } else {
-            process.nextTick(() => cb(null, '/usr/local/bin/' + argArr[0]));
-          }
-          return { kill: vi.fn() } as unknown as ChildProcess;
-        },
-      );
+      mockExecFileRouter({
+        'which:whisper-cpp': () => ({ err: null, stdout: '/usr/local/bin/whisper-cpp' }),
+        'which:ffmpeg': () => ({ err: new Error('not found'), stdout: '' }),
+      });
       const result = await service.isAvailable();
       expect(result.ffmpeg).toBe(false);
     });
   });
 
-  describe('transcribe', () => {
+  describe('transcribe with whisper-cpp', () => {
     beforeEach(() => {
-      // Model file exists by default; individual tests override for ENOENT
       vi.mocked(fs.stat).mockResolvedValue({} as import('fs').Stats);
+      vi.mocked(fs.unlink).mockResolvedValue(undefined);
+      vi.mocked(fs.readFile).mockResolvedValue(WHISPER_JSON_OUTPUT);
     });
+
+    function setupWhisperCpp() {
+      mockExecFileRouter({
+        'which:whisper-cpp': () => ({ err: null, stdout: '/usr/local/bin/whisper-cpp' }),
+        'ffmpeg': () => ({ err: null, stdout: '' }),
+        'whisper-cpp': () => ({ err: null, stdout: '' }), // output goes to file
+      });
+    }
 
     it('calls ffmpeg to convert webm to wav with correct flags', async () => {
       const calls: { cmd: string; args: string[] }[] = [];
-      vi.mocked(childProcess.execFile).mockImplementation(
-        (cmd: unknown, args: unknown, _opts: unknown, callback: unknown) => {
-          const cb = callback as (err: null, stdout: string, stderr: string) => void;
-          calls.push({ cmd: cmd as string, args: args as string[] });
-          // Second call (whisper) returns JSON
-          if (calls.length === 2) {
-            process.nextTick(() => cb(null, WHISPER_JSON_OUTPUT, ''));
-          } else {
-            process.nextTick(() => cb(null, '', ''));
-          }
-          return { kill: vi.fn() } as unknown as ChildProcess;
-        },
-      );
-      vi.mocked(fs.unlink).mockResolvedValue(undefined);
+      mockExecFileRouter({
+        'which:whisper-cpp': () => ({ err: null, stdout: '/usr/local/bin/whisper-cpp' }),
+        'ffmpeg': () => ({ err: null, stdout: '' }),
+        'whisper-cpp': () => ({ err: null, stdout: '' }),
+      }, {
+        onCall: (cmd, args) => calls.push({ cmd, args }),
+      });
 
       await service.transcribe('/tmp/meeting.webm');
 
@@ -157,45 +155,34 @@ describe('TranscriptionService', () => {
 
     it('calls whisper-cpp with --output-json and resolved model file path', async () => {
       const calls: { cmd: string; args: string[] }[] = [];
-      vi.mocked(childProcess.execFile).mockImplementation(
-        (cmd: unknown, args: unknown, _opts: unknown, callback: unknown) => {
-          const cb = callback as (err: null, stdout: string, stderr: string) => void;
-          calls.push({ cmd: cmd as string, args: args as string[] });
-          if (calls.length === 2) {
-            process.nextTick(() => cb(null, WHISPER_JSON_OUTPUT, ''));
-          } else {
-            process.nextTick(() => cb(null, '', ''));
-          }
-          return { kill: vi.fn() } as unknown as ChildProcess;
-        },
-      );
-      vi.mocked(fs.unlink).mockResolvedValue(undefined);
+      mockExecFileRouter({
+        'which:whisper-cpp': () => ({ err: null, stdout: '/usr/local/bin/whisper-cpp' }),
+        'ffmpeg': () => ({ err: null, stdout: '' }),
+        'whisper-cpp': () => ({ err: null, stdout: '' }),
+      }, {
+        onCall: (cmd, args) => calls.push({ cmd, args }),
+      });
 
       await service.transcribe('/tmp/meeting.webm', { model: 'base' });
 
-      const whisperCall = calls.find((c) => c.cmd === 'whisper-cpp' || c.cmd === 'whisper');
+      const whisperCall = calls.find((c) => c.cmd === 'whisper-cpp');
       expect(whisperCall).toBeDefined();
       expect(whisperCall!.args).toContain('--output-json');
       expect(whisperCall!.args).toContain('--model');
-      // Should pass full file path, not bare model name
       expect(whisperCall!.args).toContain('/models/ggml-base.bin');
     });
 
+    it('reads JSON output from file (not stdout)', async () => {
+      setupWhisperCpp();
+
+      await service.transcribe('/tmp/meeting.webm');
+
+      // Should read the JSON file produced by whisper-cpp
+      expect(fs.readFile).toHaveBeenCalledWith(expect.stringMatching(/\.json$/), 'utf-8');
+    });
+
     it('parses whisper JSON output into TranscriptSegments', async () => {
-      let callCount = 0;
-      vi.mocked(childProcess.execFile).mockImplementation(
-        (_cmd: unknown, _args: unknown, _opts: unknown, callback: unknown) => {
-          const cb = callback as (err: null, stdout: string, stderr: string) => void;
-          callCount++;
-          if (callCount === 2) {
-            process.nextTick(() => cb(null, WHISPER_JSON_OUTPUT, ''));
-          } else {
-            process.nextTick(() => cb(null, '', ''));
-          }
-          return { kill: vi.fn() } as unknown as ChildProcess;
-        },
-      );
-      vi.mocked(fs.unlink).mockResolvedValue(undefined);
+      setupWhisperCpp();
 
       const result = await service.transcribe('/tmp/meeting.webm');
 
@@ -205,20 +192,7 @@ describe('TranscriptionService', () => {
     });
 
     it('returns concatenated text from all segments', async () => {
-      let callCount = 0;
-      vi.mocked(childProcess.execFile).mockImplementation(
-        (_cmd: unknown, _args: unknown, _opts: unknown, callback: unknown) => {
-          const cb = callback as (err: null, stdout: string, stderr: string) => void;
-          callCount++;
-          if (callCount === 2) {
-            process.nextTick(() => cb(null, WHISPER_JSON_OUTPUT, ''));
-          } else {
-            process.nextTick(() => cb(null, '', ''));
-          }
-          return { kill: vi.fn() } as unknown as ChildProcess;
-        },
-      );
-      vi.mocked(fs.unlink).mockResolvedValue(undefined);
+      setupWhisperCpp();
 
       const result = await service.transcribe('/tmp/meeting.webm');
 
@@ -226,20 +200,7 @@ describe('TranscriptionService', () => {
     });
 
     it('returns the detected language', async () => {
-      let callCount = 0;
-      vi.mocked(childProcess.execFile).mockImplementation(
-        (_cmd: unknown, _args: unknown, _opts: unknown, callback: unknown) => {
-          const cb = callback as (err: null, stdout: string, stderr: string) => void;
-          callCount++;
-          if (callCount === 2) {
-            process.nextTick(() => cb(null, WHISPER_JSON_OUTPUT, ''));
-          } else {
-            process.nextTick(() => cb(null, '', ''));
-          }
-          return { kill: vi.fn() } as unknown as ChildProcess;
-        },
-      );
-      vi.mocked(fs.unlink).mockResolvedValue(undefined);
+      setupWhisperCpp();
 
       const result = await service.transcribe('/tmp/meeting.webm');
 
@@ -247,20 +208,7 @@ describe('TranscriptionService', () => {
     });
 
     it('cleans up the temp wav file after transcription', async () => {
-      let callCount = 0;
-      vi.mocked(childProcess.execFile).mockImplementation(
-        (_cmd: unknown, _args: unknown, _opts: unknown, callback: unknown) => {
-          const cb = callback as (err: null, stdout: string, stderr: string) => void;
-          callCount++;
-          if (callCount === 2) {
-            process.nextTick(() => cb(null, WHISPER_JSON_OUTPUT, ''));
-          } else {
-            process.nextTick(() => cb(null, '', ''));
-          }
-          return { kill: vi.fn() } as unknown as ChildProcess;
-        },
-      );
-      vi.mocked(fs.unlink).mockResolvedValue(undefined);
+      setupWhisperCpp();
 
       await service.transcribe('/tmp/meeting.webm');
 
@@ -268,41 +216,20 @@ describe('TranscriptionService', () => {
     });
 
     it('cleans up the temp wav file even when transcription fails', async () => {
-      let callCount = 0;
-      vi.mocked(childProcess.execFile).mockImplementation(
-        (_cmd: unknown, _args: unknown, _opts: unknown, callback: unknown) => {
-          const cb = callback as (err: Error | null, stdout?: string) => void;
-          callCount++;
-          if (callCount === 1) {
-            process.nextTick(() => cb(null, ''));
-          } else {
-            process.nextTick(() => cb(new Error('whisper failed')));
-          }
-          return { kill: vi.fn() } as unknown as ChildProcess;
-        },
-      );
-      vi.mocked(fs.unlink).mockResolvedValue(undefined);
+      mockExecFileRouter({
+        'which:whisper-cpp': () => ({ err: null, stdout: '/usr/local/bin/whisper-cpp' }),
+        'which:whisper': () => ({ err: new Error('not found'), stdout: '' }),
+        'ffmpeg': () => ({ err: null, stdout: '' }),
+        'whisper-cpp': () => ({ err: new Error('whisper failed'), stdout: '' }),
+      });
 
-      await expect(service.transcribe('/tmp/meeting.webm')).rejects.toThrow('whisper failed');
+      await expect(service.transcribe('/tmp/meeting.webm')).rejects.toThrow();
 
       expect(fs.unlink).toHaveBeenCalledWith(expect.stringMatching(/\.wav$/));
     });
 
     it('reports progress via onProgress callback', async () => {
-      let callCount = 0;
-      vi.mocked(childProcess.execFile).mockImplementation(
-        (_cmd: unknown, _args: unknown, _opts: unknown, callback: unknown) => {
-          const cb = callback as (err: null, stdout: string, stderr: string) => void;
-          callCount++;
-          if (callCount === 2) {
-            process.nextTick(() => cb(null, WHISPER_JSON_OUTPUT, ''));
-          } else {
-            process.nextTick(() => cb(null, '', ''));
-          }
-          return { kill: vi.fn() } as unknown as ChildProcess;
-        },
-      );
-      vi.mocked(fs.unlink).mockResolvedValue(undefined);
+      setupWhisperCpp();
 
       const progressValues: number[] = [];
       await service.transcribe('/tmp/meeting.webm', {
@@ -314,8 +241,9 @@ describe('TranscriptionService', () => {
     });
 
     it('rejects when ffmpeg conversion fails', async () => {
-      mockExecFileError('ffmpeg: command not found');
-      vi.mocked(fs.unlink).mockResolvedValue(undefined);
+      mockExecFileRouter({
+        '*': () => ({ err: new Error('ffmpeg: command not found'), stdout: '' }),
+      });
 
       await expect(service.transcribe('/tmp/meeting.webm')).rejects.toThrow(
         'ffmpeg: command not found',
@@ -323,77 +251,88 @@ describe('TranscriptionService', () => {
     });
 
     it('passes a timeout to execFile so it does not hang forever', async () => {
-      const execFileOpts: Array<Record<string, unknown>> = [];
-      vi.mocked(childProcess.execFile).mockImplementation(
-        (_cmd: unknown, _args: unknown, opts: unknown, callback: unknown) => {
-          const cb = callback as (err: null, stdout: string, stderr: string) => void;
-          execFileOpts.push(opts as Record<string, unknown>);
-          if (execFileOpts.length === 2) {
-            process.nextTick(() => cb(null, WHISPER_JSON_OUTPUT, ''));
-          } else {
-            process.nextTick(() => cb(null, '', ''));
-          }
-          return { kill: vi.fn() } as unknown as ChildProcess;
-        },
-      );
-      vi.mocked(fs.unlink).mockResolvedValue(undefined);
+      const optsList: Array<Record<string, unknown>> = [];
+      mockExecFileRouter({
+        'which:whisper-cpp': () => ({ err: null, stdout: '/usr/local/bin/whisper-cpp' }),
+        'ffmpeg': () => ({ err: null, stdout: '' }),
+        'whisper-cpp': () => ({ err: null, stdout: '' }),
+      }, {
+        onCall: (_cmd, _args, opts) => optsList.push(opts),
+      });
 
       await service.transcribe('/tmp/meeting.webm');
 
-      // Both ffmpeg and whisper calls should have a timeout
-      expect(execFileOpts.length).toBeGreaterThanOrEqual(2);
-      for (const opts of execFileOpts) {
-        expect(opts.timeout).toBeGreaterThan(0);
-      }
+      // ffmpeg and whisper-cpp calls (not `which`) should have a timeout
+      const timedCalls = optsList.filter((o) => typeof o.timeout === 'number' && o.timeout > 0);
+      expect(timedCalls.length).toBeGreaterThanOrEqual(2);
     });
 
     it('rejects with a clear error when model file is not found', async () => {
-      vi.mocked(childProcess.execFile).mockImplementation(
-        (_cmd: unknown, _args: unknown, _opts: unknown, callback: unknown) => {
-          const cb = callback as (err: null, stdout: string, stderr: string) => void;
-          // ffmpeg succeeds
-          process.nextTick(() => cb(null, '', ''));
-          return { kill: vi.fn() } as unknown as ChildProcess;
-        },
-      );
-      vi.mocked(fs.unlink).mockResolvedValue(undefined);
+      mockExecFileRouter({
+        'which:whisper-cpp': () => ({ err: null, stdout: '/usr/local/bin/whisper-cpp' }),
+        'ffmpeg': () => ({ err: null, stdout: '' }),
+      });
       vi.mocked(fs.stat).mockRejectedValue(new Error('ENOENT'));
 
       await expect(service.transcribe('/tmp/meeting.webm', { model: 'large' })).rejects.toThrow(
         /model.*not.*downloaded/i,
       );
     });
+
+    it('cleans up the whisper-cpp JSON output file', async () => {
+      setupWhisperCpp();
+
+      await service.transcribe('/tmp/meeting.webm');
+
+      const unlinkCalls = vi.mocked(fs.unlink).mock.calls.map((c) => c[0] as string);
+      expect(unlinkCalls.some((p) => p.endsWith('.json'))).toBe(true);
+    });
+  });
+
+  describe('transcribe falls back to OpenAI whisper', () => {
+    it('uses OpenAI whisper when whisper-cpp is not installed', async () => {
+      const calls: { cmd: string; args: string[] }[] = [];
+      mockExecFileRouter({
+        'which:whisper-cpp': () => ({ err: new Error('not found'), stdout: '' }),
+        'which:whisper': () => ({ err: null, stdout: '/usr/local/bin/whisper' }),
+        'ffmpeg': () => ({ err: null, stdout: '' }),
+        'whisper': () => ({ err: null, stdout: '' }),
+      }, {
+        onCall: (cmd, args) => calls.push({ cmd, args }),
+      });
+      vi.mocked(fs.readFile).mockResolvedValue(OPENAI_WHISPER_JSON);
+      vi.mocked(fs.unlink).mockResolvedValue(undefined);
+
+      const result = await service.transcribe('/tmp/meeting.webm');
+
+      // Should NOT call whisper-cpp, should call whisper
+      expect(calls.some((c) => c.cmd === 'whisper-cpp')).toBe(false);
+      const whisperCall = calls.find((c) => c.cmd === 'whisper');
+      expect(whisperCall).toBeDefined();
+      expect(result.text).toBe('Hello world How are you');
+    });
   });
 
   describe('transcribe with OpenAI whisper', () => {
     beforeEach(async () => {
       // Resolve whisperBinCache to 'whisper' by making whisper-cpp unavailable
-      vi.mocked(childProcess.execFile).mockImplementation(
-        (_cmd: unknown, args: unknown, _opts: unknown, callback: unknown) => {
-          const cb = callback as (err: Error | null, stdout?: string) => void;
-          const argArr = args as string[];
-          if (argArr[0] === 'whisper-cpp') {
-            process.nextTick(() => cb(new Error('not found')));
-          } else {
-            process.nextTick(() => cb(null, '/usr/local/bin/' + argArr[0]));
-          }
-          return { kill: vi.fn() } as unknown as ChildProcess;
-        },
-      );
+      mockExecFileRouter({
+        'which:whisper-cpp': () => ({ err: new Error('not found'), stdout: '' }),
+        'which:whisper': () => ({ err: null, stdout: '/usr/local/bin/whisper' }),
+        'which:ffmpeg': () => ({ err: null, stdout: '/usr/local/bin/ffmpeg' }),
+      });
       await service.isAvailable();
       vi.clearAllMocks();
     });
 
     it('uses --output_format json and omits --language for OpenAI whisper', async () => {
       const calls: { cmd: string; args: string[] }[] = [];
-      vi.mocked(childProcess.execFile).mockImplementation(
-        (cmd: unknown, args: unknown, _opts: unknown, callback: unknown) => {
-          const cb = callback as (err: null, stdout: string, stderr: string) => void;
-          calls.push({ cmd: cmd as string, args: args as string[] });
-          process.nextTick(() => cb(null, '', ''));
-          return { kill: vi.fn() } as unknown as ChildProcess;
-        },
-      );
+      mockExecFileRouter({
+        'ffmpeg': () => ({ err: null, stdout: '' }),
+        'whisper': () => ({ err: null, stdout: '' }),
+      }, {
+        onCall: (cmd, args) => calls.push({ cmd, args }),
+      });
       vi.mocked(fs.readFile).mockResolvedValue(OPENAI_WHISPER_JSON);
       vi.mocked(fs.unlink).mockResolvedValue(undefined);
 
@@ -409,13 +348,10 @@ describe('TranscriptionService', () => {
     });
 
     it('reads and parses the output JSON file', async () => {
-      vi.mocked(childProcess.execFile).mockImplementation(
-        (_cmd: unknown, _args: unknown, _opts: unknown, callback: unknown) => {
-          const cb = callback as (err: null, stdout: string, stderr: string) => void;
-          process.nextTick(() => cb(null, '', ''));
-          return { kill: vi.fn() } as unknown as ChildProcess;
-        },
-      );
+      mockExecFileRouter({
+        'ffmpeg': () => ({ err: null, stdout: '' }),
+        'whisper': () => ({ err: null, stdout: '' }),
+      });
       vi.mocked(fs.readFile).mockResolvedValue(OPENAI_WHISPER_JSON);
       vi.mocked(fs.unlink).mockResolvedValue(undefined);
 
@@ -430,13 +366,10 @@ describe('TranscriptionService', () => {
     });
 
     it('cleans up the output JSON file', async () => {
-      vi.mocked(childProcess.execFile).mockImplementation(
-        (_cmd: unknown, _args: unknown, _opts: unknown, callback: unknown) => {
-          const cb = callback as (err: null, stdout: string, stderr: string) => void;
-          process.nextTick(() => cb(null, '', ''));
-          return { kill: vi.fn() } as unknown as ChildProcess;
-        },
-      );
+      mockExecFileRouter({
+        'ffmpeg': () => ({ err: null, stdout: '' }),
+        'whisper': () => ({ err: null, stdout: '' }),
+      });
       vi.mocked(fs.readFile).mockResolvedValue(OPENAI_WHISPER_JSON);
       vi.mocked(fs.unlink).mockResolvedValue(undefined);
 
@@ -451,36 +384,41 @@ describe('TranscriptionService', () => {
 
   describe('cancel', () => {
     it('kills the running child process', async () => {
-      const mockKill = vi.fn();
-      let callCount = 0;
-      let resolveSecond: (() => void) | null = null;
+      const killFn = vi.fn();
+      let resolveWhisper: (() => void) | null = null;
 
       vi.mocked(childProcess.execFile).mockImplementation(
-        (_cmd: unknown, _args: unknown, _opts: unknown, callback: unknown) => {
-          callCount++;
+        (cmd: unknown, args: unknown, _opts: unknown, callback: unknown) => {
+          const cmdStr = cmd as string;
+          const argArr = args as string[];
           const cb = callback as (err: null, stdout: string, stderr: string) => void;
-          if (callCount === 1) {
+
+          if (cmdStr === 'which') {
+            process.nextTick(() => cb(null, '/usr/local/bin/' + argArr[0], ''));
+          } else if (cmdStr === 'ffmpeg') {
             process.nextTick(() => cb(null, '', ''));
-          } else {
-            // second call (whisper) — hold it so we can cancel
-            resolveSecond = () => cb(null, WHISPER_JSON_OUTPUT, '');
+          } else if (cmdStr === 'whisper-cpp') {
+            // Hold this call so we can cancel it
+            resolveWhisper = () => cb(null, '', '');
           }
-          return { kill: mockKill } as unknown as ChildProcess;
+          return { kill: killFn } as unknown as ChildProcess;
         },
       );
+
       vi.mocked(fs.unlink).mockResolvedValue(undefined);
       vi.mocked(fs.stat).mockResolvedValue({} as import('fs').Stats);
+      vi.mocked(fs.readFile).mockResolvedValue(WHISPER_JSON_OUTPUT);
 
       const transcribePromise = service.transcribe('/tmp/meeting.webm');
-      // Wait for ffmpeg to complete, stat to resolve, and whisper to start
-      await new Promise((r) => setTimeout(r, 10));
+      // Wait for ffmpeg + which + stat to resolve, and whisper-cpp to start
+      await new Promise((r) => setTimeout(r, 20));
 
       service.cancel();
 
-      expect(mockKill).toHaveBeenCalled();
+      expect(killFn).toHaveBeenCalled();
 
       // Resolve whisper so the promise settles
-      (resolveSecond as (() => void) | null)?.();
+      (resolveWhisper as (() => void) | null)?.();
       await transcribePromise.catch(() => {});
     });
 

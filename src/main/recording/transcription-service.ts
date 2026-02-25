@@ -132,22 +132,43 @@ export function createTranscriptionService(modelsDir?: string): TranscriptionSer
   }
 
   async function runWhisper(wavPath: string, model: string): Promise<TranscriptionResult> {
-    const bin = whisperBinCache ?? 'whisper-cpp';
+    // Resolve which binary is available (cache avoids repeated `which` calls)
+    const bin = await resolveWhisperBin().catch(() => null);
+
+    if (!bin) {
+      throw new Error('No whisper binary found. Install whisper-cpp or whisper (OpenAI).');
+    }
 
     if (bin === 'whisper') {
       return runOpenAIWhisper(wavPath, model);
     }
 
-    // Try whisper-cpp first
+    // whisper-cpp: validate the ggml model file exists
+    const modelPath = await resolveModelPath(model);
+
     try {
-      const modelPath = await resolveModelPath(model);
       const threads = Math.min(os.cpus().length, 8).toString();
-      const stdout = await runExecFile('whisper-cpp', [
+      await runExecFile('whisper-cpp', [
         '--model', modelPath, '--language', 'auto', '--threads', threads, '--output-json', wavPath,
       ], 300_000);
-      return parseWhisperCppOutput(stdout);
+
+      // whisper-cpp --output-json writes to a file, not stdout.
+      // Output goes to {input_path}.json (e.g. audio.wav → audio.wav.json).
+      const jsonPath = wavPath + '.json';
+      let jsonContent: string;
+      try {
+        jsonContent = await readFile(jsonPath, 'utf-8');
+      } catch {
+        // Some builds write to {input_without_ext}.json instead
+        const altPath = wavPath.replace(/\.wav$/, '.json');
+        jsonContent = await readFile(altPath, 'utf-8');
+        await unlink(altPath).catch(() => {});
+        return parseWhisperCppOutput(jsonContent);
+      }
+      await unlink(jsonPath).catch(() => {});
+      return parseWhisperCppOutput(jsonContent);
     } catch (err) {
-      // Don't fall back if the model file is explicitly missing
+      // Don't swallow model-not-downloaded errors
       if (err instanceof Error && err.message.includes('not downloaded')) throw err;
       // Fallback to OpenAI whisper
       whisperBinCache = 'whisper';
