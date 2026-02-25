@@ -13,7 +13,7 @@ vi.mock('../components/MarkdownEditor', () => ({
 
 const mockUpdateNote = vi.fn();
 const mockDeleteNote = vi.fn();
-const mockDeselectNote = vi.fn();
+const mockGoBack = vi.fn();
 
 let mockNotes: Note[] = [];
 let mockContexts: Context[] = [];
@@ -25,7 +25,7 @@ vi.mock('../stores', () => ({
       notes: mockNotes,
       updateNote: mockUpdateNote,
       deleteNote: mockDeleteNote,
-      deselectNote: mockDeselectNote,
+      goBack: mockGoBack,
       contexts: mockContexts,
       projects: mockProjects,
       stakeholders: [],
@@ -125,10 +125,10 @@ describe('NoteDetailView', () => {
     expect(screen.getByTestId('back-to-notes')).toBeInTheDocument();
   });
 
-  it('clicking back button calls deselectNote', () => {
+  it('clicking back button calls goBack', () => {
     render(<NoteDetailView noteId="note-1" />);
     fireEvent.click(screen.getByTestId('back-to-notes'));
-    expect(mockDeselectNote).toHaveBeenCalled();
+    expect(mockGoBack).toHaveBeenCalled();
   });
 
   // --- Pin toggle ---
@@ -168,7 +168,7 @@ describe('NoteDetailView', () => {
       fireEvent.click(screen.getByTestId('confirm-delete'));
     });
     expect(mockDeleteNote).toHaveBeenCalledWith('note-1');
-    expect(mockDeselectNote).toHaveBeenCalled();
+    expect(mockGoBack).toHaveBeenCalled();
   });
 
   it('cancel delete hides confirmation', () => {

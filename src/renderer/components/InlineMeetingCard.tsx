@@ -8,7 +8,7 @@ interface InlineMeetingCardProps {
 
 export function InlineMeetingCard({ onClose }: InlineMeetingCardProps) {
   const createMeeting = useStore((s) => s.createMeeting);
-  const selectMeeting = useStore((s) => s.selectMeeting);
+  const navigateTab = useStore((s) => s.navigateTab);
   const activeContextIds = useStore((s) => s.activeContextIds);
   const [title, setTitle] = useState('');
   const cardRef = useRef<HTMLDivElement>(null);
@@ -27,11 +27,11 @@ export function InlineMeetingCard({ onClose }: InlineMeetingCardProps) {
       }
       const created = await createMeeting(input);
       if (created?.id) {
-        selectMeeting(created.id);
+        navigateTab({ view: 'meetings', entityId: created.id, entityType: 'meeting' });
       }
     }
     onClose();
-  }, [createMeeting, selectMeeting, onClose, activeContextIds]);
+  }, [createMeeting, navigateTab, onClose, activeContextIds]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {

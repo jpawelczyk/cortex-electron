@@ -78,7 +78,7 @@ export function MeetingsOverviewView() {
   const contexts = useStore(s => s.contexts) as Context[];
   const activeContextIds = useStore(s => s.activeContextIds);
   const fetchMeetings = useStore(s => s.fetchMeetings);
-  const selectMeeting = useStore(s => s.selectMeeting);
+  const navigateTab = useStore(s => s.navigateTab);
   const isInlineMeetingCreating = useStore(s => s.isInlineMeetingCreating);
   const startInlineMeetingCreate = useStore(s => s.startInlineMeetingCreate);
   const cancelInlineMeetingCreate = useStore(s => s.cancelInlineMeetingCreate);
@@ -198,7 +198,7 @@ export function MeetingsOverviewView() {
           <div className="mb-6">
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-4">Today</h3>
             {todayMeetings.map(m => (
-              <MeetingRow key={m.id} meeting={m} onClick={() => selectMeeting(m.id)} contexts={contexts} />
+              <MeetingRow key={m.id} meeting={m} onClick={() => navigateTab({ view: 'meetings', entityId: m.id, entityType: 'meeting' })} contexts={contexts} />
             ))}
           </div>
         )}
@@ -208,7 +208,7 @@ export function MeetingsOverviewView() {
           <div className="mb-6">
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-4">Upcoming</h3>
             {upcomingMeetings.map(m => (
-              <MeetingRow key={m.id} meeting={m} onClick={() => selectMeeting(m.id)} contexts={contexts} />
+              <MeetingRow key={m.id} meeting={m} onClick={() => navigateTab({ view: 'meetings', entityId: m.id, entityType: 'meeting' })} contexts={contexts} />
             ))}
           </div>
         )}
@@ -218,7 +218,7 @@ export function MeetingsOverviewView() {
           <div className="mb-6">
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-4">Past</h3>
             {pastMeetings.map(m => (
-              <MeetingRow key={m.id} meeting={m} onClick={() => selectMeeting(m.id)} contexts={contexts} />
+              <MeetingRow key={m.id} meeting={m} onClick={() => navigateTab({ view: 'meetings', entityId: m.id, entityType: 'meeting' })} contexts={contexts} />
             ))}
           </div>
         )}

@@ -66,7 +66,7 @@ export function NotesOverviewView() {
   const activeContextIds = useStore(s => s.activeContextIds);
   const fetchNotes = useStore(s => s.fetchNotes);
   const createNote = useStore(s => s.createNote);
-  const selectNote = useStore(s => s.selectNote);
+  const navigateTab = useStore(s => s.navigateTab);
   const setAutoFocusNoteTitle = useStore(s => s.setAutoFocusNoteTitle);
   const isInlineNoteCreating = useStore(s => s.isInlineNoteCreating);
   const cancelInlineNoteCreate = useStore(s => s.cancelInlineNoteCreate);
@@ -83,9 +83,9 @@ export function NotesOverviewView() {
     cancelInlineNoteCreate();
     createNote({ title: 'Untitled' }).then((note) => {
       setAutoFocusNoteTitle(true);
-      selectNote(note.id);
+      navigateTab({ view: 'notes', entityId: note.id, entityType: 'note' });
     });
-  }, [isInlineNoteCreating, cancelInlineNoteCreate, createNote, selectNote, setAutoFocusNoteTitle]);
+  }, [isInlineNoteCreating, cancelInlineNoteCreate, createNote, navigateTab, setAutoFocusNoteTitle]);
 
   const filteredNotes = useMemo(() => {
     let result = notes.filter(n => !n.deleted_at);
@@ -133,7 +133,7 @@ export function NotesOverviewView() {
           onClick={async () => {
             const note = await createNote({ title: 'Untitled' });
             setAutoFocusNoteTitle(true);
-            selectNote(note.id);
+            navigateTab({ view: 'notes', entityId: note.id, entityType: 'note' });
           }}
           className="flex items-center gap-3 w-full px-4 py-3 mb-4 rounded-lg border border-dashed border-border/60 bg-card/20 text-muted-foreground/60 hover:text-muted-foreground hover:bg-accent/30 hover:border-border transition-colors cursor-pointer"
         >
@@ -143,7 +143,7 @@ export function NotesOverviewView() {
 
         {/* Notes list */}
         {filteredNotes.map(note => (
-          <NoteRow key={note.id} note={note} onClick={() => selectNote(note.id)} contexts={contexts} />
+          <NoteRow key={note.id} note={note} onClick={() => navigateTab({ view: 'notes', entityId: note.id, entityType: 'note' })} contexts={contexts} />
         ))}
 
         {/* Empty state */}

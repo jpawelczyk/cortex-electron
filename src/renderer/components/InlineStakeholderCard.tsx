@@ -8,7 +8,7 @@ interface InlineStakeholderCardProps {
 
 export function InlineStakeholderCard({ onClose }: InlineStakeholderCardProps) {
   const createStakeholder = useStore((s) => s.createStakeholder);
-  const selectStakeholder = useStore((s) => s.selectStakeholder);
+  const navigateTab = useStore((s) => s.navigateTab);
   const [name, setName] = useState('');
   const cardRef = useRef<HTMLDivElement>(null);
   const nameRef = useRef(name);
@@ -19,11 +19,11 @@ export function InlineStakeholderCard({ onClose }: InlineStakeholderCardProps) {
     if (trimmed) {
       const created = await createStakeholder({ name: trimmed });
       if (created?.id) {
-        selectStakeholder(created.id);
+        navigateTab({ view: 'stakeholders', entityId: created.id, entityType: 'stakeholder' });
       }
     }
     onClose();
-  }, [createStakeholder, selectStakeholder, onClose]);
+  }, [createStakeholder, navigateTab, onClose]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {

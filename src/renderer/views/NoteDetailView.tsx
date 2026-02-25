@@ -14,7 +14,7 @@ export function NoteDetailView({ noteId }: NoteDetailViewProps) {
   const notes = useStore((s) => s.notes);
   const updateNote = useStore((s) => s.updateNote);
   const deleteNote = useStore((s) => s.deleteNote);
-  const deselectNote = useStore((s) => s.deselectNote);
+  const goBack = useStore((s) => s.goBack);
   const contexts = useStore((s) => s.contexts);
   const projects = useStore((s) => s.projects);
   const autoFocusNoteTitle = useStore((s) => s.autoFocusNoteTitle);
@@ -83,7 +83,7 @@ export function NoteDetailView({ noteId }: NoteDetailViewProps) {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <button
-            onClick={deselectNote}
+            onClick={goBack}
             data-testid="back-to-notes"
             className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
@@ -106,7 +106,7 @@ export function NoteDetailView({ noteId }: NoteDetailViewProps) {
                 <span className="text-xs text-muted-foreground mr-1">Delete?</span>
                 <button
                   data-testid="confirm-delete"
-                  onClick={async () => { await deleteNote(noteId); deselectNote(); }}
+                  onClick={async () => { await deleteNote(noteId); goBack(); }}
                   className="p-0.5 rounded bg-destructive/15 text-destructive hover:bg-destructive/25 transition-colors"
                   aria-label="Confirm delete"
                 >

@@ -29,7 +29,7 @@ export function MeetingDetailView({ meetingId }: MeetingDetailViewProps) {
   const updateMeeting = useStore((s) => s.updateMeeting);
   const fetchMeetings = useStore((s) => s.fetchMeetings);
   const deleteMeeting = useStore((s) => s.deleteMeeting);
-  const deselectMeeting = useStore((s) => s.deselectMeeting);
+  const goBack = useStore((s) => s.goBack);
   const contexts = useStore((s) => s.contexts);
   const projects = useStore((s) => s.projects);
   const autoFocusMeetingTitle = useStore((s) => s.autoFocusMeetingTitle);
@@ -124,7 +124,7 @@ export function MeetingDetailView({ meetingId }: MeetingDetailViewProps) {
         {/* Top bar: back + delete */}
         <div className="flex items-center justify-between mb-6">
           <button
-            onClick={deselectMeeting}
+            onClick={goBack}
             data-testid="back-to-meetings"
             className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-default"
           >
@@ -137,7 +137,7 @@ export function MeetingDetailView({ meetingId }: MeetingDetailViewProps) {
               <span className="text-sm text-muted-foreground mr-1">Confirm?</span>
               <button
                 data-testid="confirm-delete"
-                onClick={async () => { await deleteMeeting(meetingId); deselectMeeting(); }}
+                onClick={async () => { await deleteMeeting(meetingId); goBack(); }}
                 className="p-1 rounded bg-destructive/15 text-destructive hover:bg-destructive/25 transition-colors"
                 aria-label="Confirm delete"
               >

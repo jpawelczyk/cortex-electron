@@ -5,7 +5,7 @@ import '@testing-library/jest-dom/vitest';
 import { InlineNoteCard } from './InlineNoteCard';
 
 const mockCreateNote = vi.fn();
-const mockSelectNote = vi.fn();
+const mockNavigateTab = vi.fn();
 const mockOnClose = vi.fn();
 let mockActiveContextIds: string[] = [];
 
@@ -13,7 +13,7 @@ vi.mock('../stores', () => ({
   useStore: (selector: (state: Record<string, unknown>) => unknown) => {
     const state = {
       createNote: mockCreateNote,
-      selectNote: mockSelectNote,
+      navigateTab: mockNavigateTab,
       activeContextIds: mockActiveContextIds,
     };
     return selector(state);
@@ -56,7 +56,7 @@ describe('InlineNoteCard', () => {
 
     expect(mockCreateNote).toHaveBeenCalledWith({ title: 'My Note' });
     await waitFor(() => {
-      expect(mockSelectNote).toHaveBeenCalledWith('new-note');
+      expect(mockNavigateTab).toHaveBeenCalledWith({ view: 'notes', entityId: 'new-note', entityType: 'note' });
       expect(mockOnClose).toHaveBeenCalled();
     });
   });

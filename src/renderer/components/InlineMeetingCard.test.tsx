@@ -5,7 +5,7 @@ import '@testing-library/jest-dom/vitest';
 import { InlineMeetingCard } from './InlineMeetingCard';
 
 const mockCreateMeeting = vi.fn();
-const mockSelectMeeting = vi.fn();
+const mockNavigateTab = vi.fn();
 const mockOnClose = vi.fn();
 let mockActiveContextIds: string[] = [];
 
@@ -13,7 +13,7 @@ vi.mock('../stores', () => ({
   useStore: (selector: (state: Record<string, unknown>) => unknown) => {
     const state = {
       createMeeting: mockCreateMeeting,
-      selectMeeting: mockSelectMeeting,
+      navigateTab: mockNavigateTab,
       activeContextIds: mockActiveContextIds,
     };
     return selector(state);

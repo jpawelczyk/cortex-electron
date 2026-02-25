@@ -41,7 +41,7 @@ function StakeholderRow({ stakeholder, onClick }: { stakeholder: Stakeholder; on
 export function StakeholdersOverviewView() {
   const stakeholders = useStore(s => s.stakeholders);
   const fetchStakeholders = useStore(s => s.fetchStakeholders);
-  const selectStakeholder = useStore(s => s.selectStakeholder);
+  const navigateTab = useStore(s => s.navigateTab);
 
   const isCreating = useStore(s => s.isInlineStakeholderCreating);
   const startInlineStakeholderCreate = useStore(s => s.startInlineStakeholderCreate);
@@ -129,7 +129,7 @@ export function StakeholdersOverviewView() {
           <StakeholderRow
             key={stakeholder.id}
             stakeholder={stakeholder}
-            onClick={() => selectStakeholder(stakeholder.id)}
+            onClick={() => navigateTab({ view: 'stakeholders', entityId: stakeholder.id, entityType: 'stakeholder' })}
           />
         ))}
 

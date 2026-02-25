@@ -16,8 +16,9 @@ import { createMeetingSlice, MeetingSlice } from './meetings';
 import { createMeetingAttendeeSlice, MeetingAttendeeSlice } from './meetingAttendees';
 import { createSearchSlice, SearchSlice } from './search';
 import { createRecordingSlice, RecordingSlice } from './recording';
+import { createTabsSlice, TabsSlice } from './tabs';
 
-export type StoreState = TaskSlice & ProjectSlice & ContextSlice & StakeholderSlice & ChecklistSlice & UISlice & NoteSlice & AuthSlice & AIAgentSlice & ProjectStakeholderSlice & NoteStakeholderSlice & SettingsSlice & MeetingSlice & MeetingAttendeeSlice & SearchSlice & RecordingSlice;
+export type StoreState = TaskSlice & ProjectSlice & ContextSlice & StakeholderSlice & ChecklistSlice & UISlice & NoteSlice & AuthSlice & AIAgentSlice & ProjectStakeholderSlice & NoteStakeholderSlice & SettingsSlice & MeetingSlice & MeetingAttendeeSlice & SearchSlice & RecordingSlice & TabsSlice;
 
 export const useStore = create<StoreState>()(
   devtools(
@@ -39,6 +40,7 @@ export const useStore = create<StoreState>()(
         ...createMeetingAttendeeSlice(...a),
         ...createSearchSlice(...a),
         ...createRecordingSlice(...a),
+        ...createTabsSlice(...a),
       }),
       {
         name: 'cortex-store',
@@ -48,6 +50,8 @@ export const useStore = create<StoreState>()(
           userFirstName: state.userFirstName,
           userLastName: state.userLastName,
           weatherCity: state.weatherCity,
+          tabs: state.tabs,
+          activeTabId: state.activeTabId,
         }),
       }
     )

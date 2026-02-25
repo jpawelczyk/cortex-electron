@@ -56,7 +56,7 @@ export function ProjectsOverviewView() {
   const updateProject = useStore((s) => s.updateProject);
   const isInlineProjectCreating = useStore((s) => s.isInlineProjectCreating);
   const cancelInlineProjectCreate = useStore((s) => s.cancelInlineProjectCreate);
-  const selectProject = useStore((s) => s.selectProject);
+  const navigateTab = useStore((s) => s.navigateTab);
   const deleteProject = useStore((s) => s.deleteProject);
   const [activeTab, setActiveTab] = useState<ProjectsTab>('active');
   const [isLocalCreating, setIsLocalCreating] = useState(false);
@@ -149,8 +149,8 @@ export function ProjectsOverviewView() {
                 role="button"
                 tabIndex={0}
                 data-testid="project-card"
-                onClick={() => selectProject(project.id)}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') selectProject(project.id); }}
+                onClick={() => navigateTab({ view: 'projects', entityId: project.id, entityType: 'project' })}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigateTab({ view: 'projects', entityId: project.id, entityType: 'project' }); }}
                 className="group/card rounded-lg border border-border bg-card/40 backdrop-blur-xl p-4 transition-colors hover:bg-accent/40 text-left cursor-default"
               >
                 <div className="flex items-start justify-between gap-2 mb-3">

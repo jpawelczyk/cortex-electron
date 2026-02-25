@@ -13,7 +13,7 @@ export function ArchivedProjectsView() {
   const tasks = useStore((s) => s.tasks);
   const activeContextIds = useStore((s) => s.activeContextIds);
   const updateProject = useStore((s) => s.updateProject);
-  const selectProject = useStore((s) => s.selectProject);
+  const navigateTab = useStore((s) => s.navigateTab);
 
   const archivedProjects = useMemo(() => {
     const statusFiltered = projects.filter((p) => p.status === 'archived' && !p.deleted_at);
@@ -49,8 +49,8 @@ export function ArchivedProjectsView() {
             role="button"
             tabIndex={0}
             data-testid="project-card"
-            onClick={() => selectProject(project.id)}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') selectProject(project.id); }}
+            onClick={() => navigateTab({ view: 'projects', entityId: project.id, entityType: 'project' })}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigateTab({ view: 'projects', entityId: project.id, entityType: 'project' }); }}
             className="group/card rounded-lg border border-border bg-card/40 backdrop-blur-xl p-4 transition-colors hover:bg-accent/40 text-left cursor-default"
           >
             <div className="flex items-start justify-between gap-2 mb-3">

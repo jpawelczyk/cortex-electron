@@ -7,7 +7,7 @@ import { CompletedProjectsView } from './CompletedProjectsView';
 let mockProjects: Record<string, unknown>[] = [];
 let mockTasks: Record<string, unknown>[] = [];
 const mockUpdateProject = vi.fn();
-const mockSelectProject = vi.fn();
+const mockNavigateTab = vi.fn();
 
 vi.mock('../stores', () => ({
   useStore: (selector: (state: Record<string, unknown>) => unknown) => {
@@ -15,7 +15,7 @@ vi.mock('../stores', () => ({
       projects: mockProjects,
       tasks: mockTasks,
       updateProject: mockUpdateProject,
-      selectProject: mockSelectProject,
+      navigateTab: mockNavigateTab,
       activeContextIds: [],
     };
     return selector(state);
@@ -153,7 +153,7 @@ describe('CompletedProjectsView', () => {
 
     fireEvent.click(screen.getByLabelText('Reopen project'));
 
-    expect(mockSelectProject).not.toHaveBeenCalled();
+    expect(mockNavigateTab).not.toHaveBeenCalled();
   });
 
   it('clicking a card navigates to project detail', () => {
@@ -164,7 +164,7 @@ describe('CompletedProjectsView', () => {
 
     fireEvent.click(screen.getByTestId('project-card'));
 
-    expect(mockSelectProject).toHaveBeenCalledWith('p1');
+    expect(mockNavigateTab).toHaveBeenCalledWith({ view: 'projects', entityId: 'p1', entityType: 'project' });
   });
 
   it('sorts completed projects by completion date descending', () => {

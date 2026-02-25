@@ -4,11 +4,12 @@ import { Plus, Search, Settings } from 'lucide-react';
 import { ContextSelector } from './components/ContextSelector';
 import { ContextSettings } from './components/ContextSettings';
 import { CommandPalette } from './components/CommandPalette';
+import { TabBar } from './components/TabBar';
 import { useStore } from './stores';
 import { filterTasksByContext } from './lib/contextFilter';
 import { getCreateAction } from './lib/getCreateAction';
 import { executeCreateAction } from './lib/executeCreateAction';
-import { Sidebar, SidebarView } from './components/Sidebar';
+import { Sidebar, type SidebarView } from './components/Sidebar';
 import { InboxView } from './views/InboxView';
 import { TasksView } from './views/TasksView';
 import { TrashView } from './views/TrashView';
@@ -61,7 +62,6 @@ export default function App() {
 }
 
 function AuthenticatedApp() {
-  const [activeView, setActiveView] = useState<SidebarView>('home');
   const [contextSettingsOpen, setContextSettingsOpen] = useState(false);
   const tasks = useStore((s) => s.tasks);
   const projects = useStore((s) => s.projects);
@@ -79,36 +79,22 @@ function AuthenticatedApp() {
   const startInlineNoteCreate = useStore((s) => s.startInlineNoteCreate);
   const startInlineStakeholderCreate = useStore((s) => s.startInlineStakeholderCreate);
   const selectedProjectId = useStore((s) => s.selectedProjectId);
-  const deselectProject = useStore((s) => s.deselectProject);
   const selectedNoteId = useStore((s) => s.selectedNoteId);
-  const deselectNote = useStore((s) => s.deselectNote);
   const selectedStakeholderId = useStore((s) => s.selectedStakeholderId);
-  const deselectStakeholder = useStore((s) => s.deselectStakeholder);
   const selectedMeetingId = useStore((s) => s.selectedMeetingId);
-  const deselectMeeting = useStore((s) => s.deselectMeeting);
   const fetchMeetings = useStore((s) => s.fetchMeetings);
   const startInlineMeetingCreate = useStore((s) => s.startInlineMeetingCreate);
   const selectTask = useStore((s) => s.selectTask);
-  const selectProject = useStore((s) => s.selectProject);
-  const selectNote = useStore((s) => s.selectNote);
   const toggleCommandPalette = useStore((s) => s.toggleCommandPalette);
   const openCommandPalette = useStore((s) => s.openCommandPalette);
 
+  const navigateTab = useStore((s) => s.navigateTab);
+  const activeTabState = useStore((s) => s.getActiveTabState());
+  const activeView = activeTabState.view;
+
   const handleViewChange = useCallback((view: SidebarView) => {
-    if (selectedProjectId) {
-      deselectProject();
-    }
-    if (selectedNoteId) {
-      deselectNote();
-    }
-    if (selectedStakeholderId) {
-      deselectStakeholder();
-    }
-    if (selectedMeetingId) {
-      deselectMeeting();
-    }
-    setActiveView(view);
-  }, [deselectProject, deselectNote, deselectStakeholder, deselectMeeting, setActiveView, selectedProjectId, selectedNoteId, selectedStakeholderId, selectedMeetingId]);
+    navigateTab({ view });
+  }, [navigateTab]);
 
   const fetchTasksRef = useRef(fetchTasks);
   fetchTasksRef.current = fetchTasks;
@@ -235,7 +221,9 @@ function AuthenticatedApp() {
       />
 
       <main className="flex-1 flex flex-col min-w-0">
-        <header className="drag-region flex items-center justify-end gap-1 px-4 py-2 border-b border-border">
+        <header className="drag-region flex items-center gap-1 px-4 py-2 border-b border-border">
+          <TabBar />
+          <div className="flex-1" />
           <div className="no-drag flex items-center gap-1">
             <ContextSelector />
             <button
@@ -304,28 +292,26 @@ function AuthenticatedApp() {
             cancelled: 'logbook',
           };
           const view = viewMap[task.status] || 'inbox';
-          handleViewChange(view);
+          navigateTab({ view });
           selectTask(task.id);
         }}
         onNavigateToProject={(projectId: string) => {
-          handleViewChange('projects');
-          selectProject(projectId);
+          navigateTab({ view: 'projects', entityId: projectId, entityType: 'project' });
         }}
         onNavigateToNote={(noteId: string) => {
-          handleViewChange('notes');
-          selectNote(noteId);
+          navigateTab({ view: 'notes', entityId: noteId, entityType: 'note' });
         }}
         onNavigateToView={handleViewChange}
         onCreateTask={() => {
-          handleViewChange('inbox');
+          navigateTab({ view: 'inbox' });
           startInlineCreate();
         }}
         onCreateProject={() => {
-          handleViewChange('projects');
+          navigateTab({ view: 'projects' });
           startInlineProjectCreate();
         }}
         onCreateNote={() => {
-          handleViewChange('notes');
+          navigateTab({ view: 'notes' });
           startInlineNoteCreate();
         }}
       />

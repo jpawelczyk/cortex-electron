@@ -46,7 +46,7 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
   const contexts = useStore((s) => s.contexts);
   const updateProject = useStore((s) => s.updateProject);
   const deleteProject = useStore((s) => s.deleteProject);
-  const deselectProject = useStore((s) => s.deselectProject);
+  const goBack = useStore((s) => s.goBack);
   const updateTask = useStore((s) => s.updateTask);
   const selectTask = useStore((s) => s.selectTask);
   const selectedTaskId = useStore((s) => s.selectedTaskId);
@@ -242,7 +242,7 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
         {/* Top bar: back + delete */}
         <div className="flex items-center justify-between mb-6">
           <button
-            onClick={deselectProject}
+            onClick={goBack}
             aria-label="Back"
             className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-default"
           >
@@ -258,7 +258,7 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
                 aria-label="Confirm delete project"
                 onClick={() => {
                   deleteProject(projectId);
-                  deselectProject();
+                  goBack();
                 }}
                 className="p-1 rounded bg-destructive/15 text-destructive hover:bg-destructive/25 transition-colors"
               >

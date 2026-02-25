@@ -9,7 +9,7 @@ let mockActiveContextIds: string[] = [];
 let mockContexts: Record<string, unknown>[] = [];
 const mockFetchNotes = vi.fn();
 const mockCreateNote = vi.fn().mockResolvedValue({ id: 'new-note-id', title: 'Untitled' });
-const mockSelectNote = vi.fn();
+const mockNavigateTab = vi.fn();
 const mockSetAutoFocusNoteTitle = vi.fn();
 
 vi.mock('../stores', () => ({
@@ -21,7 +21,7 @@ vi.mock('../stores', () => ({
       activeContextIds: mockActiveContextIds,
       fetchNotes: mockFetchNotes,
       createNote: mockCreateNote,
-      selectNote: mockSelectNote,
+      navigateTab: mockNavigateTab,
       setAutoFocusNoteTitle: mockSetAutoFocusNoteTitle,
     };
     return selector(state);
@@ -175,11 +175,11 @@ describe('NotesOverviewView', () => {
     expect(rows[1]).toHaveTextContent('Zebra');
   });
 
-  it('clicking a note row calls selectNote', () => {
+  it('clicking a note row calls navigateTab', () => {
     mockNotes = [fakeNote({ id: 'n1', title: 'Clickable Note' })];
     render(<NotesOverviewView />);
     fireEvent.click(screen.getByTestId('note-row'));
-    expect(mockSelectNote).toHaveBeenCalledWith('n1');
+    expect(mockNavigateTab).toHaveBeenCalledWith({ view: 'notes', entityId: 'n1', entityType: 'note' });
   });
 
   it('fetches notes on mount', () => {
@@ -242,7 +242,7 @@ describe('NotesOverviewView', () => {
 
       await vi.waitFor(() => {
         expect(mockCreateNote).toHaveBeenCalledWith({ title: 'Untitled' });
-        expect(mockSelectNote).toHaveBeenCalledWith('new-note-id');
+        expect(mockNavigateTab).toHaveBeenCalledWith({ view: 'notes', entityId: 'new-note-id', entityType: 'note' });
       });
     });
   });

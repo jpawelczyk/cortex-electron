@@ -8,7 +8,7 @@ interface InlineNoteCardProps {
 
 export function InlineNoteCard({ onClose }: InlineNoteCardProps) {
   const createNote = useStore((s) => s.createNote);
-  const selectNote = useStore((s) => s.selectNote);
+  const navigateTab = useStore((s) => s.navigateTab);
   const activeContextIds = useStore((s) => s.activeContextIds);
 
   const [title, setTitle] = useState('');
@@ -24,10 +24,10 @@ export function InlineNoteCard({ onClose }: InlineNoteCardProps) {
         input.context_id = activeContextIds[0];
       }
       const note = await createNote(input);
-      selectNote(note.id);
+      navigateTab({ view: 'notes', entityId: note.id, entityType: 'note' });
     }
     onClose();
-  }, [createNote, selectNote, onClose, activeContextIds]);
+  }, [createNote, navigateTab, onClose, activeContextIds]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {

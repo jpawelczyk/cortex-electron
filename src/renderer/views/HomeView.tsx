@@ -17,7 +17,7 @@ const MAX_HOME_PROJECTS = 6;
 
 
 interface HomeViewProps {
-  onNavigate: (view: SidebarView) => void;
+  onNavigate?: (view: SidebarView) => void;
 }
 
 function formatMeetingTime(meeting: Meeting): string {
@@ -57,7 +57,7 @@ function getSubtitle(todayCount: number, overdueCount: number): string {
   return `Busy day — ${todayCount} tasks lined up.`;
 }
 
-export function HomeView({ onNavigate }: HomeViewProps) {
+export function HomeView(_props: HomeViewProps) {
   const now = useMemo(() => new Date(), []);
   const dayOfWeek = format(now, 'EEEE').toUpperCase();
   const monthDay = format(now, 'MMMM d').toUpperCase();
@@ -71,11 +71,10 @@ export function HomeView({ onNavigate }: HomeViewProps) {
   const selectedTaskId = useStore((s) => s.selectedTaskId);
   const meetings = useStore((s) => s.meetings);
   const createMeeting = useStore((s) => s.createMeeting);
-  const selectMeeting = useStore((s) => s.selectMeeting);
+  const navigateTab = useStore((s) => s.navigateTab);
   const setAutoFocusMeetingTitle = useStore((s) => s.setAutoFocusMeetingTitle);
   const projects = useStore((s) => s.projects);
   const contexts = useStore((s) => s.contexts);
-  const selectProject = useStore((s) => s.selectProject);
   const weather = useWeather(weatherCity);
 
   const today = format(now, 'yyyy-MM-dd');
@@ -158,10 +157,9 @@ export function HomeView({ onNavigate }: HomeViewProps) {
     });
     if (meeting?.id) {
       setAutoFocusMeetingTitle(true);
-      onNavigate('meetings');
-      selectMeeting(meeting.id);
+      navigateTab({ view: 'meetings', entityId: meeting.id, entityType: 'meeting' });
     }
-  }, [createMeeting, selectMeeting, setAutoFocusMeetingTitle, onNavigate]);
+  }, [createMeeting, navigateTab, setAutoFocusMeetingTitle]);
 
   const subtitle = getSubtitle(todayCount, overdueCount);
   const displayName = firstName || 'there';
@@ -311,7 +309,7 @@ export function HomeView({ onNavigate }: HomeViewProps) {
                 {todayMeetings.map((m) => (
                   <div
                     key={m.id}
-                    onClick={() => { onNavigate('meetings'); selectMeeting(m.id); }}
+                    onClick={() => navigateTab({ view: 'meetings', entityId: m.id, entityType: 'meeting' })}
                     className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-accent/40 cursor-default transition-colors"
                   >
                     <Video className="size-4 text-muted-foreground shrink-0" strokeWidth={1.5} />
@@ -360,7 +358,7 @@ export function HomeView({ onNavigate }: HomeViewProps) {
                   return (
                     <div
                       key={p.id}
-                      onClick={() => { onNavigate('projects'); selectProject(p.id); }}
+                      onClick={() => navigateTab({ view: 'projects', entityId: p.id, entityType: 'project' })}
                       className="rounded-lg border border-[oklch(1_0_0/6%)] px-4 py-3.5 cursor-default transition-all duration-200 hover:border-[oklch(1_0_0/12%)] hover:translate-y-[-1px]"
                       style={{ background: 'oklch(0.15 0.01 265 / 50%)' }}
                     >

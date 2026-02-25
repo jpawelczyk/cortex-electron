@@ -6,7 +6,7 @@ import { ProjectDetailView } from './ProjectDetailView';
 import type { Project, Task, Context } from '@shared/types';
 
 const mockUpdateProject = vi.fn();
-const mockDeselectProject = vi.fn();
+const mockGoBack = vi.fn();
 const mockFetchProjects = vi.fn();
 const mockCreateTask = vi.fn().mockResolvedValue({ id: 'new-task' });
 const mockUpdateTask = vi.fn();
@@ -36,7 +36,7 @@ vi.mock('../stores', () => ({
       tasks: mockTasks,
       contexts: mockContexts,
       updateProject: mockUpdateProject,
-      deselectProject: mockDeselectProject,
+      goBack: mockGoBack,
       fetchProjects: mockFetchProjects,
       agents: [],
       fetchAgents: vi.fn(),
@@ -246,11 +246,11 @@ describe('ProjectDetailView', () => {
     expect(screen.getByRole('button', { name: /back/i })).toBeInTheDocument();
   });
 
-  it('clicking back button calls deselectProject', () => {
+  it('clicking back button calls goBack', () => {
     render(<ProjectDetailView projectId="proj-1" />);
 
     fireEvent.click(screen.getByRole('button', { name: /back/i }));
-    expect(mockDeselectProject).toHaveBeenCalled();
+    expect(mockGoBack).toHaveBeenCalled();
   });
 
   // --- Debounced title editing ---
@@ -533,7 +533,7 @@ describe('ProjectDetailView', () => {
     fireEvent.click(screen.getByLabelText('Confirm delete project'));
 
     expect(mockDeleteProject).toHaveBeenCalledWith('proj-1');
-    expect(mockDeselectProject).toHaveBeenCalled();
+    expect(mockGoBack).toHaveBeenCalled();
   });
 
   it('cancels deletion when cancel button is clicked', () => {

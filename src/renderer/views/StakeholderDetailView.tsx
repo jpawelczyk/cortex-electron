@@ -11,7 +11,7 @@ export function StakeholderDetailView({ stakeholderId }: StakeholderDetailViewPr
   const stakeholders = useStore((s) => s.stakeholders);
   const updateStakeholder = useStore((s) => s.updateStakeholder);
   const deleteStakeholder = useStore((s) => s.deleteStakeholder);
-  const deselectStakeholder = useStore((s) => s.deselectStakeholder);
+  const goBack = useStore((s) => s.goBack);
 
   const stakeholder = stakeholders.find((s) => s.id === stakeholderId);
 
@@ -80,7 +80,7 @@ export function StakeholderDetailView({ stakeholderId }: StakeholderDetailViewPr
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <button
-            onClick={deselectStakeholder}
+            onClick={goBack}
             data-testid="back-to-stakeholders"
             className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
@@ -93,7 +93,7 @@ export function StakeholderDetailView({ stakeholderId }: StakeholderDetailViewPr
                 <span className="text-xs text-muted-foreground mr-1">Delete?</span>
                 <button
                   data-testid="confirm-delete"
-                  onClick={async () => { await deleteStakeholder(stakeholderId); deselectStakeholder(); }}
+                  onClick={async () => { await deleteStakeholder(stakeholderId); goBack(); }}
                   className="p-0.5 rounded bg-destructive/15 text-destructive hover:bg-destructive/25 transition-colors"
                 >
                   <Check className="size-3" />
